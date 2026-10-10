@@ -1,0 +1,23 @@
+
+# Local generated evidence and external references
+tests/.references/
+build/
+**/objects/
+**/test-report.json
+**/build-report.json
+**/windows-vulkan-capabilities.json
+__pycache__/
+*.pyc
+*.dll
+*.exe
+*.o
+*.obj
+*.kext/
+*.dmg
+*.pkg
+*.aml
+*.dsl
+*.pfx
+*.p12
+*.key
+.env

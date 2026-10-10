@@ -1,0 +1,12 @@
+
+LunarBridge is independent research. Intel, Apple, Samsung, OpenCore, Lilu and
+their contributors do not sponsor or endorse this project.
+
+GPU platform metadata is adapted from MIT-licensed Intel Linux Xe source.
+VoodooI2C configuration is a source patch against its GPLv3 upstream project.
+The exact upstream commits, notices and source hashes are documented here.
+
+No Apple graphics binaries, macOS installer, firmware blob, installed Windows
+driver binary, machine ACPI dump, certificate or secret is included.
+NootedGreen is discussed as research context only; no code from it is included.
+MacKernelSDK remains an external build dependency with its own licenses.

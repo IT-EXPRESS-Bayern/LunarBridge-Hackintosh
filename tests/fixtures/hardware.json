@@ -1,0 +1,35 @@
+{
+  "fixture_type": "Public PCI hardware IDs only; no machine dump or personal identifiers",
+  "devices": [
+    {
+      "Name": "Intel Arc 130V",
+      "HardwareID": [
+        "PCI\\VEN_8086&DEV_64A0&SUBSYS_C1DD144D"
+      ]
+    },
+    {
+      "Name": "Intel Serial IO I2C Host Controller",
+      "HardwareID": [
+        "PCI\\VEN_8086&DEV_A878&SUBSYS_C1DD144D"
+      ]
+    },
+    {
+      "Name": "Intel Serial IO I2C Host Controller",
+      "HardwareID": [
+        "PCI\\VEN_8086&DEV_A879&SUBSYS_C1DD144D"
+      ]
+    },
+    {
+      "Name": "Intel Serial IO I2C Host Controller",
+      "HardwareID": [
+        "PCI\\VEN_8086&DEV_A87A&SUBSYS_C1DD144D"
+      ]
+    },
+    {
+      "Name": "Intel Serial IO I2C Host Controller",
+      "HardwareID": [
+        "PCI\\VEN_8086&DEV_A87B&SUBSYS_C1DD144D"
+      ]
+    }
+  ]
+}

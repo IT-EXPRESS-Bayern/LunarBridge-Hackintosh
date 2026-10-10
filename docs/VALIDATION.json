@@ -1,0 +1,58 @@
+{
+  "validated_on": "2026-10-10",
+  "environment": "Windows x86_64 host",
+  "compiler": {
+    "name": "Zig",
+    "version": "0.15.2"
+  },
+  "external_build_dependency": "MacKernelSDK headers, separately licensed",
+  "successful_compiles": 3,
+  "artifacts": [
+    {
+      "name": "lnl_host.dll",
+      "bytes": 3072,
+      "sha256": "5ce43f97b1749b5888db8ad25b1205bebd7d6167b46bee1b7a384d28ec23773c",
+      "magic_hex": "4d5a7800"
+    },
+    {
+      "name": "lnl_platform.o",
+      "bytes": 4240,
+      "sha256": "a4ae9f9e5db3ba945ddbeb075a0208d02e7c7d3b5d049c7f8310ab280e6a1d4c",
+      "magic_hex": "cffaedfe"
+    },
+    {
+      "name": "LunarLakePCIProbe.o",
+      "bytes": 136592,
+      "sha256": "be5b7905e5dde49b42007a852099f56545d97fc8d29735518b945e98b9e9ba11",
+      "magic_hex": "cffaedfe"
+    }
+  ],
+  "gpu_host_tests": {
+    "test_type": "Executed Windows DLL built from C++; exhaustive PCI selection, 20000 synthetic GMD fixtures, upstream comparison and BAR boundaries",
+    "tests_run": 8,
+    "failures": 0,
+    "errors": 0,
+    "successful": true,
+    "synthetic_fixtures_only_for_gmd": true,
+    "actual_gpu_registers_read": false,
+    "metal_hardware_tests": 0
+  },
+  "i2c_source_tests": {
+    "test_type": "Windows host-side source/matching checks; no macOS hardware tests",
+    "tests_run": 8,
+    "failures": 0,
+    "errors": 0,
+    "successful": true,
+    "macos_driver_loaded": false
+  },
+  "pinned_reference_files_sha256_verified": 7,
+  "total_host_tests_passed": 16,
+  "loadable_gpu_kext_built": false,
+  "i2c_kext_built": false,
+  "actual_gpu_registers_read": false,
+  "native_macos_hardware_tests": 0,
+  "metal_hardware_tests": 0,
+  "firmware_secure_boot_validated": false,
+  "dual_boot_or_external_ssd_install_validated": false,
+  "interpretation": "Compiled metadata and host source checks only; no proof of native GPU or boot support."
+}

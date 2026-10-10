@@ -1,0 +1,33 @@
+--- a/VoodooI2C/VoodooI2C/Info.plist
++++ b/VoodooI2C/VoodooI2C/Info.plist
+@@ -574,6 +574,30 @@
+ 			<string>VoodooI2CPCIController</string>
+ 			<key>IOPCIMatch</key>
+ 			<string>0x34e88086&amp;0xFFFCFFFF</string>
++			<key>IOProbeScore</key>
++			<integer>9999</integer>
++			<key>IOProviderClass</key>
++			<string>IOPCIDevice</string>
++		</dict>
++		<!-- Experimental Samsung NP960XHA Lunar Lake matching; no hardware validation. -->
++		<key>VoodooI2CPCILunarLakeSamsungController</key>
++		<dict>
++			<key>I2CClkRate</key>
++			<integer>100000000</integer>
++			<key>I2CSdaHoldTimeNs</key>
++			<integer>42</integer>
++			<key>I2CSdaFallingTimeNs</key>
++			<integer>171</integer>
++			<key>I2CSclFallingTimeNs</key>
++			<integer>208</integer>
++			<key>CFBundleIdentifier</key>
++			<string>com.alexandred.VoodooI2C</string>
++			<key>IOClass</key>
++			<string>VoodooI2CPCIController</string>
++			<key>IOPCIPrimaryMatch</key>
++			<string>0xa8788086 0xa8798086 0xa87a8086 0xa87b8086</string>
++			<key>IOPCISecondaryMatch</key>
++			<string>0xc1dd144d</string>
+ 			<key>IOProbeScore</key>
+ 			<integer>9999</integer>
+ 			<key>IOProviderClass</key>

@@ -1,0 +1,26 @@
+Source reference: Linux v6.17
+Repository: https://github.com/torvalds/linux
+Commit: e5f0a698b34ed76002dc5cff3804a61c80233a7a
+
+include/drm/intel/pciids.h: INTEL_LNL_IDS, Copyright 2013 Intel Corporation.
+drivers/gpu/drm/xe/regs/xe_gt_regs.h: GMD_ID and MEDIA_GT_GSI_OFFSET,
+Copyright 2023 Intel Corporation, MIT.
+drivers/gpu/drm/xe/xe_pci.c: lnl_desc and read_gmdid, MIT.
+New project implementations are GPL-3.0-only; see ../LICENSE.
+The underlying Intel MIT copyrights and permission text remain in
+../LICENSES/MIT-Intel.txt. This does not relicense upstream Intel source.
+
+Pinned source URLs and verified SHA256 values are listed in
+../tests/reference-manifest.json. tools/fetch_references.py downloads the
+external test inputs into ../tests/.references/; they are excluded from Git
+and the public source archive and retain their upstream licenses.
+
+The Linux driver is NOT included as a macOS driver. No Linux kernel interfaces
+or NootedGreen code have been transplanted into this prototype.
+The functions implemented here are independent platform metadata and decoding.
+They contain no firmware loader, scheduler, memory manager, display driver,
+shader compiler or macOS Metal provider. Actual GMD_ID has NOT been read.
+
+LunarLakePCIProbe.cpp uses separately licensed MacKernelSDK IOKit headers.
+The SDK is an external build dependency. Its headers retain their own licenses.
+Compiled object files are not executable or installable kexts.

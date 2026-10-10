@@ -1,0 +1,39 @@
+{
+  "files": [
+    {
+      "path": "linux-v6.17/include/drm/intel/pciids.h",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/include/drm/intel/pciids.h",
+      "sha256": "ae6ac8678e169f81669442a9ffc84f379b1a4db1a71cee448a4b34cfb937b079"
+    },
+    {
+      "path": "linux-v6.17/drivers/gpu/drm/xe/xe_pci.c",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/drivers/gpu/drm/xe/xe_pci.c",
+      "sha256": "1563c7f2b3d11aa5917bfc2660e6d5e05ad8b3c2086e6ffa4b6752a898040740"
+    },
+    {
+      "path": "linux-v6.17/drivers/gpu/drm/xe/regs/xe_gt_regs.h",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/drivers/gpu/drm/xe/regs/xe_gt_regs.h",
+      "sha256": "c028945c81fc65579f282c1614126a396ba784c87eafdb9cb10924bcb1653459"
+    },
+    {
+      "path": "linux-v6.17/drivers/mfd/intel-lpss-pci.c",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/drivers/mfd/intel-lpss-pci.c",
+      "sha256": "6a4e4b5abd3dabd78419a9b6730a14c1364aa546362bbb0adca54e81a3980b93"
+    },
+    {
+      "path": "VoodooI2C/VoodooI2C/VoodooI2C/Info.plist",
+      "url": "https://raw.githubusercontent.com/VoodooI2C/VoodooI2C/5c0c99cc451b03790c684ce6552c3f61620ad46b/VoodooI2C/VoodooI2C/Info.plist",
+      "sha256": "f52136e0f643a94505c54c13bfd2b39e4a972da0119ea6556194bc302466b39c"
+    },
+    {
+      "path": "VoodooI2C/VoodooI2C/VoodooI2C/VoodooI2CController/VoodooI2CControllerConstants.hpp",
+      "url": "https://raw.githubusercontent.com/VoodooI2C/VoodooI2C/5c0c99cc451b03790c684ce6552c3f61620ad46b/VoodooI2C/VoodooI2C/VoodooI2CController/VoodooI2CControllerConstants.hpp",
+      "sha256": "937f3b9a2263a553724c7d7707884d869f2e2863248163e73494f422dca653d1"
+    },
+    {
+      "path": "VoodooI2C/VoodooI2C/VoodooI2C/VoodooI2CController/VoodooI2CControllerDriver.cpp",
+      "url": "https://raw.githubusercontent.com/VoodooI2C/VoodooI2C/5c0c99cc451b03790c684ce6552c3f61620ad46b/VoodooI2C/VoodooI2C/VoodooI2CController/VoodooI2CControllerDriver.cpp",
+      "sha256": "325afed97ffd87bf7bb1cfde49858c5355f2872d650fb1ea24fc7122b79e5170"
+    }
+  ]
+}

@@ -1,0 +1,3 @@
+* text=auto eol=lf
+# Unified diff context starts with a space before the source's tab indentation.
+*.patch whitespace=-space-before-tab
