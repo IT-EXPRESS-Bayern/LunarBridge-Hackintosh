@@ -16,6 +16,7 @@ x86_64 macOS Mach-O object files; these are local build outputs excluded from Gi
 | macOS object format | Five Mach-O objects verified | Actual x86_64 object compilation and parser inspection; these objects are rejected by the installer |
 | Native macOS link workflow | Real diagnostic Kext linked | Pinned external SDK and macOS linker; source commit, hashes and unsigned status in VALIDATION.json; no target-hardware loading |
 | Native bundle installer integration | Passed in a synthetic EFI under Windows | Actual CI bundle planned/installed/rolled back; config bytes restored; no real EFI modified |
+| Packaged CLI and corresponding source | Passed | Packaged plan/install/rollback CLI executed in a synthetic EFI; ten source file hashes, binary hash and archive CRC verified |
 
 The public hardware fixture is a documented device-ID fixture, not a captured
 machine inventory or a native device test. The I2C patch has also passed
@@ -30,6 +31,12 @@ no GPU operation was submitted by these host tests, and Metal acceleration
 has not been implemented. The future `Metal-Minimaltest.mm` has not been built
 or executed. Display, sleep/wake, firmware Secure Boot and the external-SSD
 dual-boot installation remain unvalidated.
+
+The final diagnostic build uses project-owned module entry glue and links no
+static SDK library. It was built with Apple clang on an Intel macOS 26 runner
+and has no code signature. Its exact source commit differs from later documentation
+commits; the commit and hashes are retained in VALIDATION.json and the packaged
+SOURCE-REFERENCE.json. The successful link is separate from target-device loading.
 
 The machine-readable [validation record](VALIDATION.json) includes artifact
 hashes and explicit test boundaries. Compiler commands containing local

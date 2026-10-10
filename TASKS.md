@@ -28,7 +28,7 @@ und Firmware-UEFI-Secure-Boot bleiben Anforderungen. Eine VM ersetzt das Ziel ni
 ## Native Validierung benötigt
 
 - [x] Diagnose-Kext mit einem macOS-Kext-Linker bauen und Mach-O-Bundle prüfen.
-- [ ] GitHub-Buildartefakt herunterladen, Inhalt/Prüfsummen prüfen und als Diagnose-Build bereitstellen.
+- [x] GitHub-Buildartefakt herunterladen, Inhalt/Prüfsummen prüfen und als Diagnose-Build bereitstellen.
 - [ ] Kext tatsächlich unter dem Ziel-Tahoe laden und Gerätezuordnung nachweisen.
 - [ ] PCI-Daten, Grafik-/Media-IP und später echte Fusetopologie am Gerät erfassen.
 - [ ] Speicheranschluss, Verbindungsschluss und parallele Clients auf macOS prüfen.
@@ -71,8 +71,9 @@ sind eine umfangreiche weitere Portierung; es gibt derzeit keinen bestätigten
 nativen Arc-Metal-Treiber und keine Zusage fehlerfreier Funktion.
 
 Aktuell bestanden: 59 Prüfungen unter Windows, sechs Compiler-Aufrufe und fünf
-macOS-Objektdateien. Ein erster GitHub-macOS-Linkbuild ist bestanden;
-alle Geräteproben sind offen. Der geprüfte Buildstand steht in `docs/VALIDATION.json`.
+macOS-Objektdateien. Der überarbeitete GitHub-macOS-Linkbuild und das Diagnosepaket
+sind geprüft, einschließlich paketinternem Installer und zehn Quellprüfsummen.
+Alle Geräteproben sind offen. Der geprüfte Buildstand steht in `docs/VALIDATION.json`.
 Als Nächstes folgen
 Matching/Snapshot und der CPU-Speichertest am Zielgerät. Erst danach wird der
 GPU-Speicher-/GuC-/Queue-Pfad erweitert. Die Datensicherung der externen SSD ist
