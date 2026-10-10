@@ -127,5 +127,5 @@ queue. Firmware UEFI Secure Boot remains a separate
 required acceptance check; Apple's `SecureBootModel` is a different mechanism.
 
 See [native backend](NATIVE_BACKEND.md), [diagnostics](DIAGNOSTICS.md),
-[installer](INSTALLER.md) and [tasks](../TASKS.md) for the implemented boundary
+[installer](INSTALLER.md) and [validation](VALIDATION.md) for the implemented boundary
 and the next qualification steps.

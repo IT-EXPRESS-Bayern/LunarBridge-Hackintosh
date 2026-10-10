@@ -1,7 +1,7 @@
 # LunarBridge-Hackintosh
 
 Experimentelle Entwicklung nativer macOS-Treiber für Intel Lunar Lake.
-Die laufende Umsetzung und offene Geräteproben stehen in der [Aufgabenliste](TASKS.md).
+Der geprüfte Entwicklungsstand steht in [VALIDATION.md](docs/VALIDATION.md).
 Das erste Ziel ist die Intel Arc 130V (`8086:64A0`) im Samsung Galaxy Book5 Pro.
 Das Projekt enthält eigene native Diagnose-/CPU-Speicherbausteine, einen
 Installer und Tests unter Windows. **Ein funktionierender Arc-Metal-Treiber, eine bootfähige

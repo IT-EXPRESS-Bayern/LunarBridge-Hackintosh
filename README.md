@@ -13,7 +13,6 @@ The project has native diagnostic/CPU-buffer source and host validation tools.
 Latest [validation](docs/VALIDATION.md): **59 Windows host tests passed**, six
 successful compiler invocations and five macOS objects. The native macOS workflow
 has linked a real diagnostic Kext; **zero target macOS hardware tests have passed**.
-The maintained [task list](TASKS.md) distinguishes source work from device qualification.
 
 ## Current work
 
@@ -44,7 +43,6 @@ tests/fixtures/     Public hardware ID fixture; no machine dump
 tests/reference-manifest.json   Pinned external inputs and SHA256
 tools/              Native build, macOS collector, trace analysis and reference tools
 docs/               GPU design, native backend, installer, diagnostics and validation
-TASKS.md            Completed source work and all open acceptance/development tasks
 .github/            Native build workflow and diagnostic issue template
 ```
 

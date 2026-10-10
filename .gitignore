@@ -1,5 +1,7 @@
 
 # Local generated evidence and external references
+/TASKS.md
+/tasks.md
 tests/.references/
 build/
 **/objects/

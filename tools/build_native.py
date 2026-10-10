@@ -90,7 +90,7 @@ def main():
               'docs/INSTALLER.md', 'docs/DIAGNOSTICS.md', 'docs/NATIVE_BACKEND.md',
               'docs/GPU_DESIGN.md', 'docs/HARDWARE_SUPPORT.md', 'docs/LICENSING.md',
               'docs/VALIDATION.md', 'docs/VALIDATION.json', 'README.md', 'README.de.md',
-              'TASKS.md', '.github/ISSUE_TEMPLATE/native-diagnostics.yml',
+              '.github/ISSUE_TEMPLATE/native-diagnostics.yml',
               'LICENSE', 'NOTICE', 'LICENSE-STATUS.txt', 'LICENSES/MIT-Intel.txt')]
     with zipfile.ZipFile(archive, 'w', zipfile.ZIP_DEFLATED) as z:
         for source, name in paths: z.write(source, name)

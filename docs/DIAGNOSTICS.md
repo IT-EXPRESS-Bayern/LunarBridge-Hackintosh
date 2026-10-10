@@ -69,4 +69,4 @@ Aufrufe; sie bestätigen keine tatsächliche macOS-Verbindung oder Gerätefunkti
 
 Die [Issue-Vorlage](../.github/ISSUE_TEMPLATE/native-diagnostics.yml) ermöglicht
 das Zuordnen eines Gerätefehlers zu Commit, Phase und bereinigten Ereignissen.
-Die [Aufgabenliste](../TASKS.md) enthält offene Implementierungs- und Geräteproben.
+Der [Prüfbericht](VALIDATION.md) hält die bestandenen Prüfungen und deren Grenzen fest.

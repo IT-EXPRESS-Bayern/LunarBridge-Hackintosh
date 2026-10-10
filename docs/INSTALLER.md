@@ -102,5 +102,5 @@ eine neue gültige Vault-Signatur benötigt. Vault wird nicht automatisch ausges
 Apples `SecureBootModel` bestätigt keine Firmware-UEFI-Vertrauenskette. Die gültige
 UEFI-Signierung und Schlüsselannahme des Bootloaders sowie Kext-Injektion und beide
 Startwege müssen mit der Samsung-Firmware geprüft werden. Die externe Lexar-SSD
-darf erst nach bestätigter Datensicherung neu aufgeteilt werden. Diese Prüfungen
-stehen weiterhin in [TASKS.md](../TASKS.md).
+darf erst nach bestätigter Datensicherung neu aufgeteilt werden. Diese Geräteprüfungen
+sind weiterhin offen; der [Prüfbericht](VALIDATION.md) dokumentiert den belegten Stand.
