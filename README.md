@@ -11,8 +11,8 @@ The project has native diagnostic/CPU-buffer source and host validation tools.
 **There is no working Arc Metal driver, bootable EFI or installable GPU kext yet.**
 
 Latest [validation](docs/VALIDATION.md): **59 Windows host tests passed**, six
-successful compiler invocations and five macOS objects. A native macOS link
-workflow is prepared; **zero target macOS hardware tests have passed**.
+successful compiler invocations and five macOS objects. The native macOS workflow
+has linked a real diagnostic Kext; **zero target macOS hardware tests have passed**.
 The maintained [task list](TASKS.md) distinguishes source work from device qualification.
 
 ## Current work
@@ -76,9 +76,10 @@ python3 tools/build_native.py --sdk /path/to/MacKernelSDK --out build/native
 ```
 
 The prepared GitHub workflow also uses an Intel macOS build runner and a pinned
-SDK checkout. Its first successful link/build has not yet been confirmed.
+SDK checkout. A successful native link/build and archive checks are recorded
+with their exact source commit in [validation](docs/VALIDATION.json).
 Building does not load a kext or test the Arc GPU. See [installer](docs/INSTALLER.md)
-for the genuine kernel bundle and planned installer archive, and
+for the genuine kernel bundle and installer archive with corresponding source, and
 [diagnostics](docs/DIAGNOSTICS.md) for collection and failure tracking.
 
 MMIO is off by default. The native CPU buffer is not GPU-bound; GPU submission

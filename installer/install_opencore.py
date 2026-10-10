@@ -141,7 +141,7 @@ def plan(efi, source, enable=False):
 def write_atomic(path, data, root):
     reject_links(path, root)
     path = inside(root, path)
-    temporary = path.with_name('.' + path.name + '.LunarBridge-' + uuid.uuid4().hex + '.tmp')
+    temporary = path.with_name('.lb-' + uuid.uuid4().hex[:16] + '.tmp')
     inside(root, temporary)
     try:
         with temporary.open('xb') as handle:

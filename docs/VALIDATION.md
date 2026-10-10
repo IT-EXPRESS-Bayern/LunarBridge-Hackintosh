@@ -14,7 +14,8 @@ x86_64 macOS Mach-O object files; these are local build outputs excluded from Gi
 | OpenCore installer | 18 tests passed | Synthetic PE/kernel format fixtures in isolated temporary EFI trees, plan/update/rollback, injected copy/config/receipt failures, concurrent edits and security/Vault refusal |
 | Pinned test references | 7 SHA256 values verified | Exact external inputs identified in the reference manifest |
 | macOS object format | Five Mach-O objects verified | Actual x86_64 object compilation and parser inspection; these objects are rejected by the installer |
-| Native macOS link workflow | Prepared, not yet confirmed successful | Pinned external SDK and macOS linker; no target-hardware loading |
+| Native macOS link workflow | Real diagnostic Kext linked | Pinned external SDK and macOS linker; source commit, hashes and unsigned status in VALIDATION.json; no target-hardware loading |
+| Native bundle installer integration | Passed in a synthetic EFI under Windows | Actual CI bundle planned/installed/rolled back; config bytes restored; no real EFI modified |
 
 The public hardware fixture is a documented device-ID fixture, not a captured
 machine inventory or a native device test. The I2C patch has also passed

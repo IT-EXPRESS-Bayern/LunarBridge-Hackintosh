@@ -6,6 +6,13 @@ unter Windows gegen externe MacKernelSDK-Header zu x86_64-Mach-O-Objekten
 kompiliert. Das bestätigt Kompilierbarkeit, keine Kext-Ladefähigkeit oder
 binäre Kompatibilität mit dem Ziel-Tahoe.
 
+Eigene minimale Moduleinstiege ersetzen eine statische SDK-Startroutine.
+Der Kernel verwaltet C++-Initialisierung vor dem Moduleinstieg und Finalisierung
+nach dem Stop-Pfad, wie im veröffentlichten
+[XNU-OSKext-Start/Stop-Code](https://github.com/apple-oss-distributions/xnu/blob/main/libkern/c%2B%2B/OSKext.cpp)
+beschrieben. Ob die konkrete Kext samt Metaclasses unter dem Ziel-Tahoe lädt,
+bleibt eine erforderliche native Geräteprobe.
+
 ## Gerätezuordnung und Registerlesen
 
 Die Personality trifft ausschließlich Intel `8086:64A0`, Samsung-Subsystem

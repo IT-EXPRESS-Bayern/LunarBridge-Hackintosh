@@ -30,14 +30,14 @@ void LunarBridgePCI::trace(uint32_t event, IOReturn status, uint32_t context,
     uint64_t ticks = 0;
     clock_get_uptime(&ticks);
     IOLockLock(_lock);
-    const uint64_t sequence = lb_trace_push(&_trace, ticks, event, status, context, arg0, arg1);
+    const uint64_t sequence = lb_trace_push(&_trace, ticks, event, static_cast<uint32_t>(status), context, arg0, arg1);
     const bool print = (_verbose || status != kIOReturnSuccess || event == LBStart ||
                         event == LBReady || event == LBStop) && _printed < 256;
     if (print) ++_printed;
     IOLockUnlock(_lock);
     if (print)
         IOLog("[LunarBridge] seq=%llu event=%u status=0x%08x context=%u a0=%llu a1=%llu\n",
-              static_cast<unsigned long long>(sequence), event, status, context,
+              static_cast<unsigned long long>(sequence), event, static_cast<uint32_t>(status), context,
               static_cast<unsigned long long>(arg0), static_cast<unsigned long long>(arg1));
 }
 

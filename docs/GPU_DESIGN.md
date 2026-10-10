@@ -121,8 +121,9 @@ Acceptance ladder:
 Metadata, bounded trace/preflight code, native IOKit diagnostic/CPU-buffer source,
 collector and OpenCore installer have been implemented. Five native translation
 units compile to macOS objects. No step in this native hardware ladder has passed.
-The native diagnostic Kext has not been linked or loaded; it does not bind GPU
-memory or execute a GPU queue. Firmware UEFI Secure Boot remains a separate
+The native diagnostic Kext has been linked in the macOS build workflow and has
+not been loaded on the target; it does not bind GPU memory or execute a GPU
+queue. Firmware UEFI Secure Boot remains a separate
 required acceptance check; Apple's `SecureBootModel` is a different mechanism.
 
 See [native backend](NATIVE_BACKEND.md), [diagnostics](DIAGNOSTICS.md),

@@ -23,11 +23,11 @@ und Firmware-UEFI-Secure-Boot bleiben Anforderungen. Eine VM ersetzt das Ziel ni
 - [x] Installer für OpenCore mit Prüfung, Sicherung und Rücknahme implementieren.
 - [x] Installer an isolierten Testverzeichnissen mit 18 Fehler-/Transaktionsprüfungen validieren.
 - [x] Issue-Vorlage für native Fehler mit Commit, Phase und bereinigten Ereignissen erstellen.
-- [ ] Entwicklungsstand, Tests und Quellen dokumentieren und unter der genehmigten Identität veröffentlichen.
+- [x] Entwicklungsstand, Tests und Quellen dokumentieren und unter der genehmigten Identität veröffentlichen.
 
 ## Native Validierung benötigt
 
-- [ ] Diagnose-Kext mit einem macOS-Kext-Linker bauen und Mach-O-Bundle prüfen.
+- [x] Diagnose-Kext mit einem macOS-Kext-Linker bauen und Mach-O-Bundle prüfen.
 - [ ] GitHub-Buildartefakt herunterladen, Inhalt/Prüfsummen prüfen und als Diagnose-Build bereitstellen.
 - [ ] Kext tatsächlich unter dem Ziel-Tahoe laden und Gerätezuordnung nachweisen.
 - [ ] PCI-Daten, Grafik-/Media-IP und später echte Fusetopologie am Gerät erfassen.
@@ -71,8 +71,9 @@ sind eine umfangreiche weitere Portierung; es gibt derzeit keinen bestätigten
 nativen Arc-Metal-Treiber und keine Zusage fehlerfreier Funktion.
 
 Aktuell bestanden: 59 Prüfungen unter Windows, sechs Compiler-Aufrufe und fünf
-macOS-Objektdateien. Der macOS-Linkschritt und alle Geräteproben sind noch offen.
-Der nächste unmittelbare Schritt ist der GitHub-Linkbuild; danach folgen
+macOS-Objektdateien. Ein erster GitHub-macOS-Linkbuild ist bestanden;
+alle Geräteproben sind offen. Der geprüfte Buildstand steht in `docs/VALIDATION.json`.
+Als Nächstes folgen
 Matching/Snapshot und der CPU-Speichertest am Zielgerät. Erst danach wird der
 GPU-Speicher-/GuC-/Queue-Pfad erweitert. Die Datensicherung der externen SSD ist
 weiterhin nicht als abgeschlossen bestätigt.

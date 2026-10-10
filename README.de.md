@@ -9,7 +9,8 @@ EFI und eine installierbare Grafik-Kext liegen noch nicht vor.**
 
 [Geprüfter Stand](docs/VALIDATION.md): **59 bestandene Prüfungen unter Windows**,
 sechs erfolgreiche Compiler-Aufrufe und fünf macOS-Objektdateien.
-**Keine bestandene native macOS-Geräteprobe**; der GitHub-Linkbuild ist vorbereitet.
+Der GitHub-macOS-Build hat eine echte Diagnose-Kext gelinkt.
+**Keine bestandene native macOS-Geräteprobe**.
 
 ## Vorhandene Ergebnisse
 
@@ -66,9 +67,10 @@ Der Build erzeugt eine Windows-Test-DLL und fünf macOS-Objektdateien.
 Er erzeugt keine installierbare oder signierte Grafik-Kext.
 
 Der [native Build](docs/INSTALLER.md#echte-diagnose-kext-bauen) ist als Skript und
-GitHub-macOS-Workflow vorbereitet. Er soll eine echte Diagnose-Kext und das
-Installer-Archiv erzeugen; der erste erfolgreiche Linkschritt ist noch nicht
-bestätigt. Die Kext implementiert weiterhin keine GPU-Ausführung.
+GitHub-macOS-Workflow verfügbar. Ein echter Diagnose-Kext-/Installer-Build ist
+bestanden; Quellstand und Prüfsummen stehen in [VALIDATION.json](docs/VALIDATION.json).
+Die Kext implementiert weiterhin keine GPU-Ausführung. Das Installer-Archiv
+enthält auch den entsprechenden Treiberquellcode und das Buildskript.
 
 Der [Installer](docs/INSTALLER.md) nimmt eine ausdrücklich ausgewählte OpenCore-EFI
 und bietet Planung, Installation und Rücknahme. Er ändert weder Bootreihenfolge

@@ -18,10 +18,14 @@ Auf macOS mit Xcode Command Line Tools, Python 3 und einem separat bezogenen
 python3 tools/build_native.py --sdk /path/to/MacKernelSDK --out build/native
 ```
 
-Der vorbereitete Build verwendet den macOS-Kext-Linker und `libkmod.a`.
+Der Build verwendet den macOS-Kext-Linker und eigene minimale Moduleinstiege.
+Es wird keine statische SDK-Bibliothek in den Treiber übernommen.
 Er prüft Mach-O-Typ, Architektur, C++-Initialisierer und Kmod-Metadaten und erzeugt
-`build/native/LunarBridge.kext` sowie `LunarBridge-Installer.zip` mit dem Installer
-und den Lizenzhinweisen. Dieser macOS-Linkschritt wurde hier noch nicht ausgeführt.
+`build/native/LunarBridge.kext` sowie `LunarBridge-Installer.zip` mit Installer,
+Diagnosewerkzeugen, entsprechendem Treiberquellcode, Buildskript und Lizenzhinweisen.
+`SOURCE-REFERENCE.json` enthält Quellstand, Einstellungen und Quell-/Binary-Prüfsummen.
+Ein erster echter macOS-Linkbuild ist im GitHub-Workflow erfolgreich durchgelaufen;
+der jeweils geprüfte Quellstand steht in [VALIDATION.json](VALIDATION.json).
 Die Strukturprüfung bestätigt weder Signierung noch Laden oder Tahoe-ABI-Kompatibilität.
 Das externe SDK basiert auf älteren macOS-Headern; die Ziel-Tahoe-Probe bleibt notwendig.
 

@@ -40,8 +40,8 @@
     },
     {
       "name": "KmodInfo.o",
-      "bytes": 4264,
-      "sha256": "229d3a5679e5a7a386d2726870a3df1f1038a3a7196d6416614d16c46bc368d8",
+      "bytes": 5392,
+      "sha256": "acc839da493f0d06e9acce56ea090ebe6ae09fd764219a2ab771d2d1606b4b4b",
       "magic_hex": "cffaedfe"
     }
   ],
@@ -95,10 +95,34 @@
   "total_host_tests_passed": 59,
   "macos_object_count": 5,
   "native_diagnostic_source_compiled": true,
-  "native_diagnostic_kext_linked": false,
+  "native_diagnostic_kext_linked": true,
   "native_build_workflow": {
-    "status": "prepared; first link run not yet confirmed",
-    "sdk_commit": "3f750085caa17ec3a7880f11c11bf4f48cd6a164"
+    "source_commit": "f25b4ce44149269c2ab8749e134f6b280e5b81a4",
+    "workflow_run_id": 38083035189,
+    "workflow_url": "https://github.com/IT-EXPRESS-Bayern/LunarBridge-Hackintosh/actions/runs/38083035189",
+    "artifact_id": 11681127189,
+    "sdk_commit": "3f750085caa17ec3a7880f11c11bf4f48cd6a164",
+    "artifact_sha256": "810fe5be871f27250c6194a269ddae32992f6c572f2c58aeb82fc54b1dce22ab",
+    "installer_zip_sha256": "40ca5b27b249860b6ae1293f9311d9ca0968bf75e78d29f045d36aa48e32db37",
+    "installer_zip_bytes": 61010,
+    "kext_binary_sha256": "c60ef497bd0e6fa391579ca8417cbc914977d202008b76bf1a963f3d9017095b",
+    "kext_binary_bytes": 50592,
+    "macos_version": "26.6.1",
+    "compiler_version": "Apple clang version 21.0.0 (clang-2100.1.1.101)",
+    "entry_glue": "external SDK libkmod.a",
+    "archive_crc_and_hash_checks_passed": true,
+    "installer_integration": "real CI bundle plan/install/rollback in a synthetic EFI under Windows passed",
+    "status": "success; target hardware not tested",
+    "inspection": {
+      "filetype": 11,
+      "architecture": "x86_64",
+      "has_code_signature": false,
+      "native_load_verified": false,
+      "identifier": "de.nordapps.LunarBridge",
+      "version": "0.2.0d1"
+    },
+    "defined_symbol_count": 78,
+    "undefined_kernel_symbol_count": 340
   },
   "real_efi_or_ssd_modified": false,
   "loadable_gpu_kext_built": false,
