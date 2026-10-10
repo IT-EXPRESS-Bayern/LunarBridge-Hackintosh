@@ -120,16 +120,16 @@
   "native_diagnostic_source_compiled": true,
   "native_diagnostic_kext_linked": true,
   "native_build_workflow": {
-    "source_commit": "fd22d4232b94e37475d88a742e31ad4fde4e40d1",
-    "workflow_run_id": 38086955447,
-    "workflow_url": "https://github.com/IT-EXPRESS-Bayern/LunarBridge-Hackintosh/actions/runs/38086955447",
-    "artifact_id": 11682133004,
+    "source_commit": "cb47a2de119440731a44a14105df4a4192613123",
+    "workflow_run_id": 38091493905,
+    "workflow_url": "https://github.com/IT-EXPRESS-Bayern/LunarBridge-Hackintosh/actions/runs/38091493905",
+    "artifact_id": 11684106976,
     "sdk_commit": "3f750085caa17ec3a7880f11c11bf4f48cd6a164",
-    "artifact_sha256": "db134eaf90ff6c9c26004e1739fc9b09743d2104bf14b5144dc1167831fdf8c6",
-    "installer_zip_sha256": "050946f09de22056511fe79abe583a7c1c4b1d56afacdc8707f1447e011088c5",
-    "installer_zip_bytes": 84609,
-    "kext_binary_sha256": "e90856b436031651a8e9a69593ef53f7857327a6f8f09082e4f761e16bfc6cde",
-    "kext_binary_bytes": 50496,
+    "artifact_sha256": "e9915ada49aa0d0f22b4a91cbf0b0e2ffa455d32153e464e6aa8d24171586516",
+    "installer_zip_sha256": "89982cd2def697b9836dbba840a429dfcd7c76111d4103bde5a9eb1d373ca72f",
+    "installer_zip_bytes": 103941,
+    "kext_binary_sha256": "8c81f17be10d9e32a87de31f83f66b0bec873623b5a8fc4c8da9ae283d1e47b7",
+    "kext_binary_bytes": 59376,
     "macos_version": "26.6.1",
     "compiler_version": "Apple clang version 21.0.0 (clang-2100.1.1.101)",
     "entry_glue": "project-owned KmodInfo.cpp; no static SDK library linked",
@@ -144,10 +144,12 @@
       "identifier": "de.nordapps.LunarBridge",
       "version": "0.2.0d1"
     },
-    "defined_symbol_count": 75,
-    "undefined_kernel_symbol_count": 340,
-    "packaged_source_files_sha256_verified": 10,
-    "packaged_installer_cli_integration_passed": true
+    "defined_symbol_count": 89,
+    "undefined_kernel_symbol_count": 342,
+    "packaged_source_files_sha256_verified": 16,
+    "packaged_installer_cli_integration_passed": true,
+    "gpu_cpu_foundation_symbols_linked": true,
+    "internal_tasks_and_plans_absent_from_package": true
   },
   "real_efi_or_ssd_modified": false,
   "loadable_gpu_kext_built": false,
@@ -164,5 +166,5 @@
   "metal_hardware_tests": 0,
   "firmware_secure_boot_validated": false,
   "dual_boot_or_external_ssd_install_validated": false,
-  "interpretation": "Executed host metadata/preflight/trace code, simulated IOKit and isolated installer tests; native source object compilation. No proof of target-device GPU or boot support."
+  "interpretation": "Executed CPU metadata, Xe2 memory planning, GuC firmware/transport codecs, preflight and trace code; simulated IOKit and isolated installer tests. No proof of target-device GPU execution, Metal or boot support."
 }

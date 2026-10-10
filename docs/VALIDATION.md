@@ -39,6 +39,12 @@ and has no code signature. Its exact source commit differs from later documentat
 commits; the commit and hashes are retained in VALIDATION.json and the packaged
 SOURCE-REFERENCE.json. The successful link is separate from target-device loading.
 
+The build from `cb47a2de119440731a44a14105df4a4192613123` includes the Xe2
+memory and GuC CPU helpers. Their defined symbols were inspected in the actual
+kernel binary, and all 16 corresponding-source hashes were verified from the
+downloaded installer package. Internal task and plan files are absent. These
+symbols do not establish GPU page-table binding, GuC startup or GPU execution.
+
 The machine-readable [validation record](VALIDATION.json) includes artifact
 hashes and explicit test boundaries. Compiler commands containing local
 machine paths and generated binaries are excluded from the public repository.
