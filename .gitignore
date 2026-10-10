@@ -4,6 +4,8 @@ tests/.references/
 build/
 **/objects/
 **/test-report.json
+**/*-test-report.json
+**/native-build-report.json
 **/build-report.json
 **/windows-vulkan-capabilities.json
 __pycache__/
@@ -21,3 +23,7 @@ __pycache__/
 *.p12
 *.key
 .env
+**/install-receipt.json
+**/diagnostics.json
+**/FEHLERBERICHT.md
+**/LunarBridge-Backups/

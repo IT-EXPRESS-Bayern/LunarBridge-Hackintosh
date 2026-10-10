@@ -51,7 +51,8 @@ macOS Metal calls and AIR shaders
     -> native macOS GPU-driver / Metal-provider integration [missing]
     -> metal2vulkan: AIR -> Vulkan Shader SPIR-V [external alpha component]
     -> Mesa ANV/NIR Intel backend: SPIR-V -> Xe2 code [XNU port missing]
-    -> native user/kernel bridge: buffers, GPU VA, queues and fences [missing]
+    -> native user/kernel bridge: CPU buffers/traces [source implemented]
+       GPU VA, DMA binding, queues and fences [missing]
     -> Xe platform/GuC logic adapted to XNU [missing]
     -> Arc 130V
 ```
@@ -80,11 +81,11 @@ other kernel dependencies must be reviewed individually before reuse.
 
 | Piece | Source/function | Adaptation needed |
 | --- | --- | --- |
-| Identification | `include/drm/intel/pciids.h`, `INTEL_LNL_IDS`; `xe_pci.c`, `lnl_desc`, `read_gmdid` | Current prototype handles PCI IDs and supplied GMD values; real MMIO/power/topology still absent |
+| Identification | `include/drm/intel/pciids.h`, `INTEL_LNL_IDS`; `xe_pci.c`, `lnl_desc`, `read_gmdid` | Metadata implemented; native diagnostic source adds explicit opt-in GMD reads with preflight. Native power/MMIO/topology qualification still absent |
 | GPU memory | `drivers/gpu/drm/xe/xe_bo.c`, `xe_ggtt.c`, `xe_vm.c`, `xe_vm_create_ioctl`, `xe_vm_bind_ioctl` | Replace DRM/TTM allocation, DMA and page ownership with XNU memory/IOKit interfaces; retain Xe2 page-table semantics |
 | Execution | `xe_exec_queue.c`, `xe_exec_queue_create_ioctl`; `xe_exec.c`, `xe_exec_ioctl` | Provide validated native IOUserClient operations for queue creation, submission, lifetime and completion |
 | Firmware/GuC | `xe_uc_fw.c`, `xe_guc.c`, `xe_guc_init`; `xe_guc_ct.c`; `xe_guc_submit.c`, `xe_guc_submit_init` | Port firmware transport, scheduling and synchronization; media can remain out of the first milestone |
-| Userspace ABI | `include/uapi/drm/xe_drm.h` | A DRM `ioctl()` is not an IOKit call; memory-bind, exec and fence contracts require a real native bridge |
+| Userspace ABI | `include/uapi/drm/xe_drm.h` | IOUserClient CPU-buffer/snapshot/trace source implemented. A DRM `ioctl()` is not an IOKit call; GPU memory-bind, exec and fences remain missing |
 | Compute runtime | Intel compute-runtime `shared/source/os_interface/linux/xe/ioctl_helper_xe.cpp`, `shared/source/compiler_interface/compiler_interface.cpp` | Another explicit OS seam; OpenCL-only execution would be an intermediate test, not Metal desktop acceleration |
 | Presentation | IOKit framebuffer, display mode/link initialization, IOAccel/IOSurface coordination | A computed buffer still needs a complete macOS display/presentation path |
 
@@ -117,6 +118,13 @@ Acceptance ladder:
 4. Integrate a real Metal provider and pass `Metal-Minimaltest.mm`.
 5. Present correct frames through the laptop panel, then test sleep/wake.
 
-Only the host-side metadata work has been implemented. No step in this native
-hardware ladder has passed yet. Firmware UEFI Secure Boot remains a separate
+Metadata, bounded trace/preflight code, native IOKit diagnostic/CPU-buffer source,
+collector and OpenCore installer have been implemented. Five native translation
+units compile to macOS objects. No step in this native hardware ladder has passed.
+The native diagnostic Kext has not been linked or loaded; it does not bind GPU
+memory or execute a GPU queue. Firmware UEFI Secure Boot remains a separate
 required acceptance check; Apple's `SecureBootModel` is a different mechanism.
+
+See [native backend](NATIVE_BACKEND.md), [diagnostics](DIAGNOSTICS.md),
+[installer](INSTALLER.md) and [tasks](../TASKS.md) for the implemented boundary
+and the next qualification steps.

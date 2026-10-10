@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleIdentifier</key><string>de.nordapps.LunarBridge</string>
+    <key>CFBundleName</key><string>LunarBridge</string>
+    <key>CFBundleExecutable</key><string>LunarBridge</string>
+    <key>CFBundlePackageType</key><string>KEXT</string>
+    <key>CFBundleVersion</key><string>0.2.0d1</string>
+    <key>CFBundleShortVersionString</key><string>0.2.0</string>
+    <key>OSBundleRequired</key><string>Root</string>
+    <key>OSBundleLibraries</key>
+    <dict>
+        <key>com.apple.kpi.iokit</key><string>8.0.0</string>
+        <key>com.apple.kpi.libkern</key><string>8.0.0</string>
+        <key>com.apple.kpi.mach</key><string>8.0.0</string>
+        <key>com.apple.iokit.IOPCIFamily</key><string>2.0</string>
+    </dict>
+    <key>IOKitPersonalities</key>
+    <dict>
+        <key>LunarBridgeArc130VSamsungDiagnostic</key>
+        <dict>
+            <key>CFBundleIdentifier</key><string>de.nordapps.LunarBridge</string>
+            <key>IOClass</key><string>LunarBridgePCI</string>
+            <key>IOProviderClass</key><string>IOPCIDevice</string>
+            <key>IOPCIPrimaryMatch</key><string>0x64a08086</string>
+            <key>IOPCISecondaryMatch</key><string>0xc1dd144d</string>
+            <key>IOMatchCategory</key><string>LunarBridgeDiagnostic</string>
+            <key>IOUserClientClass</key><string>LunarBridgeUserClient</string>
+            <key>IOUserClientDefaultLocking</key><true/>
+            <key>LBEnableMMIORead</key><false/>
+            <key>LBDebugLogging</key><false/>
+        </dict>
+    </dict>
+</dict>
+</plist>

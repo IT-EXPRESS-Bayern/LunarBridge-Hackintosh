@@ -5,7 +5,7 @@ NP960XHA, Core Ultra 5 226V, Lunar Lake. No native macOS boot has been tested.
 
 | Device | Comparison / candidate | Current conclusion |
 | --- | --- | --- |
-| Arc 130V `8086:64A0` | Ice Lake Apple drivers; Xe-LP WhateverXe; Linux Xe/IGC | No verified Arc Metal support. Native Xe2 port research; metadata prototype only |
+| Arc 130V `8086:64A0` | Ice Lake Apple drivers; Xe-LP WhateverXe; Linux Xe/IGC | No verified Arc Metal support. Metadata plus native diagnostic/CPU-buffer source compiled; not linked/loaded or GPU-bound |
 | I2C `8086:A878`–`A87B` | VoodooI2C and Linux Intel LPSS/DesignWare | Concrete source patch with model restriction and verified timing references |
 | Touchpad `IMG4100` | VoodooI2CHID HID-over-I2C | Firmware exposes `PNP0C50`; controller/interrupt/sleep behavior still untested |
 | Goodix touch `GXTP7936` | VoodooI2CHID HID-over-I2C | Same protocol-level candidate; device descriptors and interrupts require native testing |

@@ -1,0 +1,53 @@
+name: Nativer LunarBridge-Fehler
+description: Einen macOS-Gerätebefund mit Commit, Phase und bereinigtem Trace erfassen.
+title: "[macOS] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Anleitung: docs/DIAGNOSTICS.md. Bitte nur LunarBridge-Diagnosen teilen.
+        EFI-Konfigurationen, SMBIOS, Seriennummern und vollständige Systemlogs bleiben privat.
+        Ein Windows-Test oder gesetztes Capability-Bit bestätigt keine native GPU-Ausführung.
+  - type: input
+    id: revision
+    attributes:
+      label: LunarBridge-Commit und Treiberversion
+      placeholder: Commit-SHA und LBDriverVersion
+    validations:
+      required: true
+  - type: input
+    id: system
+    attributes:
+      label: macOS-Version/Build und PCI-/Subsystem-ID
+      placeholder: Tahoe-Build; 8086:64A0; 144D:C1DD
+    validations:
+      required: true
+  - type: dropdown
+    id: stage
+    attributes:
+      label: Tatsächlich erreichte Phase
+      options:
+        - Nur Quellcode/Objektdateien unter Windows geprüft
+        - Diagnose-Kext nativ gebaut, Laden noch nicht bestätigt
+        - Kext geladen und LunarBridgePCI gefunden
+        - Snapshot/Trace nativ erfasst
+        - CPU-Speichertest nativ ausgeführt
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Auslöser, erwartetes und beobachtetes Ergebnis
+      description: MMIO-/Debug-Einstellung, verwendeter Befehl, Rückgabecode und reproduzierbare Schritte.
+    validations:
+      required: true
+  - type: textarea
+    id: trace
+    attributes:
+      label: Bereinigte LunarBridge-Ereignisse und Befunde
+      description: Passende Ausschnitte aus diagnostics.json und FEHLERBERICHT.md; keine allgemeinen Systemlogs.
+  - type: textarea
+    id: boot
+    attributes:
+      label: Separat geprüfter Boot-/Secure-Boot-Stand
+      description: Tatsächlicher Firmware-Secure-Boot-Status und Bootweg, soweit geprüft. SecureBootModel alleine genügt nicht.

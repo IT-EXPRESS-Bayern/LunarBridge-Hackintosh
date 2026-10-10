@@ -1,0 +1,48 @@
+name: Native diagnostic Kext build
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'native/**'
+      - 'gpu-prototype/**'
+      - 'installer/**'
+      - 'tools/build_native.py'
+      - 'tools/macho.py'
+      - 'tools/collect_macos.py'
+      - 'tools/lb_wire.py'
+      - 'tools/analyze_trace.py'
+      - '.github/workflows/native-build.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Link diagnostic Kext; no hardware test
+    runs-on: macos-26-intel
+    timeout-minutes: 15
+    steps:
+      - name: Check out project source
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+        with:
+          persist-credentials: false
+      - name: Check out external MacKernelSDK
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+        with:
+          repository: acidanthera/MacKernelSDK
+          ref: 3f750085caa17ec3a7880f11c11bf4f48cd6a164
+          path: build/dependencies/MacKernelSDK
+          persist-credentials: false
+      - name: Build real kernel bundle and installer archive
+        run: python3 tools/build_native.py --sdk build/dependencies/MacKernelSDK --out build/native
+      - name: Preserve unsigned diagnostic build
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: LunarBridge-diagnostic-unsigned
+          retention-days: 14
+          if-no-files-found: error
+          path: |
+            build/native/LunarBridge-Installer.zip
+            build/native/native-build-report.json

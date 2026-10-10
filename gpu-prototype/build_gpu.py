@@ -21,16 +21,20 @@ common = [str(args.compiler.resolve()), 'c++', '-std=c++17', '-O2', '-Wall',
 dll = args.host_dir.resolve() / 'lnl_host.dll'
 commands = [common + ['-target', 'x86_64-windows-gnu', '-shared', '-nostdlib',
                      '-Wl,--entry,DllMain', str(root / 'lnl_platform.cpp'),
+                     str(root / 'lb_diagnostics.cpp'),
                      str(root / 'host_dll_entry.cpp'), '-o', str(dll)]]
-for name in ['lnl_platform', 'LunarLakePCIProbe']:
+sources = [(name, root / (name + '.cpp')) for name in
+           ['lnl_platform', 'LunarLakePCIProbe', 'lb_diagnostics']]
+sources += [(name, root.parent / 'native' / (name + '.cpp')) for name in
+            ['LunarBridgeDriver', 'KmodInfo']]
+for name, source in sources:
     command = common + ['-target', 'x86_64-macos', '-mmacosx-version-min=12.0',
-                        '-ffreestanding', '-c', str(root / (name + '.cpp')),
+                        '-ffreestanding', '-c', str(source),
                         '-o', str(args.object_dir.resolve() / (name + '.o'))]
-    if name == 'LunarLakePCIProbe':
-        command += ['-DKERNEL', '-DKERNEL_PRIVATE', '-D__KERNEL__', '-mkernel',
-                    '-fapple-kext', '-nostdinc', '-nostdinc++', '-I',
-                    str(args.sdk.resolve() / 'Headers'), '-Wno-unused-parameter',
-                    '-UTARGET_IPHONE_SIMULATOR', '-UTARGET_OS_NANO']
+    command += ['-DKERNEL', '-DKERNEL_PRIVATE', '-D__KERNEL__', '-mkernel',
+                '-fapple-kext', '-mno-sse', '-mno-sse2', '-mno-mmx', '-mno-red-zone',
+                '-nostdinc', '-nostdinc++', '-I', str(args.sdk.resolve() / 'Headers'),
+                '-Wno-unused-parameter', '-UTARGET_IPHONE_SIMULATOR', '-UTARGET_OS_NANO']
     commands.append(command)
 results = []
 for command in commands:
@@ -43,14 +47,15 @@ for command in commands:
         print(proc.stderr, flush=True)
         break
 artifacts = []
-for path in [dll, *(args.object_dir / (n + '.o') for n in ['lnl_platform', 'LunarLakePCIProbe'])]:
+for path in [dll, *(args.object_dir / (name + '.o') for name, _ in sources)]:
     if path.exists():
         data = path.read_bytes()
         artifacts.append({'name': path.name, 'bytes': len(data),
                           'sha256': hashlib.sha256(data).hexdigest(), 'magic_hex': data[:4].hex()})
 report = {'compiler_version': subprocess.check_output([str(args.compiler.resolve()), 'version'],
                   text=True).strip(), 'commands': results, 'artifacts': artifacts,
-          'all_compiles_succeeded': len(results) == 3 and all(r['exit_code'] == 0 for r in results),
+          'all_compiles_succeeded': len(results) == len(commands) and all(r['exit_code'] == 0 for r in results),
+          'macos_object_count': len(sources),
           'loadable_kext_built': False, 'macos_hardware_tested': False,
           'metal_acceleration_implemented': False}
 (root / 'build-report.json').write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
