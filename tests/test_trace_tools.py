@@ -197,7 +197,10 @@ class TraceToolTests(unittest.TestCase):
 
     def test_real_cross_compiled_files_are_objects_and_cannot_be_installed(self):
         objects = sorted((ROOT/'build/macos').glob('*.o'))
-        self.assertEqual(len(objects), 5)
+        self.assertEqual({p.name for p in objects}, {
+            'lnl_platform.o', 'LunarLakePCIProbe.o', 'lb_diagnostics.o',
+            'lb_gpu_memory.o', 'lb_guc_transport.o', 'lb_guc_firmware.o',
+            'LunarBridgeDriver.o', 'KmodInfo.o'})
         for path in objects:
             result = inspect_macho(path.read_bytes())
             self.assertEqual((result['filetype'], result['architecture']), (1, 'x86_64'))

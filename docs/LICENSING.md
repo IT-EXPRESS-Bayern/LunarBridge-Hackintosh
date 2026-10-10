@@ -27,7 +27,7 @@ The GPL option already granted to recipients cannot simply be revoked later.
 | --- | --- |
 | New LunarBridge prototype and tools | GPL-3.0-only |
 | Intel Linux Xe hardware source underlying platform metadata | MIT; preserve Intel notices and permission text in `LICENSES/MIT-Intel.txt` |
-| VoodooI2C source configuration patch | Upstream GNU GPL version 3; its exact license remains in `i2c-patch/LICENSE.txt` |
+| VoodooI2C source patch and build | Separate LunarBridge-I2C repository; its original upstream licenses remain there |
 | WhateverXe / WhateverGreen | BSD-3-Clause reference; no source imported into the current prototype |
 | Intel graphics compiler / compute-runtime | MIT references; integration would require their complete applicable notices |
 | metal2vulkan | LGPL-3.0-or-later external candidate; no translator source linked into this prototype |

@@ -2,6 +2,15 @@
 # Local generated evidence and external references
 /TASKS.md
 /tasks.md
+/PLAN.md
+/plan.md
+**/TASKS.md
+**/tasks.md
+**/PLAN.md
+**/plan.md
+/i2c-patch/
+/.github/workflows/i2c-build.yml
+/tools/native_compatibility.py
 tests/.references/
 build/
 **/objects/

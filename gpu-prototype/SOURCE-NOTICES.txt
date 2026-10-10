@@ -17,9 +17,14 @@ and the public source archive and retain their upstream licenses.
 
 The Linux driver is NOT included as a macOS driver. No Linux kernel interfaces
 or NootedGreen code have been transplanted into this prototype.
-The functions implemented here are independent platform metadata and decoding.
-They contain no firmware loader, scheduler, memory manager, display driver,
-shader compiler or macOS Metal provider. Actual GMD_ID has NOT been read.
+The functions implemented here include platform metadata and decoding plus
+CPU-side GPU-VA ownership, Xe2 PTE encoding, page-table planning, GuC CSS/HXG/CT
+validation and bounded shadow rings. Their format references also include
+xe_vm.c, xe_pt.c, xe_pat.c, xe_ggtt.c, xe_uc_fw.c, xe_uc_fw_abi.h,
+regs/xe_gtt_defs.h and the GuC message/CT ABI headers at the same source pin.
+They do not allocate/bind native DMA pages, program GPU tables, authenticate or
+upload firmware, run a scheduler, drive a display, compile shaders or provide
+macOS Metal. Actual GMD_ID has NOT been read.
 
 LunarLakePCIProbe.cpp uses separately licensed MacKernelSDK IOKit headers.
 The SDK is an external build dependency. Its headers retain their own licenses.

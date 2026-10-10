@@ -78,6 +78,10 @@ müssen auf macOS geprüft werden, bevor der Speicherpfad erweitert wird.
 
 ## Nächster Grafikschritt
 
+Die CPU-seitigen GPU-VA-/PTE-/Tabellen- und GuC-Formatbausteine sind bereits
+[implementiert und geprüft](GPU_FOUNDATION.md). Der native Service verwendet
+sie noch nicht für DMA-Bindung oder tatsächliche Firmwarekommunikation.
+
 Nach nativer Diagnose-/Speicherqualifikation folgt Xe2-GPU-Speicherverwaltung
 mit Seiteneigentum und GPU-VA. Danach werden GuC-Boot/Kommunikation und eine
 Warteschlange mit echtem Abschlussnachweis benötigt. Erst ein byteweise geprüftes

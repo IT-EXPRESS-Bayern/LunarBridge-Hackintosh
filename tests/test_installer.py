@@ -151,6 +151,22 @@ class InstallerTests(unittest.TestCase):
             path.write_bytes(plistlib.dumps(info))
             with self.assertRaises(installer.InstallerError): installer.plan(self.efi, self.source)
 
+    def test_gpu_installer_rejects_extra_hardware_personality_without_changes(self):
+        path = self.source/'Contents/Info.plist'
+        info = plistlib.loads(path.read_bytes())
+        info['IOKitPersonalities']['EmbeddedI2C'] = {'IOClass': 'AnotherController',
+                                                   'IOPCIPrimaryMatch': '0xa8788086'}
+        path.write_bytes(plistlib.dumps(info))
+        with self.assertRaises(installer.InstallerError): installer.install(self.efi, self.source)
+        self.assertEqual(self.config.read_bytes(), self.before)
+        self.assertFalse((self.efi/'OC/LunarBridge-Backups').exists())
+
+    def test_gpu_installer_rejects_nested_hardware_kext_without_changes(self):
+        bundle_fixture(self.source/'Contents/PlugIns', 'OtherHardware.kext')
+        with self.assertRaises(installer.InstallerError): installer.install(self.efi, self.source)
+        self.assertEqual(self.config.read_bytes(), self.before)
+        self.assertFalse((self.efi/'OC/LunarBridge-Backups').exists())
+
     def test_failed_copy_cleans_staging_and_preserves_original(self):
         old = self.previous()
         def fail_copy(source, destination, root):

@@ -5,7 +5,9 @@ einer ausdrücklich ausgewählten OpenCore-EFI. Er bietet `plan`, `install` und
 `rollback`. Die aktuelle Version installiert den experimentellen Diagnosetreiber.
 GPU-Ausführung, Metal und Displaybeschleunigung sind darin nicht implementiert.
 
-Unter Windows wurden 18 Prüfungen an künstlichen EFI-Verzeichnissen bestanden.
+Unter Windows wurden 20 Prüfungen an künstlichen EFI-Verzeichnissen bestanden.
+Zusätzliche Hardware-Personalities und eingebettete Kexts werden vor einer
+EFI-Änderung abgewiesen; der Installer gehört ausschließlich zum Grafikmodul.
 Es wurde keine reale EFI verändert und kein Treiber auf macOS geladen.
 Die Windows-Builds sind Objektdateien und können nicht installiert werden.
 

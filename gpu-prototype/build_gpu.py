@@ -22,9 +22,12 @@ dll = args.host_dir.resolve() / 'lnl_host.dll'
 commands = [common + ['-target', 'x86_64-windows-gnu', '-shared', '-nostdlib',
                      '-Wl,--entry,DllMain', str(root / 'lnl_platform.cpp'),
                      str(root / 'lb_diagnostics.cpp'),
+                     str(root / 'lb_gpu_memory.cpp'), str(root / 'lb_guc_transport.cpp'),
+                     str(root / 'lb_guc_firmware.cpp'),
                      str(root / 'host_dll_entry.cpp'), '-o', str(dll)]]
 sources = [(name, root / (name + '.cpp')) for name in
-           ['lnl_platform', 'LunarLakePCIProbe', 'lb_diagnostics']]
+           ['lnl_platform', 'LunarLakePCIProbe', 'lb_diagnostics', 'lb_gpu_memory',
+            'lb_guc_transport', 'lb_guc_firmware']]
 sources += [(name, root.parent / 'native' / (name + '.cpp')) for name in
             ['LunarBridgeDriver', 'KmodInfo']]
 for name, source in sources:

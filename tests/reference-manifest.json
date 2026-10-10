@@ -16,24 +16,49 @@
       "sha256": "c028945c81fc65579f282c1614126a396ba784c87eafdb9cb10924bcb1653459"
     },
     {
-      "path": "linux-v6.17/drivers/mfd/intel-lpss-pci.c",
-      "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/drivers/mfd/intel-lpss-pci.c",
-      "sha256": "6a4e4b5abd3dabd78419a9b6730a14c1364aa546362bbb0adca54e81a3980b93"
+      "path": "linux-v6.17/drivers/gpu/drm/xe/xe_vm.c",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/drivers/gpu/drm/xe/xe_vm.c",
+      "sha256": "fc07305e53c2d68e3eddbd104701797ab1f1dcb8764e268c7a2c42ddbfcc5b9f"
     },
     {
-      "path": "VoodooI2C/VoodooI2C/VoodooI2C/Info.plist",
-      "url": "https://raw.githubusercontent.com/VoodooI2C/VoodooI2C/5c0c99cc451b03790c684ce6552c3f61620ad46b/VoodooI2C/VoodooI2C/Info.plist",
-      "sha256": "f52136e0f643a94505c54c13bfd2b39e4a972da0119ea6556194bc302466b39c"
+      "path": "linux-v6.17/drivers/gpu/drm/xe/xe_ggtt.c",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/drivers/gpu/drm/xe/xe_ggtt.c",
+      "sha256": "5aeb6c6b8eab62665de1762938010ba31c7346df198864372e4b9e3f3c4cd71e"
     },
     {
-      "path": "VoodooI2C/VoodooI2C/VoodooI2C/VoodooI2CController/VoodooI2CControllerConstants.hpp",
-      "url": "https://raw.githubusercontent.com/VoodooI2C/VoodooI2C/5c0c99cc451b03790c684ce6552c3f61620ad46b/VoodooI2C/VoodooI2C/VoodooI2CController/VoodooI2CControllerConstants.hpp",
-      "sha256": "937f3b9a2263a553724c7d7707884d869f2e2863248163e73494f422dca653d1"
+      "path": "linux-v6.17/drivers/gpu/drm/xe/xe_pt.c",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/drivers/gpu/drm/xe/xe_pt.c",
+      "sha256": "5878a7ff720444261869b7765ed86f199de15368b0dab465572507549f7cc191"
     },
     {
-      "path": "VoodooI2C/VoodooI2C/VoodooI2C/VoodooI2CController/VoodooI2CControllerDriver.cpp",
-      "url": "https://raw.githubusercontent.com/VoodooI2C/VoodooI2C/5c0c99cc451b03790c684ce6552c3f61620ad46b/VoodooI2C/VoodooI2C/VoodooI2CController/VoodooI2CControllerDriver.cpp",
-      "sha256": "325afed97ffd87bf7bb1cfde49858c5355f2872d650fb1ea24fc7122b79e5170"
+      "path": "linux-v6.17/drivers/gpu/drm/xe/xe_pat.c",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/drivers/gpu/drm/xe/xe_pat.c",
+      "sha256": "3016c9b974f579926b8d23191ebb65f8e6ebca3fd8907d19a40b4216de5709bd"
+    },
+    {
+      "path": "linux-v6.17/drivers/gpu/drm/xe/xe_uc_fw.c",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/drivers/gpu/drm/xe/xe_uc_fw.c",
+      "sha256": "c40f8b4d09eb604ca249f7a6369b2e09fb4df917e34972d95641ec91f126e156"
+    },
+    {
+      "path": "linux-v6.17/drivers/gpu/drm/xe/regs/xe_gtt_defs.h",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/drivers/gpu/drm/xe/regs/xe_gtt_defs.h",
+      "sha256": "55afcbf691c4063cb28ee48dad071f313a0bdb44054ea20ac84c7400788cec88"
+    },
+    {
+      "path": "linux-v6.17/drivers/gpu/drm/xe/abi/guc_communication_ctb_abi.h",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/drivers/gpu/drm/xe/abi/guc_communication_ctb_abi.h",
+      "sha256": "f62c93e2930f600c3a5d62d56253766d3987fa04abf3b6ad2eaa4034e123ecbb"
+    },
+    {
+      "path": "linux-v6.17/drivers/gpu/drm/xe/abi/guc_messages_abi.h",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/drivers/gpu/drm/xe/abi/guc_messages_abi.h",
+      "sha256": "c7101af4fc6458f1917cfb1bb1cc94a365fb14a68d7efdf5fd0ea7dbbe116995"
+    },
+    {
+      "path": "linux-v6.17/drivers/gpu/drm/xe/xe_uc_fw_abi.h",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/drivers/gpu/drm/xe/xe_uc_fw_abi.h",
+      "sha256": "d36c7405c31d95e1a11ac9302e3136d2dca030ee1f283a90f4d775f9e625df2e"
     }
   ]
 }

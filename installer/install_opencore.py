@@ -57,12 +57,17 @@ def validate_bundle(source):
         raise InstallerError('Kext-Quelle ist eine Verknüpfung')
     source = original.resolve()
     hashes = tree_hashes(source)
+    if any(part.lower().endswith('.kext') for name in hashes for part in Path(name).parts) or \
+       any(name.startswith('Contents/PlugIns/') for name in hashes):
+        raise InstallerError('Grafik-Bundle darf keine weiteren Hardware-Treiber enthalten')
     try: info = plistlib.loads((source/'Contents/Info.plist').read_bytes())
     except (OSError, plistlib.InvalidFileException) as exc: raise InstallerError('Kext-Info.plist fehlt oder ist ungültig') from exc
     if info.get('CFBundleIdentifier') != IDENTIFIER or info.get('CFBundleExecutable') != 'LunarBridge' or \
        info.get('CFBundlePackageType') != 'KEXT': raise InstallerError('Falsche Bundle-Identität')
     try: personality = info['IOKitPersonalities']['LunarBridgeArc130VSamsungDiagnostic']
     except (KeyError, TypeError) as exc: raise InstallerError('Diagnose-Personality fehlt') from exc
+    if set(info['IOKitPersonalities']) != {'LunarBridgeArc130VSamsungDiagnostic'}:
+        raise InstallerError('Grafik-Bundle enthält zusätzliche Hardware-Personalities')
     expected = {'IOClass': 'LunarBridgePCI', 'IOProviderClass': 'IOPCIDevice',
                 'IOPCIPrimaryMatch': '0x64a08086', 'IOPCISecondaryMatch': '0xc1dd144d',
                 'IOMatchCategory': 'LunarBridgeDiagnostic', 'IOUserClientClass': 'LunarBridgeUserClient'}

@@ -1,17 +1,17 @@
 {
-  "validated_on": "2026-10-10",
+  "validated_on": "2026-10-11",
   "environment": "Windows x86_64 host",
   "compiler": {
     "name": "Zig",
     "version": "0.15.2"
   },
   "external_build_dependency": "MacKernelSDK headers, separately licensed",
-  "successful_compiles": 6,
+  "successful_compiles": 9,
   "artifacts": [
     {
       "name": "lnl_host.dll",
-      "bytes": 4096,
-      "sha256": "de12fd804dee315a6d9f7718aa1c6b5660dc93ddf342ffa712357f6c144a289f",
+      "bytes": 10240,
+      "sha256": "2daed313e8632c500f0775ba9b2cfe61f5e5a24facf3bcae031d2d5718db6553",
       "magic_hex": "4d5a7800"
     },
     {
@@ -30,6 +30,24 @@
       "name": "lb_diagnostics.o",
       "bytes": 8872,
       "sha256": "169e408ae25ba8b2f882f88a4a9389e88bb15b94bfc5b342772cea3c327ccfc8",
+      "magic_hex": "cffaedfe"
+    },
+    {
+      "name": "lb_gpu_memory.o",
+      "bytes": 18208,
+      "sha256": "f0016ae0fad1ba5e0105109fb8a4adafe35c9a91f2a5a4988e7bfa1d5d951501",
+      "magic_hex": "cffaedfe"
+    },
+    {
+      "name": "lb_guc_transport.o",
+      "bytes": 13792,
+      "sha256": "2d324934743fbab150ac9d49307603a9e22538da0c95fed3bc409c22ba5b5194",
+      "magic_hex": "cffaedfe"
+    },
+    {
+      "name": "lb_guc_firmware.o",
+      "bytes": 6136,
+      "sha256": "6c638877580cdef6d026ff556238c29363f1d907f077b9334bb1d8f61ce3cb88",
       "magic_hex": "cffaedfe"
     },
     {
@@ -55,13 +73,18 @@
     "actual_gpu_registers_read": false,
     "metal_hardware_tests": 0
   },
-  "i2c_source_tests": {
-    "test_type": "Windows host-side source/matching checks; no macOS hardware tests",
-    "tests_run": 8,
+  "gpu_foundation_tests": {
+    "test_type": "Executed C++ Xe2 PTE/VA/DMA staging, GuC CSS and CPU-shadow CTB codec; synthetic addresses/firmware/messages",
+    "tests_run": 31,
     "failures": 0,
     "errors": 0,
+    "skipped": 0,
     "successful": true,
-    "macos_driver_loaded": false
+    "synthetic_inputs": true,
+    "actual_dma_or_gpu_binding": false,
+    "firmware_uploaded": false,
+    "guc_hardware_messages_sent": false,
+    "native_macos_hardware_tests": 0
   },
   "diagnostic_cpp_tests": {
     "test_type": "Executed host C++ preflight, bounded buffer policy and trace ABI; no native IOKit execution",
@@ -83,7 +106,7 @@
   },
   "installer_tests": {
     "test_type": "Isolated installer transactions, injected failures and synthetic Mach-O/PE format fixtures",
-    "tests_run": 18,
+    "tests_run": 20,
     "failures": 0,
     "errors": 0,
     "skipped": 0,
@@ -91,20 +114,20 @@
     "real_efi_modified": false,
     "native_macos_hardware_tests": 0
   },
-  "pinned_reference_files_sha256_verified": 7,
-  "total_host_tests_passed": 59,
-  "macos_object_count": 5,
+  "pinned_reference_files_sha256_verified": 12,
+  "total_host_tests_passed": 84,
+  "macos_object_count": 8,
   "native_diagnostic_source_compiled": true,
   "native_diagnostic_kext_linked": true,
   "native_build_workflow": {
-    "source_commit": "ffeac02536ee901639b7e7fad30ae596dad84281",
-    "workflow_run_id": 38083926213,
-    "workflow_url": "https://github.com/IT-EXPRESS-Bayern/LunarBridge-Hackintosh/actions/runs/38083926213",
-    "artifact_id": 11680669875,
+    "source_commit": "fd22d4232b94e37475d88a742e31ad4fde4e40d1",
+    "workflow_run_id": 38086955447,
+    "workflow_url": "https://github.com/IT-EXPRESS-Bayern/LunarBridge-Hackintosh/actions/runs/38086955447",
+    "artifact_id": 11682133004,
     "sdk_commit": "3f750085caa17ec3a7880f11c11bf4f48cd6a164",
-    "artifact_sha256": "0a1305405f88cb0ed720b5ce40b73d3a3efcc745d2f407254773824dcab91a80",
-    "installer_zip_sha256": "2e5e836352eaa51af78ece30d9c7b1a0b1b1c580836c0220b0008fe820833d36",
-    "installer_zip_bytes": 86995,
+    "artifact_sha256": "db134eaf90ff6c9c26004e1739fc9b09743d2104bf14b5144dc1167831fdf8c6",
+    "installer_zip_sha256": "050946f09de22056511fe79abe583a7c1c4b1d56afacdc8707f1447e011088c5",
+    "installer_zip_bytes": 84609,
     "kext_binary_sha256": "e90856b436031651a8e9a69593ef53f7857327a6f8f09082e4f761e16bfc6cde",
     "kext_binary_bytes": 50496,
     "macos_version": "26.6.1",
@@ -128,7 +151,14 @@
   },
   "real_efi_or_ssd_modified": false,
   "loadable_gpu_kext_built": false,
-  "i2c_kext_built": false,
+  "independent_modules": {
+    "I2C": "https://github.com/IT-EXPRESS-Bayern/LunarBridge-I2C",
+    "HDR_Samsung": "https://github.com/IT-EXPRESS-Bayern/LunarBridge-HDR-Samsung",
+    "native_compatibility": "https://github.com/IT-EXPRESS-Bayern/LunarBridge-Native-Compatibility",
+    "Windows_compatibility": "https://github.com/IT-EXPRESS-Bayern/LunarBridge-Windows-Compatibility",
+    "camera": "https://github.com/IT-EXPRESS-Bayern/LunarBridge-Camera",
+    "OpenCore": "https://github.com/IT-EXPRESS-Bayern/LunarBridge-OpenCore"
+  },
   "actual_gpu_registers_read": false,
   "native_macos_hardware_tests": 0,
   "metal_hardware_tests": 0,

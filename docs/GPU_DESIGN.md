@@ -119,7 +119,7 @@ Acceptance ladder:
 5. Present correct frames through the laptop panel, then test sleep/wake.
 
 Metadata, bounded trace/preflight code, native IOKit diagnostic/CPU-buffer source,
-collector and OpenCore installer have been implemented. Five native translation
+collector and GPU OpenCore installer have been implemented. Eight native translation
 units compile to macOS objects. No step in this native hardware ladder has passed.
 The native diagnostic Kext has been linked in the macOS build workflow and has
 not been loaded on the target; it does not bind GPU memory or execute a GPU
@@ -129,3 +129,8 @@ required acceptance check; Apple's `SecureBootModel` is a different mechanism.
 See [native backend](NATIVE_BACKEND.md), [diagnostics](DIAGNOSTICS.md),
 [installer](INSTALLER.md) and [validation](VALIDATION.md) for the implemented boundary
 and the next qualification steps.
+
+CPU-side GPU-VA ownership, Xe2 PTE/table planning, DMA-list staging, GuC CSS
+validation and HXG/CT shadow-ring handling are now implemented and host-tested.
+They do not yet connect to native DMA mappings or live hardware transport.
+See [GPU foundations](GPU_FOUNDATION.md) for exact boundaries and source pins.

@@ -3,7 +3,8 @@ LunarBridge is independent research. Intel, Apple, Samsung, OpenCore, Lilu and
 their contributors do not sponsor or endorse this project.
 
 GPU platform metadata is adapted from MIT-licensed Intel Linux Xe source.
-VoodooI2C configuration is a source patch against its GPLv3 upstream project.
+The VoodooI2C source patch and its independent build now live in the separate
+IT-EXPRESS-Bayern/LunarBridge-I2C repository with their original upstream terms.
 The exact upstream commits, notices and source hashes are documented here.
 
 No Apple graphics binaries, macOS installer, firmware blob, installed Windows

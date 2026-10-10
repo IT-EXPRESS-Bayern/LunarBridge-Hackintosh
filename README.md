@@ -6,12 +6,13 @@
 [Public repository](https://github.com/IT-EXPRESS-Bayern/LunarBridge-Hackintosh)
 
 LunarBridge investigates a native macOS path for Lunar Lake laptops, initially
-Intel Arc 130V (`8086:64A0`) and Samsung Galaxy Book5 Pro I2C controllers.
-The project has native diagnostic/CPU-buffer source and host validation tools.
-**There is no working Arc Metal driver, bootable EFI or installable GPU kext yet.**
+Intel Arc 130V (`8086:64A0`) in the Samsung Galaxy Book5 Pro.
+The project has a built native diagnostic kext, CPU-buffer service and host
+validation tools. **GPU execution, Metal acceleration and a qualified bootable
+EFI have not been implemented or demonstrated.**
 
-Latest [validation](docs/VALIDATION.md): **59 Windows host tests passed**, six
-successful compiler invocations and five macOS objects. The native macOS workflow
+Latest [validation](docs/VALIDATION.md): **84 Windows host tests passed**, nine
+successful compiler invocations and eight macOS objects. The native macOS workflow
 has linked a real diagnostic Kext; **zero target macOS hardware tests have passed**.
 
 ## Current work
@@ -23,8 +24,9 @@ has linked a real diagnostic Kext; **zero target macOS hardware tests have passe
 | Native IOKit diagnostic service | Narrow Samsung/Arc personality, PCI snapshot, opt-in GMD read preflight | Compiled against external SDK headers; no native MMIO/device test |
 | Native CPU memory client | Administrator-only IOUserClient, isolated zeroed buffers, size/client limits | Source compiled; allocation policy executed under Windows; native lifecycle untested |
 | Tracker and traces | ABI 1, bounded sequence ring, fixed events/status/context, macOS collector and triage | C++ ring tests and simulated IOKit/decoder/privacy tests; no target-device report |
-| OpenCore installer | Explicit EFI plan/install/rollback, checksums, backups and conflict detection | 18 isolated transaction/format tests; no real EFI modified |
-| Samsung I2C | Four PCI IDs, Samsung subsystem filter and Linux-derived timings | Eight source/matching checks; no macOS device test |
+| Xe2 memory foundation | Owner-isolated GPU-VA reservations, PTE encoding, page-table planning and DMA-list staging in CPU memory | Part of 31 foundation tests; no native allocation/binding/TLB programming |
+| GuC foundation | Bounded CSS firmware parser, HXG/CT message codecs and CPU shadow rings | Part of 31 foundation tests; no authenticated firmware boot or hardware transport |
+| GPU OpenCore installer | Explicit EFI plan/install/rollback, checksums, backups and conflict detection | 20 isolated transaction/format/module-boundary tests; no real EFI modified |
 | Arc GPU execution / Metal / display | Research only | Zero native macOS hardware tests |
 
 The first GPU milestone is a correctly completed operation through one user
@@ -38,7 +40,6 @@ of executing Xe2 instructions.
 native/             IOKit diagnostic service, CPU user client and Kmod metadata
 gpu-prototype/      Portable metadata, preflight/trace code and future Metal test
 installer/          OpenCore plan/install/rollback
-i2c-patch/           Experimental VoodooI2C source patch, not a release kext
 tests/fixtures/     Public hardware ID fixture; no machine dump
 tests/reference-manifest.json   Pinned external inputs and SHA256
 tools/              Native build, macOS collector, trace analysis and reference tools
@@ -56,12 +57,12 @@ python tools/fetch_references.py
 python gpu-prototype/build_gpu.py --compiler C:/path/to/zig.exe --sdk C:/path/to/MacKernelSDK --host-dir build/host --object-dir build/macos
 python gpu-prototype/test_gpu.py build/host/lnl_host.dll
 python gpu-prototype/test_diagnostics.py build/host/lnl_host.dll
-python i2c-patch/test_patch.py
+python gpu-prototype/test_gpu_foundation.py build/host/lnl_host.dll
 python tests/test_trace_tools.py
 python tests/test_installer.py
 ```
 
-This builds a Windows DLL and **five macOS object files**. It does not link,
+This builds a Windows DLL and **eight macOS object files**. It does not link,
 sign, install or load a macOS GPU driver. Source checks and synthetic fixtures
 cannot establish physical GPU compatibility.
 
@@ -97,6 +98,25 @@ See [GPU architecture](docs/GPU_DESIGN.md) and
 Windows on the internal disk and firmware UEFI Secure Boot remain acceptance
 requirements. This repository does not substitute a VM for native macOS.
 
+CPU-side GPU-VA, PTE, CSS and CT handling are documented in
+[GPU foundations](docs/GPU_FOUNDATION.md). The native service does not yet call
+these helpers for DMA binding or GuC execution.
+
+## Independent modules
+
+Each larger module has its own public repository and build. Hardware remains
+in separate kernel bundles; software diagnostics and compatibility helpers
+remain user-space tools. See [module boundaries](docs/DRIVER_MODULES.md).
+
+| Module | Public repository |
+| --- | --- |
+| I2C / GPIO / HID | [LunarBridge-I2C](https://github.com/IT-EXPRESS-Bayern/LunarBridge-I2C) |
+| HDR / Samsung settings research | [LunarBridge-HDR-Samsung](https://github.com/IT-EXPRESS-Bayern/LunarBridge-HDR-Samsung) |
+| Native app compatibility | [LunarBridge-Native-Compatibility](https://github.com/IT-EXPRESS-Bayern/LunarBridge-Native-Compatibility) |
+| Windows executables / Wine preparation | [LunarBridge-Windows-Compatibility](https://github.com/IT-EXPRESS-Bayern/LunarBridge-Windows-Compatibility) |
+| IPU7 / OV02E10 camera | [LunarBridge-Camera](https://github.com/IT-EXPRESS-Bayern/LunarBridge-Camera) |
+| OpenCore / dual boot / trust-chain review | [LunarBridge-OpenCore](https://github.com/IT-EXPRESS-Bayern/LunarBridge-OpenCore) |
+
 ## License
 
 New LunarBridge work is licensed under **GNU GPL version 3 only**
@@ -104,7 +124,8 @@ New LunarBridge work is licensed under **GNU GPL version 3 only**
 allowed. Distribution of covered modified versions must comply with the GPL,
 including its corresponding-source requirements.
 
-Intel MIT notices and the VoodooI2C upstream GPL conditions are preserved.
+Intel MIT notices are preserved. The independent I2C repository retains its
+own upstream license conditions.
 External research references retain their own licenses. See
 [licensing and commercial use](docs/LICENSING.md), [NOTICE](NOTICE) and
 [license scope](LICENSE-STATUS.txt).

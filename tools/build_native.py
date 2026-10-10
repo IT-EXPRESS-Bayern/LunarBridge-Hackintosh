@@ -33,6 +33,8 @@ def main():
     objects.mkdir(parents=True, exist_ok=True)
     commands = []
     sources = [root/'gpu-prototype/lnl_platform.cpp', root/'gpu-prototype/lb_diagnostics.cpp',
+               root/'gpu-prototype/lb_gpu_memory.cpp', root/'gpu-prototype/lb_guc_transport.cpp',
+               root/'gpu-prototype/lb_guc_firmware.cpp',
                root/'native/LunarBridgeDriver.cpp', root/'native/KmodInfo.cpp']
     common = [clang, '-arch', 'x86_64', '-mmacosx-version-min=12.0', '-std=c++17', '-O2',
               '-Wall', '-Wextra', '-Werror', '-Wno-unused-parameter', '-fno-exceptions', '-fno-rtti',
@@ -72,6 +74,9 @@ def main():
                     'native/KmodInfo.cpp', 'native/Info.plist', 'gpu-prototype/lnl_platform.cpp',
                     'gpu-prototype/lnl_platform.h', 'gpu-prototype/lb_diagnostics.cpp',
                     'gpu-prototype/lb_diagnostics.h', 'gpu-prototype/SOURCE-NOTICES.txt',
+                    'gpu-prototype/lb_gpu_memory.cpp', 'gpu-prototype/lb_gpu_memory.h',
+                    'gpu-prototype/lb_guc_transport.cpp', 'gpu-prototype/lb_guc_transport.h',
+                    'gpu-prototype/lb_guc_firmware.cpp', 'gpu-prototype/lb_guc_firmware.h',
                     'tools/build_native.py')
     reference = {key: report[key] for key in ('source_commit', 'macos_version', 'compiler_version',
                  'entry_glue', 'binary_sha256', 'mmio_enabled', 'debug_logging',
@@ -89,6 +94,7 @@ def main():
               'tools/collect_macos.py', 'tools/analyze_trace.py', 'tools/lb_wire.py',
               'docs/INSTALLER.md', 'docs/DIAGNOSTICS.md', 'docs/NATIVE_BACKEND.md',
               'docs/GPU_DESIGN.md', 'docs/HARDWARE_SUPPORT.md', 'docs/LICENSING.md',
+              'docs/GPU_FOUNDATION.md', 'docs/DRIVER_MODULES.md',
               'docs/VALIDATION.md', 'docs/VALIDATION.json', 'README.md', 'README.de.md',
               '.github/ISSUE_TEMPLATE/native-diagnostics.yml',
               'LICENSE', 'NOTICE', 'LICENSE-STATUS.txt', 'LICENSES/MIT-Intel.txt')]

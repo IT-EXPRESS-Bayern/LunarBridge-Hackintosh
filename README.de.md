@@ -4,11 +4,12 @@ Experimentelle Entwicklung nativer macOS-Treiber für Intel Lunar Lake.
 Der geprüfte Entwicklungsstand steht in [VALIDATION.md](docs/VALIDATION.md).
 Das erste Ziel ist die Intel Arc 130V (`8086:64A0`) im Samsung Galaxy Book5 Pro.
 Das Projekt enthält eigene native Diagnose-/CPU-Speicherbausteine, einen
-Installer und Tests unter Windows. **Ein funktionierender Arc-Metal-Treiber, eine bootfähige
-EFI und eine installierbare Grafik-Kext liegen noch nicht vor.**
+Installer und Tests unter Windows. Eine echte native Diagnose-Kext ist gebaut.
+**GPU-Ausführung, Arc-Metal-Beschleunigung und eine qualifizierte bootfähige EFI
+liegen noch nicht vor.**
 
-[Geprüfter Stand](docs/VALIDATION.md): **59 bestandene Prüfungen unter Windows**,
-sechs erfolgreiche Compiler-Aufrufe und fünf macOS-Objektdateien.
+[Geprüfter Stand](docs/VALIDATION.md): **84 bestandene Prüfungen unter Windows**,
+neun erfolgreiche Compiler-Aufrufe und acht macOS-Objektdateien.
 Der GitHub-macOS-Build hat eine echte Diagnose-Kext gelinkt.
 **Keine bestandene native macOS-Geräteprobe**.
 
@@ -21,8 +22,9 @@ Der GitHub-macOS-Build hat eine echte Diagnose-Kext gelinkt.
 | Nativer IOKit-Diagnosetreiber | Enge Samsung-/Arc-Zuordnung, PCI-Snapshot und expliziter GMD-Lesepfad mit Vorbedingungen | Quellcode als macOS-Objektdatei kompiliert; kein nativer Register-/Gerätetest |
 | Nativer CPU-Speicheranschluss | Administrativer User-Client, eigene genullte Puffer und Größen-/Clientgrenzen | Quellcode kompiliert, portable Speicherregeln unter Windows ausgeführt; native Mappings ungeprüft |
 | Tracker und Traces | Fester ABI, begrenzter Ereignisring, Sammler und Fehlerbericht | C++-Ringpuffer und simulierte IOKit-/Auswertungsfälle geprüft |
-| OpenCore-Installer | Planen, sichern, installieren und zurücknehmen; Prüfsummen und Änderungserkennung | 18 Prüfungen an künstlichen EFI-Verzeichnissen; keine echte EFI geändert |
-| Samsung-I2C | Quellpatch für vier Controller mit Samsung-Subsystemfilter und Linux-basierten Timings | Konfiguration und Gerätezuordnung prüfbar; keine native Geräteprobe |
+| Xe2-Speichergrundlagen | Getrennte GPU-VA-Reservierungen, PTE-Encoding, Tabellenplanung und DMA-Listen im CPU-Speicher | Teil von 31 Grundlagenprüfungen; echte DMA-Bindung und GPU-Tabellen fehlen |
+| GuC-Grundlagen | CSS-Headerprüfung, HXG-/CT-Nachrichten und begrenzte CPU-Schattenringe | Teil von 31 Grundlagenprüfungen; kein authentifizierter Firmwarestart oder Hardwaretransport |
+| Grafik-Installer für OpenCore | Planen, sichern, installieren und zurücknehmen; Prüfsummen und Modulgrenzen | 20 Prüfungen an künstlichen EFI-Verzeichnissen; keine echte EFI geändert |
 | Grafikbeschleunigung, Display und Metal | Architekturvergleich und mögliche Portierungsstellen | Noch keine native Hardwarevalidierung |
 
 Die Windows-Treiberkomponenten wurden lokal anhand ihrer Dateimetadaten und
@@ -34,7 +36,9 @@ Das öffentliche Repository enthält keine Windows- oder Apple-Treiberdateien.
 Der untersuchte Weg verbindet eine mögliche Metal-Übersetzung, einen
 Xe2-fähigen Shader-Compiler, einen neuen nativen macOS-Anschluss und portierte
 Teile des Linux-Xe-Treibers. Der Diagnose-/CPU-Pufferanschluss liegt als eigener
-Quellcode vor; GPU-VA, GuC, Ausführungswarteschlangen und Metal-Anbindung fehlen.
+Quellcode vor. GPU-VA-, PTE- und GuC-Formate sind inzwischen als CPU-seitige
+[Grundlagen](docs/GPU_FOUNDATION.md) implementiert; die native DMA-/GPU-Bindung,
+Firmware-Kommunikation, Ausführungswarteschlangen und Metal-Anbindung fehlen.
 [Architektur und konkrete Quellstellen](docs/GPU_DESIGN.md)
 erklären, welche Teile als Referenz dienen und welche noch fehlen.
 
@@ -43,10 +47,11 @@ Puffer konzentrieren. Weniger Funktionen ändern jedoch nicht die
 Xe2-Befehlssprache und die Abhängigkeiten von Speicherverwaltung und Firmware.
 Eine zusätzliche Geräte-ID in einem alten Xe-LP-Treiber reicht daher nicht aus.
 
-Der I2C-Patch ist ein gesonderter, kleinerer Ansatz. Er ist gegen einen
-festgehaltenen VoodooI2C-Quellstand erstellt und noch kein geprüfter
-Touchpad-/Touchscreen-Treiber. Die [Hardwareübersicht](docs/HARDWARE_SUPPORT.md)
-nennt die vorhandenen Ansätze und ihre offenen Fragen.
+I2C ist in das eigene [LunarBridge-I2C-Repository](https://github.com/IT-EXPRESS-Bayern/LunarBridge-I2C)
+ausgegliedert. Es baut fünf getrennte Kexts; die GPIO-Portierung und native
+Touchpad-/Touchscreen-Proben bleiben offen. Alle größeren Module haben eigene
+[öffentliche Repositories und Paketgrenzen](docs/DRIVER_MODULES.md), darunter
+HDR/Samsung, native Software, Windows-Programme, Kamera und OpenCore.
 
 ## Ziel und Abnahme
 
@@ -63,7 +68,7 @@ nativen Abnahmetests bestanden.
 Python 3, Zig 0.15.2 und externe MacKernelSDK-Header sind erforderlich.
 Die Befehle stehen in der [englischen README](README.md#build-and-check-under-windows).
 Die Referenzdateien werden mit festgehaltenen SHA256-Werten geprüft.
-Der Build erzeugt eine Windows-Test-DLL und fünf macOS-Objektdateien.
+Der Build erzeugt eine Windows-Test-DLL und acht macOS-Objektdateien.
 Er erzeugt keine installierbare oder signierte Grafik-Kext.
 
 Der [native Build](docs/INSTALLER.md#echte-diagnose-kext-bauen) ist als Skript und
@@ -90,7 +95,8 @@ Bei der Weitergabe abgeleiteter Versionen müssen die GPL-Pflichten einschließl
 des entsprechenden Quellcodes erfüllt werden. Andere dürfen ebenfalls
 GPL-konforme Kopien weitergeben und verkaufen.
 
-Die MIT-Hinweise von Intel und die GPL-Bedingungen von VoodooI2C bleiben erhalten.
+Die MIT-Hinweise von Intel bleiben erhalten. Das separate I2C-Repository bewahrt
+seine jeweiligen GPL- und Apple-Herkunftshinweise.
 Fremde Quelltexte, SDK-Header und Firmware erhalten dadurch keine neue Lizenz.
 NootedGreen-Code wird aufgrund seiner abweichenden Lizenz nicht übernommen.
 Siehe [vollständige Lizenz](LICENSE), [Herkunftshinweise](NOTICE) und

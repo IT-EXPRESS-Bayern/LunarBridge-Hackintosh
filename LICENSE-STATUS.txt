@@ -7,8 +7,8 @@ This covers the new prototype implementations, validation tools and project
 documentation unless a file explicitly preserves an upstream license.
 The MIT permission text and Intel copyrights underlying the platform metadata
 are preserved in LICENSES/MIT-Intel.txt and the source notices.
-The VoodooI2C source configuration patch retains its upstream GPL version 3
-conditions; i2c-patch/LICENSE.txt preserves the exact upstream license file.
+The independent LunarBridge-I2C repository retains the VoodooI2C source patch
+and its exact upstream license files. That module is no longer included here.
 External test reference downloads and SDK headers retain their upstream terms.
 
 Commercial use is allowed. Distribution of covered derived versions must meet
