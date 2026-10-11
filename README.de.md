@@ -50,9 +50,9 @@ Xe2-Befehlssprache und die Abhängigkeiten von Speicherverwaltung und Firmware.
 Eine zusätzliche Geräte-ID in einem alten Xe-LP-Treiber reicht daher nicht aus.
 
 I2C ist in das eigene [LunarBridge-I2C-Repository](https://github.com/IT-EXPRESS-Bayern/LunarBridge-I2C)
-ausgegliedert. Es baut fünf getrennte Kexts; die GPIO-Portierung und native
+ausgegliedert. Es baut fünf getrennte Kexts; native
 Touchpad-/Touchscreen-Proben bleiben offen. Der experimentelle Samsung-GPI1-Port
-ist implementiert und standardmäßig deaktiviert. Alle größeren Module haben eigene
+ist implementiert, nativ gebaut und standardmäßig deaktiviert. Alle größeren Module haben eigene
 [öffentliche Repositories und Paketgrenzen](docs/DRIVER_MODULES.md), darunter
 HDR/Samsung, native Software, Windows-Programme, Kamera und OpenCore.
 
@@ -71,7 +71,7 @@ nativen Abnahmetests bestanden.
 Python 3, Zig 0.15.2 und externe MacKernelSDK-Header sind erforderlich.
 Die Befehle stehen in der [englischen README](README.md#build-and-check-under-windows).
 Die Referenzdateien werden mit festgehaltenen SHA256-Werten geprüft.
-Der Build erzeugt eine Windows-Test-DLL und acht macOS-Objektdateien.
+Der Build erzeugt eine Windows-Test-DLL und zehn macOS-Objektdateien.
 Er erzeugt keine installierbare oder signierte Grafik-Kext.
 
 Der [native Build](docs/INSTALLER.md#echte-diagnose-kext-bauen) ist als Skript und
