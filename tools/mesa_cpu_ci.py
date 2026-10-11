@@ -10,6 +10,7 @@ import os
 from pathlib import Path
 import platform
 import re
+import shlex
 import signal
 import stat
 import struct
@@ -333,6 +334,31 @@ def source_reference(source: Path, build: Path, environment: dict, steps: Steps,
 OWN_SOURCE_PATHS = ("tools/mesa_cpu_ci.py", "tests/test_mesa_cpu.py", ".github/workflows/mesa-cpu.yml")
 
 
+def macos_sdk_environment(environment: dict, steps: Steps) -> tuple[dict, dict]:
+    raw = steps.run("sdk-path", ["xcrun", "--sdk", "macosx", "--show-sdk-path"], 30).decode("utf-8").strip()
+    if not raw or any(char in raw for char in ("\n", "\r", "\0")) or not Path(raw).is_absolute():
+        raise BuildError("macos-sdk-path-invalid")
+    sdk = Path(raw).resolve(strict=True)
+    if not sdk.is_dir() or sdk.suffix != ".sdk":
+        raise BuildError("macos-sdk-directory-invalid")
+    settings = bounded_file(sdk / "SDKSettings.json", 1024 * 1024)
+    system_library = bounded_file(sdk / "usr/lib/libSystem.tbd", 4 * 1024 * 1024)
+    if not system_library:
+        raise BuildError("macos-sdk-system-library-empty")
+    version = steps.run("sdk-version", ["xcrun", "--sdk", "macosx", "--show-sdk-version"], 30).decode("ascii").strip()
+    metadata = json.loads(settings)
+    if (re.fullmatch(r"[0-9]+(?:\.[0-9]+){0,2}", version) is None
+            or not isinstance(metadata, dict) or metadata.get("Version") != version):
+        raise BuildError("macos-sdk-version-mismatch")
+    flags = "-isysroot " + shlex.quote(str(sdk)) + " -arch x86_64"
+    qualified = dict(environment)
+    qualified.update({"SDKROOT": str(sdk), "CFLAGS": flags, "CXXFLAGS": flags,
+                      "OBJCFLAGS": flags, "LDFLAGS": flags})
+    return qualified, {"name": sdk.name, "version": version, "architecture": "x86_64",
+                       "settings_sha256": sha256(settings), "system_library_tbd_sha256": sha256(system_library),
+                       "explicit_compile_and_link_sysroot": True}
+
+
 def own_source_reference(root: Path, steps: Steps) -> dict:
     commit = os.environ.get("GITHUB_SHA", "")
     if re.fullmatch(r"[0-9a-f]{40}", commit) is None:
@@ -431,6 +457,9 @@ def main(argv: list[str] | None = None) -> int:
         environment.update({"CC": clang, "CXX": clang_cpp, "OBJC": clang})
         versions["clang"] = sanitize(steps.run("clang-version", [clang, "--version"], 30).decode(), steps.prefixes)
         report["tool_versions"] = versions
+        report["phase"] = "sdk"
+        environment, report["sdk"] = macos_sdk_environment(environment, steps)
+        steps.prefixes.append(Path(environment["SDKROOT"]))
         build = private / "mesa-build"
         report["phase"] = "configure"
         steps.run("configure", [sys.executable, "-m", "mesonbuild.mesonmain", "setup", str(build), str(source),

@@ -8,6 +8,7 @@ import hashlib
 import json
 from pathlib import Path
 import struct
+import shlex
 import sys
 import tempfile
 import unittest
@@ -199,6 +200,43 @@ class CpuBoundaries(unittest.TestCase):
             with patch.object(module, "bounded_file", side_effect=AssertionError("outside file read")):
                 with self.assertRaises(module.BuildError):
                     module.source_reference(source, build, {"NINJA": "not-executed"}, FakeSteps(), {})
+
+    def test_sdk_sysroot_reaches_compile_and_link_flags_without_mutating_input(self):
+        with tempfile.TemporaryDirectory(prefix="cpu sdk boundary ") as directory:
+            sdk = Path(directory) / "MacOSX26.6.sdk"
+            (sdk / "usr/lib").mkdir(parents=True)
+            (sdk / "SDKSettings.json").write_bytes(b'{"Version":"26.6"}')
+            (sdk / "usr/lib/libSystem.tbd").write_bytes(b"offline-sdk-metadata-boundary\n")
+            class FakeSteps:
+                def run(self, name, *args, **kwargs):
+                    return (str(sdk) if name == "sdk-path" else "26.6").encode()
+            original = {"CFLAGS": "unqualified-inherited-value"}
+            environment, report = module.macos_sdk_environment(original, FakeSteps())
+            self.assertEqual(original["CFLAGS"], "unqualified-inherited-value")
+            self.assertEqual(environment["SDKROOT"], str(sdk.resolve()))
+            for name in ("CFLAGS", "CXXFLAGS", "OBJCFLAGS", "LDFLAGS"):
+                self.assertEqual(shlex.split(environment[name]), ["-isysroot", str(sdk.resolve()), "-arch", "x86_64"])
+            self.assertEqual(report["version"], "26.6")
+            self.assertEqual(report["system_library_tbd_sha256"], hashlib.sha256(b"offline-sdk-metadata-boundary\n").hexdigest())
+            self.assertNotIn(directory, json.dumps(report))
+
+    def test_sdk_path_or_version_error_rejected_before_build(self):
+        class RelativeSteps:
+            def run(self, *args, **kwargs):
+                return b"relative.sdk"
+        with patch.object(module, "bounded_file", side_effect=AssertionError("metadata read before path guard")):
+            with self.assertRaisesRegex(module.BuildError, "macos-sdk-path-invalid"):
+                module.macos_sdk_environment({}, RelativeSteps())
+        with tempfile.TemporaryDirectory() as directory:
+            sdk = Path(directory) / "MacOSX26.6.sdk"
+            (sdk / "usr/lib").mkdir(parents=True)
+            (sdk / "SDKSettings.json").write_bytes(b'{"Version":"26.5"}')
+            (sdk / "usr/lib/libSystem.tbd").write_bytes(b"offline-sdk-metadata-boundary\n")
+            class VersionSteps:
+                def run(self, name, *args, **kwargs):
+                    return (str(sdk) if name == "sdk-path" else "26.6").encode()
+            with self.assertRaisesRegex(module.BuildError, "macos-sdk-version-mismatch"):
+                module.macos_sdk_environment({}, VersionSteps())
 
 
 if __name__ == "__main__":

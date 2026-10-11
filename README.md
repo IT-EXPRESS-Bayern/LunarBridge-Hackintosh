@@ -66,7 +66,7 @@ flowchart TD
 | GGTT write plan | **Complete — CPU planner** | 31 tests / 132 actual C++ calls; integrated host DLL and macOS object build, no hardware binding. [GGTT](docs/GGTT_BINDING.md) |
 | GuC scheduler codec | **Complete — CPU protocol** | 25 tests at the production C++ codec; register/mode/submit/deregister messages, no live firmware or queue. [Scheduler contract](docs/GUC_SCHEDULER.md) |
 | MSL → AIR → Shader SPIR-V | **In progress — compiler qualification** | 52 offline tests passed; Metal tool discovery qualified on real CI, converter build timed out. The revised workflow preserves partial AIR and requires verified translation. [Compiler bridge](docs/METAL_SHADER_BRIDGE.md) |
-| Mesa CPU parser | **In progress — native build qualification** | 21 offline tests passed; a separate Intel-macOS CI builds pinned `spirv2nir`. Native GPU execution remains open. [Backend seams](docs/METAL_BACKEND_SEAMS.md) |
+| Mesa CPU parser | **In progress — native build qualification** | 23 offline tests passed; the first real CI exposed a missing SDK sysroot. The corrected Intel-macOS build qualifies pinned `spirv2nir`. Native GPU execution remains open. [Backend seams](docs/METAL_BACKEND_SEAMS.md) |
 | Native memory + execution | **Blocked — implementation missing** | GPU-VA binding, programmed PAT2, global GGTT ownership, GuC startup and queue submission remain missing. [Architecture](docs/GPU_DESIGN.md) |
 | Metal provider + display | **Blocked — implementation missing** | No LunarBridge system Metal provider, accelerated display or WindowServer integration. [Hardware scope](docs/HARDWARE_SUPPORT.md) |
 

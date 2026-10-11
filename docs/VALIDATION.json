@@ -173,7 +173,7 @@
     "parallel_kernel_lifetime_tested": false
   },
   "pinned_reference_files_sha256_verified": 16,
-  "total_host_tests_passed": 424,
+  "total_host_tests_passed": 426,
   "macos_object_count": 14,
   "native_diagnostic_source_compiled": true,
   "native_diagnostic_kext_linked": true,
@@ -709,15 +709,15 @@
     "native_target_hardware_tests": 0
   },
   "mesa_cpu_harness_tests": {
-    "tests_run": 21,
+    "tests_run": 23,
     "failures": 0,
     "errors": 0,
     "skipped": 0,
     "successful": true,
     "scope": "Executed host guards, provenance, wheel hashes, Mach-O formats and actual bounded process timeout; no Mesa parser built locally",
     "source_files_sha256": {
-      "tools/mesa_cpu_ci.py": "4696562ed29291f1f21c8fe97ed5653455685e847be55edb2802b1bbf4eb749f",
-      "tests/test_mesa_cpu.py": "16d9619862ceadcf79d0b24630d5b880e3c856b1a6cd6165c2610ccd45afc3b7",
+      "tools/mesa_cpu_ci.py": "d373447b05ec1c265a89caf4622928fb3ae37dd1a4774da1385de4b066dd237c",
+      "tests/test_mesa_cpu.py": "00fe38099a2eadf3dc37ec2cebb85174abe016a68d81732822eade4debf0a378",
       ".github/workflows/mesa-cpu.yml": "e5bce50493825b1182d30e9cbc16aad926c2b9620bc19b4f9cc5ea9345f68c72"
     },
     "native_target_hardware_tests": 0
