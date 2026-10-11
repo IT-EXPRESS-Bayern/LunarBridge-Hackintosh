@@ -6,12 +6,12 @@
     "version": "0.15.2"
   },
   "external_build_dependency": "MacKernelSDK headers, separately licensed",
-  "successful_compiles": 9,
+  "successful_compiles": 11,
   "artifacts": [
     {
       "name": "lnl_host.dll",
-      "bytes": 10240,
-      "sha256": "2daed313e8632c500f0775ba9b2cfe61f5e5a24facf3bcae031d2d5718db6553",
+      "bytes": 174592,
+      "sha256": "fc4320a99a81722cfa6a090dcd90bafacf3c18f45b6384f069b75a61eb5fb867",
       "magic_hex": "4d5a7800"
     },
     {
@@ -28,8 +28,8 @@
     },
     {
       "name": "lb_diagnostics.o",
-      "bytes": 8872,
-      "sha256": "169e408ae25ba8b2f882f88a4a9389e88bb15b94bfc5b342772cea3c327ccfc8",
+      "bytes": 8848,
+      "sha256": "d25a6cc746b57e0de96c7355488f62d11aca5634c100d0379f48d5b509abe1c1",
       "magic_hex": "cffaedfe"
     },
     {
@@ -51,9 +51,21 @@
       "magic_hex": "cffaedfe"
     },
     {
+      "name": "LBDMAContext.o",
+      "bytes": 164680,
+      "sha256": "03ea7ed96dbeb0ae1ea855aab966770e089835bcbdc964d5e1a717048dd0418c",
+      "magic_hex": "cffaedfe"
+    },
+    {
+      "name": "LBDMAQuarantine.o",
+      "bytes": 164472,
+      "sha256": "cc9e2c0063063cf0aa336576cb6b162b7d9eb59a31b50e75d4771be8b724cf07",
+      "magic_hex": "cffaedfe"
+    },
+    {
       "name": "LunarBridgeDriver.o",
-      "bytes": 243880,
-      "sha256": "8bdb4f9a47497b59faa100f2c21a29a5cc7ab3bcb3f278904b7b3963f56d2814",
+      "bytes": 277456,
+      "sha256": "cfacc34d4910304537360a77d051afbf34c510d48256a6f9fd4ebb49b05c1f02",
       "magic_hex": "cffaedfe"
     },
     {
@@ -96,7 +108,7 @@
   },
   "trace_tool_tests": {
     "test_type": "Python ABI, privacy, triage and simulated IOKit failure tests; actual Mach-O object format checks",
-    "tests_run": 13,
+    "tests_run": 19,
     "failures": 0,
     "errors": 0,
     "skipped": 0,
@@ -106,7 +118,7 @@
   },
   "installer_tests": {
     "test_type": "Isolated installer transactions, injected failures and synthetic Mach-O/PE format fixtures",
-    "tests_run": 20,
+    "tests_run": 21,
     "failures": 0,
     "errors": 0,
     "skipped": 0,
@@ -114,9 +126,31 @@
     "real_efi_modified": false,
     "native_macos_hardware_tests": 0
   },
+  "dma_adapter_tests": {
+    "tests_run": 30,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "successful": true,
+    "io_kit_calls_simulated": true,
+    "actual_adapter_cpp_executed": true,
+    "native_dma_hardware_tested": false,
+    "gpu_binding_or_execution_tested": false
+  },
+  "dma_quarantine_tests": {
+    "tests_run": 10,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "successful": true,
+    "actual_cpp_ownership_table_executed": true,
+    "iokit_calls_simulated": true,
+    "native_hardware_tested": false,
+    "parallel_kernel_lifetime_tested": false
+  },
   "pinned_reference_files_sha256_verified": 12,
-  "total_host_tests_passed": 84,
-  "macos_object_count": 8,
+  "total_host_tests_passed": 131,
+  "macos_object_count": 10,
   "native_diagnostic_source_compiled": true,
   "native_diagnostic_kext_linked": true,
   "native_build_workflow": {

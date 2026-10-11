@@ -59,8 +59,9 @@ Referenzen: [CSS-Layout](https://github.com/torvalds/linux/blob/e5f0a698b34ed760
 
 ## Anschluss an echte Hardware
 
-Der folgende native Anschluss fehlt noch: qualifizierte IODMACommand-/Mapper-
-Vorbereitung samt Seiteneigentum und Cache-Kohärenz, gepinnte Tabellen und
+Der [native IODMACommand-/Mapper-Anschluss](DMA_BACKEND.md) ist implementiert
+und standardmäßig deaktiviert. Die tatsächliche Vorbereitung, Seiteneigentum
+und Cache-Kohärenz müssen am Zielgerät qualifiziert werden. Es fehlen gepinnte Tabellen und
 Directory-Verknüpfung, Root-Veröffentlichung, GGTT-/WOPCM-Belegung, PAT-
 Programmierung, TLB-Invalidierung und Fehler-/Power-Reihenfolge. Der Schattenring
 benötigt eigene Hardware-Memory-Barriers, GuC-Registrierung, Benachrichtigung,

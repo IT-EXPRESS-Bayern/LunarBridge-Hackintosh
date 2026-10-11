@@ -56,6 +56,7 @@ Die Linux-Aufrufreihenfolge allein bestätigt keinen sicheren XNU-Energiepfad.
 | 2 | keine | BufferInfo, 24 Byte | Größe, Alignment, CPU-shared, GPU-bound=false |
 | 3 | ein uint64, exklusiver Sequenzcursor | TraceBatch, 800 Byte | Maximal 16 Ereignisse; Cursor 0 beginnt beim ältesten |
 | 4 | keine | keine | GPU-Submit gibt ausdrücklich Unsupported zurück |
+| 5 | keine | DMAInfo, 32 Byte | Vorbereitete Bytezahl/Seiten/PTEs und Mapperstatus; keine Adressen |
 
 Ein Trace-Eintrag hat 48 Byte. Längen werden durch den nativen Dispatch geprüft.
 Indirekte Strukturdeskriptoren und asynchrone Aufrufe sind nicht unterstützt.
@@ -66,8 +67,10 @@ Reserved-Felder und unbenutzte Trace-Ausgaben werden auf null gesetzt.
 Bis zu acht gleichzeitige Clients erhalten jeweils höchstens einen Puffer von
 1 MiB, auf 4 KiB gerundet. Das aktive Buchungsbudget beträgt 8 MiB. Puffer
 werden vor Export genullt; jeder Client erhält nur seinen eigenen Deskriptor.
-Es gibt keine physische Adressausgabe, DMA/IOMMU-Konfiguration, GPU-VA oder
-GPU-Bindung. Das ist ein CPU-Speicheranschluss als Grundlage weiterer Portierung.
+Es gibt keine physische oder DMA-Adressausgabe und keine GPU-Bindung.
+Das explizite, standardmäßig deaktivierte `LBEnableDMAPreparation` ergänzt
+einen [Geräte-Mapper-/IODMACommand-Anschluss](DMA_BACKEND.md), der Segmente
+prüft und PTEs ausschließlich in CPU-Speicher vorbereitet.
 
 Ein IOLock schützt Client-Zustand, ein zweiter im Service die Trace-/Budgetdaten.
 Stop und Freigabe behandeln Client-Buchung und gehaltene Deskriptorreferenz
@@ -79,8 +82,9 @@ müssen auf macOS geprüft werden, bevor der Speicherpfad erweitert wird.
 ## Nächster Grafikschritt
 
 Die CPU-seitigen GPU-VA-/PTE-/Tabellen- und GuC-Formatbausteine sind bereits
-[implementiert und geprüft](GPU_FOUNDATION.md). Der native Service verwendet
-sie noch nicht für DMA-Bindung oder tatsächliche Firmwarekommunikation.
+[implementiert und geprüft](GPU_FOUNDATION.md). Der native DMA-Adapter verwendet
+Arena und PTE-Staging, veröffentlicht sie jedoch noch nicht an die GPU.
+Tatsächliche Firmwarekommunikation ist noch nicht implementiert.
 
 Nach nativer Diagnose-/Speicherqualifikation folgt Xe2-GPU-Speicherverwaltung
 mit Seiteneigentum und GPU-VA. Danach werden GuC-Boot/Kommunikation und eine

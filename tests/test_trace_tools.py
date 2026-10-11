@@ -11,15 +11,16 @@ from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT/'tools'))
-from lb_wire import Snapshot, TraceRecord, TraceBatch, BufferInfo, decode_snapshot, decode_batch, parse_kernel_messages
+from lb_wire import Snapshot, TraceRecord, TraceBatch, BufferInfo, DMAInfo, decode_snapshot, decode_batch, decode_dma_info, parse_kernel_messages
 from analyze_trace import findings, markdown
 import collect_macos as collector
 from macho import inspect_macho
 
-def snapshot_bytes(capabilities=7):
+def snapshot_bytes(capabilities=7, flags=0):
     value = Snapshot()
     value.abi, value.structBytes, value.policy, value.capabilities = 1, c.sizeof(value), 1, capabilities
     value.vendor, value.device, value.subvendor, value.subdevice = 0x8086, 0x64a0, 0x144d, 0xc1dd
+    value.flags = flags
     return bytes(value)
 
 class Function:
@@ -31,6 +32,8 @@ class FakeKit:
         self.closed, self.released, self.calls, self.unmapped = [], [], [], []
         self.memory = (c.c_uint8 * 4096)()
         self.map_size, self.map_status, self.unmap_status, self.trace_status = 4096, 0, 0, 0
+        self.snapshot_flags = 0
+        self.dma_info = bytes(DMAInfo(4096, 1, 1, 1, 1, 1, 0))
         self.IOServiceMatching = Function(lambda name: 1)
         self.IOServiceGetMatchingServices = Function(lambda port, match, out: self.put(out, 10))
         self.IOIteratorNext = Function(lambda iterator: 11)
@@ -53,8 +56,9 @@ class FakeKit:
             outputs[0] = 4096
             self.put(output_count, 1)
             return 0
-        if selector == 0: data = snapshot_bytes()
+        if selector == 0: data = snapshot_bytes(flags=self.snapshot_flags)
         elif selector == 2: data = bytes(BufferInfo(4096, 1, 4096, 1, 0))
+        elif selector == 5: data = self.dma_info
         elif selector == 3:
             if self.trace_status: return self.trace_status
             batch = TraceBatch()
@@ -83,11 +87,78 @@ class FakeKit:
 
 class TraceToolTests(unittest.TestCase):
     def test_wire_sizes_and_snapshot_never_promote_claim_to_proof(self):
-        self.assertEqual([c.sizeof(t) for t in (Snapshot, TraceRecord, TraceBatch, BufferInfo)], [104, 48, 800, 24])
+        self.assertEqual([c.sizeof(t) for t in (Snapshot, TraceRecord, TraceBatch, BufferInfo, DMAInfo)], [104, 48, 800, 24, 32])
         result = decode_snapshot(snapshot_bytes(0x20007))
         self.assertTrue(result['claims_metal'])
         self.assertFalse(result['metal_execution_verified'])
         self.assertEqual(result['policy_name'], 'explicit_opt_in_missing')
+
+    def test_dma_wire_rejects_partial_or_out_of_bounds_states_and_exports_no_addresses(self):
+        self.assertFalse(decode_dma_info(bytes(DMAInfo(0, 1, 0, 0, 0, 0, 0)))['dma_prepared'])
+        valid = DMAInfo(1024*1024, 1, 256, 256, 1, 1, 0)
+        result = decode_dma_info(bytes(valid))
+        self.assertEqual(result['pte_entries'], 256)
+        self.assertFalse(result['gpu_execution_tested'])
+        self.assertFalse(result['dma_cleanup_verified'])
+        self.assertFalse(any('address' in key for key in result))
+        for name, value in [('bytes', 0), ('bytes', 4097), ('bytes', 1024*1024+4096),
+                            ('abi', 2), ('segments', 255), ('pteEntries', 257),
+                            ('deviceMapperUsed', 2), ('dmaPrepared', 0), ('gpuBound', 1)]:
+            bad = DMAInfo.from_buffer_copy(bytes(valid))
+            setattr(bad, name, value)
+            with self.assertRaises(ValueError): decode_dma_info(bytes(bad))
+        for data in (b'', bytes(valid)[:-1], bytes(valid)+b'\0', bytes(DMAInfo(4096, 1, 0, 0, 0, 0, 0))):
+            with self.assertRaises(ValueError): decode_dma_info(data)
+
+    def collect_fake(self, kit, **options):
+        with mock.patch.object(collector.c, 'CDLL', side_effect=[kit, object()]), \
+             mock.patch.object(collector.c.c_uint32, 'in_dll', return_value=c.c_uint32(1)):
+            return collector.collect_iokit(**options)
+
+    def test_cpu_test_cannot_start_dma_without_explicit_collector_opt_in(self):
+        kit = FakeKit()
+        kit.snapshot_flags = 32
+        report = self.collect_fake(kit, memory_test=True)
+        self.assertEqual(report['cpu_memory_test']['reason'], 'explicit_dma_test_required')
+        self.assertNotIn(1, kit.calls)
+        self.assertEqual(kit.closed, [12])
+
+    def test_dma_test_refuses_disabled_driver_before_buffer_allocation(self):
+        kit = FakeKit()
+        report = self.collect_fake(kit, dma_test=True)
+        self.assertEqual(report['dma_preparation_test']['reason'], 'driver_dma_opt_in_disabled')
+        self.assertNotIn(1, kit.calls)
+
+    def test_dma_test_checks_actual_selector_contract_without_claiming_gpu_or_cleanup(self):
+        kit = FakeKit()
+        kit.snapshot_flags = 32
+        report = self.collect_fake(kit, dma_test=True)
+        self.assertEqual(report['dma_preparation_test']['state'], 'passed')
+        info = report['dma_preparation_test']['dma_preparation']
+        self.assertTrue(info['device_mapper_used'])
+        self.assertFalse(info['gpu_bound'])
+        self.assertFalse(info['dma_cleanup_verified'])
+        self.assertIn(5, kit.calls)
+        self.assertNotIn(4, kit.calls)
+        self.assertEqual(len(kit.unmapped), 1)
+        self.assertEqual(kit.closed, [12])
+
+    def test_failed_dma_contract_keeps_trace_and_closes_connection_without_mapping(self):
+        kit = FakeKit()
+        kit.snapshot_flags = 32
+        kit.dma_info = bytes(DMAInfo(0, 1, 0, 0, 0, 0, 0))
+        report = self.collect_fake(kit, dma_test=True)
+        self.assertEqual(report['dma_preparation_test']['state'], 'failed')
+        self.assertEqual([r['event'] for r in report['trace']], [1, 7])
+        self.assertEqual(kit.closed, [12])
+        self.assertEqual(kit.unmapped, [])
+
+    def test_dma_teardown_error_is_reported_as_error_not_as_gpu_completion(self):
+        report = {'synthetic': True, 'dma_preparation_test': {'state': 'failed'},
+                  'trace': [{'event': 43, 'status': '0xe00002bd'}]}
+        items = {r['code']: r for r in findings(report)}
+        self.assertEqual(items['DMA_RELEASE_FAILED']['level'], 'error')
+        self.assertEqual(items['DMA_PROBE_FAILED']['level'], 'error')
 
     def test_snapshot_rejects_length_version_and_reserved(self):
         for data in (b'', snapshot_bytes()[:-1], snapshot_bytes() + b'\0'):
@@ -200,7 +271,7 @@ class TraceToolTests(unittest.TestCase):
         self.assertEqual({p.name for p in objects}, {
             'lnl_platform.o', 'LunarLakePCIProbe.o', 'lb_diagnostics.o',
             'lb_gpu_memory.o', 'lb_guc_transport.o', 'lb_guc_firmware.o',
-            'LunarBridgeDriver.o', 'KmodInfo.o'})
+            'LBDMAContext.o', 'LBDMAQuarantine.o', 'LunarBridgeDriver.o', 'KmodInfo.o'})
         for path in objects:
             result = inspect_macho(path.read_bytes())
             self.assertEqual((result['filetype'], result['architecture']), (1, 'x86_64'))

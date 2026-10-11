@@ -132,5 +132,7 @@ and the next qualification steps.
 
 CPU-side GPU-VA ownership, Xe2 PTE/table planning, DMA-list staging, GuC CSS
 validation and HXG/CT shadow-ring handling are now implemented and host-tested.
-They do not yet connect to native DMA mappings or live hardware transport.
+The opt-in native DMA adapter now connects memory descriptors to the exact PCI
+mapper and stages validated PTEs in CPU memory. It has not been exercised on the
+Samsung target and does not publish GPU mappings or provide live hardware transport.
 See [GPU foundations](GPU_FOUNDATION.md) for exact boundaries and source pins.

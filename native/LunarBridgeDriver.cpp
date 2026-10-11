@@ -55,6 +55,11 @@ void LunarBridgePCI::publishSnapshot() {
     setProperty("LBMediaIP", _snapshot.media.version_x100, 32);
     setProperty("LBTraceCapacity", LB_TRACE_CAPACITY, 32);
     setProperty("LBCpuBufferMaxBytes", LB_BUFFER_MAX_BYTES, 64);
+    setProperty("LBEnableDMAPreparation", _dmaProbe);
+    setProperty("LBDMAMappingVerifiedOnTarget", false);
+    setProperty("LBDMATeardownQuarantined", false);
+    setProperty("LBDMAQuarantineSlots", static_cast<uint64_t>(0), 32);
+    setProperty("LBDMAResourcesDrained", false);
     setProperty("LBGPUExecutionSupported", false);
     setProperty("LBMetalSupported", false);
     setProperty("LBStage", "native-diagnostic-source; hardware validation pending");
@@ -66,6 +71,8 @@ bool LunarBridgePCI::start(IOService *provider) {
     if (!pci) { trace(LBStart, kIOReturnBadArgument); return false; }
     auto verbose = OSDynamicCast(OSBoolean, getProperty("LBDebugLogging"));
     _verbose = verbose && verbose->isTrue();
+    auto dma = OSDynamicCast(OSBoolean, getProperty("LBEnableDMAPreparation"));
+    _dmaProbe = dma && dma->isTrue();
     trace(LBStart);
     _snapshot.vendor = pci->configRead16(kIOPCIConfigVendorID);
     _snapshot.device = pci->configRead16(kIOPCIConfigDeviceID);
@@ -89,7 +96,7 @@ bool LunarBridgePCI::start(IOService *provider) {
     _snapshot.pmcsr = pmPresent ? pci->configRead16(static_cast<uint8_t>(pmOffset + 4)) : 0xffff;
     auto optIn = OSDynamicCast(OSBoolean, getProperty("LBEnableMMIORead"));
     const bool enabled = optIn && optIn->isTrue();
-    _snapshot.flags = (pmPresent ? 1u : 0u) | (enabled ? 2u : 0u);
+    _snapshot.flags = (pmPresent ? 1u : 0u) | (enabled ? 2u : 0u) | (_dmaProbe ? 32u : 0u);
     LBMMIOInput input{_snapshot.vendor, _snapshot.device, _snapshot.subvendor, _snapshot.subdevice,
                       _snapshot.classCode, _snapshot.pciCommand, _snapshot.pmcsr,
                       pci->getPowerState(), enabled ? 1u : 0u, pmPresent ? 1u : 0u};
@@ -153,7 +160,9 @@ bool LunarBridgePCI::start(IOService *provider) {
 void LunarBridgePCI::stop(IOService *provider) {
     IOLockLock(_lock);
     _stopping = true;
+    const bool drained = _clients == 0 && _dmaSlots.retained() == 0;
     IOLockUnlock(_lock);
+    setProperty("LBDMAResourcesDrained", drained);
     trace(LBStop);
     IOService::stop(provider);
 }
@@ -180,18 +189,74 @@ bool LunarBridgePCI::traceBatch(uint64_t since, LBTraceBatchResult *out) {
     return result;
 }
 
-bool LunarBridgePCI::admitClient(uint32_t *id) {
+bool LunarBridgePCI::admitClient(uint32_t *id, uint32_t *slot) {
+    if (!id || !slot) return false;
     IOLockLock(_lock);
-    const bool available = !_stopping && _clients < LB_MAX_CLIENTS && _nextClient != 0;
-    if (available) { ++_clients; *id = _nextClient++; }
+    int reserved = -1;
+    if (!_stopping && _clients < LB_MAX_CLIENTS && _nextClient != 0)
+        reserved = _dmaSlots.reserve(_nextClient);
+    const bool available = reserved >= 0;
+    if (available) { ++_clients; *id = _nextClient++; *slot = static_cast<uint32_t>(reserved); }
     IOLockUnlock(_lock);
     return available;
 }
 
-void LunarBridgePCI::releaseClient() {
+void LunarBridgePCI::releaseClient(uint32_t id, uint32_t slot) {
     IOLockLock(_lock);
-    if (_clients) --_clients;
+    if (_dmaSlots.releaseClient(slot, id) && _clients) --_clients;
     IOLockUnlock(_lock);
+}
+
+bool LunarBridgePCI::quarantineClient(uint32_t id, uint32_t slot, LBDMAContext *context,
+                                      IOBufferMemoryDescriptor *buffer, uint64_t bytes) {
+    retain(); // A concurrent retry may release the transferred slot reference.
+    IOLockLock(_lock);
+    const bool transferred = _dmaSlots.hold(slot, id, context, buffer, bytes);
+    const uint32_t held = _dmaSlots.retained();
+    IOLockUnlock(_lock);
+    if (transferred) {
+        // Transfer the client's already-held service reference to this slot.
+        // Byte/client reservations stay occupied until completion succeeds.
+        setProperty("LBDMATeardownQuarantined", true);
+        setProperty("LBDMAQuarantineSlots", held, 32);
+        setProperty("LBDMAResourcesDrained", false);
+    }
+    release(); // Outside the service lock, after the last access to this.
+    return transferred;
+}
+
+void LunarBridgePCI::retryQuarantine() {
+    // Called before admission on an administrative client thread, never from
+    // the workloop or under either client/service lock. No new device mapping.
+    retain();
+    for (uint32_t slot = 0; slot < LBDMAQuarantine::Capacity; ++slot) {
+        LBDMAQuarantine::Held held{};
+        IOLockLock(_lock);
+        const bool stopped = _stopping;
+        const bool claimed = !stopped && _dmaSlots.beginRetry(slot, &held);
+        IOLockUnlock(_lock);
+        if (stopped) break;
+        if (!claimed) continue;
+        const IOReturn status = held.context->reset();
+        IOLockLock(_lock);
+        const bool committed = _dmaSlots.finishRetry(slot, held.owner, status == kIOReturnSuccess);
+        if (committed && status == kIOReturnSuccess) {
+            _reservedBytes -= held.bytes;
+            --_clients;
+        }
+        const uint32_t remaining = _dmaSlots.retained();
+        IOLockUnlock(_lock);
+        setProperty("LBDMATeardownQuarantined", remaining != 0);
+        setProperty("LBDMAQuarantineSlots", remaining, 32);
+        trace(status == kIOReturnSuccess && committed ? LBDmaReleased : LBDmaReleaseFailed,
+              committed ? status : kIOReturnInternalError, held.owner, held.bytes);
+        if (committed && status == kIOReturnSuccess) {
+            held.buffer->release();
+            delete held.context;
+            release(); // Exactly one transferred slot/service reference.
+        }
+    }
+    release(); // Last operation: loop-wide temporary service reference.
 }
 
 bool LunarBridgePCI::reserveBuffer(uint64_t requested, uint64_t *rounded) {
@@ -208,6 +273,30 @@ void LunarBridgePCI::releaseBuffer(uint64_t bytes) {
     IOLockUnlock(_lock);
 }
 
+IOReturn LunarBridgePCI::prepareDMA(LBDMAContext *context, IOBufferMemoryDescriptor *memory,
+                                   uint32_t owner, uint64_t bytes) {
+    if (!context || !memory) return kIOReturnBadArgument;
+    IOLockLock(_lock);
+    if (_stopping) { IOLockUnlock(_lock); return kIOReturnNotReady; }
+    if (!_dmaProbe) { IOLockUnlock(_lock); return kIOReturnSuccess; }
+    auto pci = OSDynamicCast(IOPCIDevice, getProvider());
+    if (pci) pci->retain();
+    IOLockUnlock(_lock);
+    if (!pci) return kIOReturnNotReady;
+    IOReturn status = context->prepare(pci, memory, owner, bytes);
+    pci->release();
+    IOLockLock(_lock);
+    const bool stopped = _stopping;
+    IOLockUnlock(_lock);
+    if (stopped && status == kIOReturnSuccess) {
+        status = context->reset();
+        if (status == kIOReturnSuccess) status = kIOReturnNotReady;
+    }
+    trace(status == kIOReturnSuccess ? LBDmaPrepared : LBDmaFailed,
+          status, owner, bytes, context->segments());
+    return status;
+}
+
 bool LunarBridgeUserClient::initWithTask(task_t task, void *token, UInt32 type, OSDictionary *properties) {
     if (type != 0 || clientHasPrivilege(token, kIOClientPrivilegeAdministrator) != kIOReturnSuccess)
         return false;
@@ -220,7 +309,9 @@ bool LunarBridgeUserClient::start(IOService *provider) {
     if (!_owner) return false;
     _owner->retain();
     _lock = IOLockAlloc();
-    if (!_lock || !_owner->admitClient(&_context)) {
+    _dma = new LBDMAContext();
+    _owner->retryQuarantine();
+    if (!_lock || !_dma || !_owner->admitClient(&_context, &_slot)) {
         _owner->trace(LBClientRejected, kIOReturnNoResources);
         return false;
     }
@@ -237,22 +328,36 @@ IOReturn LunarBridgeUserClient::externalMethod(uint32_t selector, IOExternalMeth
         {invoke, 1, 0, 1, 0},
         {invoke, 0, 0, 0, sizeof(LBBufferInfo)},
         {invoke, 1, 0, 0, sizeof(LBTraceBatchResult)},
-        {invoke, 0, 0, 0, 0}
+        {invoke, 0, 0, 0, 0},
+        {invoke, 0, 0, 0, sizeof(LBDMAInfo)}
     };
     if (!args || selector >= LBSelectorCount) {
-        if (_owner) _owner->trace(LBMethodRejected, kIOReturnBadArgument, _context, selector);
+        traceRequest(LBMethodRejected, kIOReturnBadArgument, selector);
         return kIOReturnBadArgument;
     }
     // No indirect input/output descriptors: all supported wire payloads fit in 800 bytes.
     if (args->structureInputDescriptor || args->structureOutputDescriptor || args->asyncWakePort) {
-        if (_owner) _owner->trace(LBMethodRejected, kIOReturnBadArgument, _context, selector);
+        traceRequest(LBMethodRejected, kIOReturnBadArgument, selector);
         return kIOReturnBadArgument;
     }
     const IOReturn result = IOUserClient::externalMethod(selector, args, &methods[selector], this,
                             reinterpret_cast<void *>(static_cast<uintptr_t>(selector)));
-    if (result != kIOReturnSuccess && result != kIOReturnUnsupported && _owner)
-        _owner->trace(LBMethodRejected, result, _context, selector);
+    if (result != kIOReturnSuccess && result != kIOReturnUnsupported)
+        traceRequest(LBMethodRejected, result, selector);
     return result;
+}
+
+void LunarBridgeUserClient::traceRequest(uint32_t event, IOReturn status, uint64_t selector) {
+    if (!_lock) return;
+    IOLockLock(_lock);
+    auto owner = _owner;
+    const uint32_t context = _context;
+    if (owner) owner->retain();
+    IOLockUnlock(_lock);
+    if (owner) {
+        owner->trace(event, status, context, selector);
+        owner->release(); // A last service reference is never released under _lock.
+    }
 }
 
 IOReturn LunarBridgeUserClient::invoke(OSObject *target, void *reference, IOExternalMethodArguments *args) {
@@ -290,6 +395,13 @@ IOReturn LunarBridgeUserClient::perform(uint32_t selector, IOExternalMethodArgum
             }
             bzero(_buffer->getBytesNoCopy(), static_cast<size_t>(bytes));
             _bytes = bytes;
+            const IOReturn dmaStatus = _owner->prepareDMA(_dma, _buffer, _context, bytes);
+            if (dmaStatus != kIOReturnSuccess) {
+                _owner->trace(LBBufferFailed, dmaStatus, _context, bytes);
+                _closed = true;
+                releaseResources();
+                return dmaStatus;
+            }
             args->scalarOutput[0] = bytes;
             _owner->trace(LBBufferAllocated, kIOReturnSuccess, _context, bytes);
             return kIOReturnSuccess;
@@ -303,6 +415,12 @@ IOReturn LunarBridgeUserClient::perform(uint32_t selector, IOExternalMethodArgum
             if (!args->scalarInput || !args->structureOutput) return kIOReturnBadArgument;
             return _owner->traceBatch(args->scalarInput[0], static_cast<LBTraceBatchResult *>(args->structureOutput))
                 ? kIOReturnSuccess : kIOReturnBadArgument;
+        case LBGetDMAInfo:
+            if (!_buffer || !args->structureOutput) return kIOReturnNotReady;
+            *static_cast<LBDMAInfo *>(args->structureOutput) = {
+                _dma->bytes(), LB_ABI_VERSION, _dma->segments(), _dma->ptes(),
+                _dma->ready() ? 1u : 0u, _dma->ready() ? 1u : 0u, 0};
+            return kIOReturnSuccess;
         case LBSubmit:
             _owner->trace(LBSubmitUnsupported, kIOReturnUnsupported, _context);
             return kIOReturnUnsupported;
@@ -339,6 +457,18 @@ IOReturn LunarBridgeUserClient::clientDied() { return clientClose(); }
 
 void LunarBridgeUserClient::releaseResources() {
     if (_buffer) {
+        const bool wasPrepared = _dma->ready();
+        const IOReturn dmaStatus = _dma->reset();
+        if (dmaStatus != kIOReturnSuccess) {
+            if (_owner) _owner->trace(LBDmaReleaseFailed, dmaStatus, _context, _bytes);
+            if (_owner && _admitted && _owner->quarantineClient(_context, _slot, _dma, _buffer, _bytes)) {
+                // The pre-reserved slot now owns all references and accounting.
+                _owner = nullptr; _dma = nullptr; _buffer = nullptr;
+                _bytes = 0; _admitted = false;
+            }
+            return;
+        }
+        if (wasPrepared && _owner) _owner->trace(LBDmaReleased, kIOReturnSuccess, _context, _bytes);
         _buffer->release(); _buffer = nullptr;
         if (_owner) {
             _owner->releaseBuffer(_bytes);
@@ -346,7 +476,7 @@ void LunarBridgeUserClient::releaseResources() {
         }
         _bytes = 0;
     }
-    if (_admitted && _owner) { _owner->releaseClient(); _admitted = false; }
+    if (_admitted && _owner) { _owner->releaseClient(_context, _slot); _admitted = false; }
 }
 
 void LunarBridgeUserClient::stop(IOService *provider) {
@@ -356,6 +486,10 @@ void LunarBridgeUserClient::stop(IOService *provider) {
 
 void LunarBridgeUserClient::free() {
     releaseResources();
+    // An impossible ownership-table mismatch must not destroy outstanding
+    // mappings. Normal failure paths transfer them to a reachable service slot.
+    if (_buffer || (_dma && !_dma->drained())) return;
+    if (_dma) { delete _dma; _dma = nullptr; }
     if (_owner) { _owner->release(); _owner = nullptr; }
     if (_lock) { IOLockFree(_lock); _lock = nullptr; }
     IOUserClient::free();

@@ -16,7 +16,8 @@ enum LBEvent : uint32_t {
     LBClientOpened = 20, LBClientClosed = 21, LBBufferRequested = 22,
     LBBufferAllocated = 23, LBBufferFailed = 24, LBBufferMappingRequested = 25,
     LBMethodRejected = 26, LBSubmitUnsupported = 27, LBBufferReleased = 28,
-    LBClientRejected = 29
+    LBClientRejected = 29, LBDmaPrepared = 40, LBDmaFailed = 41,
+    LBDmaReleased = 42, LBDmaReleaseFailed = 43
 };
 
 enum LBMMIOReason : uint32_t {
@@ -66,7 +67,7 @@ struct LBTraceRing {
 
 enum LBSelector : uint32_t {
     LBGetSnapshot = 0, LBAllocateBuffer = 1, LBGetBufferInfo = 2,
-    LBReadTrace = 3, LBSubmit = 4, LBSelectorCount = 5
+    LBReadTrace = 3, LBSubmit = 4, LBGetDMAInfo = 5, LBSelectorCount = 6
 };
 
 struct LBBufferInfo {
@@ -74,10 +75,16 @@ struct LBBufferInfo {
     uint32_t abi, alignment, cpuShared, gpuBound;
 };
 
+struct LBDMAInfo {
+    uint64_t bytes;
+    uint32_t abi, segments, pteEntries, deviceMapperUsed, dmaPrepared, gpuBound;
+};
+
 static_assert(sizeof(LBDeviceSnapshot) == 104, "Snapshot wire ABI");
 static_assert(sizeof(LBTraceRecord) == 48, "Trace wire ABI");
 static_assert(sizeof(LBTraceBatchResult) == 800, "Trace batch wire ABI");
 static_assert(sizeof(LBBufferInfo) == 24, "Buffer wire ABI");
+static_assert(sizeof(LBDMAInfo) == 32, "DMA info wire ABI without addresses");
 
 extern "C" {
 LNL_API uint32_t lb_mmio_preflight(const LBMMIOInput *input, uint64_t barBytes,

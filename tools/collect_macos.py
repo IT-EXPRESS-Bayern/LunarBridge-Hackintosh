@@ -11,7 +11,7 @@ import subprocess
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from lb_wire import Snapshot, TraceBatch, BufferInfo, decode_snapshot, decode_batch, parse_kernel_messages
+from lb_wire import Snapshot, TraceBatch, BufferInfo, DMAInfo, decode_snapshot, decode_batch, decode_dma_info, parse_kernel_messages
 from analyze_trace import markdown
 
 def command(args):
@@ -27,14 +27,16 @@ def filtered_registry(nodes):
         allowed = {'LBDriverVersion', 'LBDriverABI', 'LBPCIIdentifier', 'LBSubsystemIdentifier',
                    'LBRevision', 'LBBarBytes', 'LBMMIOPolicy', 'LBGmdSamplesValid', 'LBActualMMIOPerformed',
                    'LBGraphicsIP', 'LBMediaIP', 'LBTraceCapacity', 'LBCpuBufferMaxBytes',
-                   'LBGPUExecutionSupported', 'LBMetalSupported', 'LBStage', 'LBEnableMMIORead', 'LBDebugLogging'}
+                   'LBGPUExecutionSupported', 'LBMetalSupported', 'LBStage', 'LBEnableMMIORead', 'LBDebugLogging',
+                   'LBEnableDMAPreparation', 'LBDMAMappingVerifiedOnTarget', 'LBDMATeardownQuarantined',
+                   'LBDMAQuarantineSlots', 'LBDMAResourcesDrained'}
         properties = {key: value for key, value in nodes.items() if key in allowed and
                       isinstance(value, (bool, int, str))}
         if properties: result.append(properties)
         result.extend(filtered_registry(nodes.get('IORegistryEntryChildren', [])))
     return result
 
-def cpu_memory_roundtrip(kit, connection, task, call):
+def cpu_memory_roundtrip(kit, connection, task, call, dma_required=False):
     input_size, output_size = (c.c_uint64 * 1)(4096), (c.c_uint64 * 1)()
     output_count = c.c_uint32(1)
     status = kit.IOConnectCallMethod(connection, 1, input_size, 1, None, 0,
@@ -45,6 +47,11 @@ def cpu_memory_roundtrip(kit, connection, task, call):
     info = BufferInfo.from_buffer_copy(call(2, BufferInfo()))
     if info.abi != 1 or info.bytes != 4096 or info.alignment != 4096 or info.gpuBound != 0 or info.cpuShared != 1:
         raise ValueError('CPU buffer contract mismatch')
+    dma_info = None
+    if dma_required:
+        dma_info = decode_dma_info(call(5, DMAInfo()))
+        if not dma_info['dma_prepared'] or dma_info['bytes'] != 4096:
+            raise ValueError('DMA preparation was not observed')
     kit.IOConnectMapMemory64.argtypes = [c.c_uint32, c.c_uint32, c.c_uint32,
         c.POINTER(c.c_uint64), c.POINTER(c.c_uint64), c.c_uint32]
     kit.IOConnectMapMemory64.restype = c.c_uint32
@@ -62,10 +69,12 @@ def cpu_memory_roundtrip(kit, connection, task, call):
     finally:
         unmap_status = kit.IOConnectUnmapMemory64(connection, 0, task, address.value)
         if unmap_status: raise RuntimeError(f'CPU unmapping: 0x{unmap_status:08x}')
-    return {'state': 'passed', 'bytes': 4096, 'gpu_bound': False, 'gpu_execution_tested': False,
-            'cpu_unmap_status': '0x00000000'}
+    result = {'state': 'passed', 'bytes': 4096, 'gpu_bound': False, 'gpu_execution_tested': False,
+              'cpu_unmap_status': '0x00000000'}
+    if dma_info is not None: result['dma_preparation'] = dma_info
+    return result
 
-def collect_iokit(memory_test=False):
+def collect_iokit(memory_test=False, dma_test=False):
     kit = c.CDLL('/System/Library/Frameworks/IOKit.framework/IOKit')
     system = c.CDLL('/usr/lib/libSystem.B.dylib')
     task = c.c_uint32.in_dll(system, 'mach_task_self_').value
@@ -99,12 +108,21 @@ def collect_iokit(memory_test=False):
             if size.value != c.sizeof(structure): raise ValueError('Native output size mismatch')
             return bytes(structure)
         report = {'iokit_status': 'success', 'snapshot': decode_snapshot(call(0, Snapshot())),
-                  'trace': [], 'trace_overwritten': 0, 'cpu_memory_test': 'not_requested'}
-        if memory_test:
+                  'trace': [], 'trace_overwritten': 0, 'cpu_memory_test': 'not_requested',
+                  'dma_preparation_test': 'not_requested'}
+        dma_enabled = report['snapshot']['dma_preparation_enabled']
+        if dma_test and not dma_enabled:
+            report['dma_preparation_test'] = {'state': 'blocked', 'reason': 'driver_dma_opt_in_disabled'}
+        elif memory_test and dma_enabled and not dma_test:
+            report['cpu_memory_test'] = {'state': 'blocked', 'reason': 'explicit_dma_test_required'}
+        elif memory_test or dma_test:
             try:
-                report['cpu_memory_test'] = cpu_memory_roundtrip(kit, connection.value, task, call)
+                result = cpu_memory_roundtrip(kit, connection.value, task, call, dma_required=dma_test)
+                report['cpu_memory_test'] = result
+                if dma_test: report['dma_preparation_test'] = result
             except (OSError, RuntimeError, ValueError) as exc:
                 report['cpu_memory_test'] = {'state': 'failed', 'error': str(exc), 'gpu_execution_tested': False}
+                if dma_test: report['dma_preparation_test'] = report['cpu_memory_test']
         cursor = 0
         for _ in range(8):
             try: batch = decode_batch(call(3, TraceBatch(), (cursor,)))
@@ -125,6 +143,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--out', required=True, type=Path)
     parser.add_argument('--memory-test', action='store_true', help='Test the private 4 KiB CPU buffer; never submit GPU work')
+    parser.add_argument('--dma-test', action='store_true', help='Explicit 4 KiB IOKit DMA preparation probe; requires driver opt-in; never bind GPU memory')
     parser.add_argument('--minutes', type=int, default=10, choices=range(1, 61))
     args = parser.parse_args()
     if sys.platform != 'darwin': raise SystemExit('Dieser Sammler benötigt natives macOS; hier wurde keine Geräteprobe ausgeführt.')
@@ -133,7 +152,7 @@ def main():
     for name, option in [('macos_version', '-productVersion'), ('macos_build', '-buildVersion')]:
         status, data = command(['/usr/bin/sw_vers', option])
         if status == 0: report[name] = data.decode('utf-8', 'replace').strip()
-    try: report.update(collect_iokit(args.memory_test))
+    try: report.update(collect_iokit(args.memory_test, args.dma_test))
     except (OSError, RuntimeError, ValueError) as exc: report['iokit_error'] = str(exc)
     status, data = command(['/usr/sbin/ioreg', '-r', '-c', 'LunarBridgePCI', '-a'])
     if status == 0:

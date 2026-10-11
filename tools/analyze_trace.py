@@ -39,6 +39,10 @@ def findings(report):
     if report.get('iokit_error'):
         add('error', 'IOKIT_FAILED', 'IOKit-Zugriff fehlgeschlagen; Selectorstatus und ABI im JSON-Bericht prüfen.',
             'tools/collect_macos.py')
+    dma_test = report.get('dma_preparation_test')
+    if isinstance(dma_test, dict) and dma_test.get('state') == 'failed':
+        add('error', 'DMA_PROBE_FAILED', 'IOKit-DMA-Vorbereitung oder Pufferprobe fehlgeschlagen; keine GPU-Bindung bestätigt.',
+            'native/LBDMAContext.cpp; tools/collect_macos.py')
     rows = report.get('trace', []) + report.get('kernel_events', [])
     ids = {row.get('event') for row in rows}
     if 4 in ids:
@@ -56,6 +60,12 @@ def findings(report):
     if 29 in ids:
         add('warning', 'CLIENT_REJECTED', 'Client wurde abgewiesen. Administratorrecht und Verbindungslimit prüfen.',
             'native/LunarBridgeDriver.cpp: LunarBridgeUserClient::start')
+    if 41 in ids:
+        add('error', 'DMA_PREPARATION_FAILED', 'DMA-Vorbereitung abgewiesen; exakten PCI-Mapper, Descriptorstatus und Segmentgrenzen prüfen.',
+            'native/LBDMAContext.cpp: prepare')
+    if 43 in ids:
+        add('error', 'DMA_RELEASE_FAILED', 'DMA-Freigabe fehlgeschlagen; gehaltene Ressourcen nicht als frei werten. Quarantäne und Neustartqualifikation erforderlich.',
+            'native/LBDMAContext.cpp: reset; native/LunarBridgeDriver.cpp: releaseResources')
     if 27 in ids:
         add('info', 'GPU_NOT_IMPLEMENTED', 'GPU-Ausführung ist in dieser Version nicht implementiert; Unsupported ist erwartet.',
             'native/LunarBridgeDriver.cpp: LBSubmit')

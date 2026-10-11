@@ -78,7 +78,8 @@ def validate_bundle(source):
     if inspection['identifier'] != IDENTIFIER or inspection['version'] != info.get('CFBundleVersion'):
         raise InstallerError('Kmod-Metadaten passen nicht zum Bundle')
     if not isinstance(personality.get('LBEnableMMIORead'), bool) or \
-       not isinstance(personality.get('LBDebugLogging'), bool): raise InstallerError('Ungültige Diagnose-Einstellungen')
+       not isinstance(personality.get('LBDebugLogging'), bool) or \
+       not isinstance(personality.get('LBEnableDMAPreparation', False), bool): raise InstallerError('Ungültige Diagnose-Einstellungen')
     return {'source': source, 'hashes': hashes, 'inspection': inspection, 'info': info}
 
 def target_state(efi):
@@ -135,6 +136,7 @@ def plan(efi, source, enable=False):
     after = plistlib.dumps(state['data'], sort_keys=False)
     public = {'operation': 'plan_only', 'bundle': BUNDLE, 'enabled_after_next_boot': bool(enable),
               'mmio_enabled': bundle['info']['IOKitPersonalities']['LunarBridgeArc130VSamsungDiagnostic']['LBEnableMMIORead'],
+              'dma_preparation_enabled': bundle['info']['IOKitPersonalities']['LunarBridgeArc130VSamsungDiagnostic'].get('LBEnableDMAPreparation', False),
               'config_before_sha256': digest(state['before']), 'config_after_sha256': digest(after),
               'bundle_hashes': bundle['hashes'], 'opencore_sha256_unchanged': state['opencore_sha256'],
               'firmware_secure_boot_changed': False, 'firmware_secure_boot_verified': False,

@@ -97,6 +97,21 @@ class InstallerTests(unittest.TestCase):
         self.assertFalse(result['firmware_secure_boot_changed'])
         self.assertFalse(result['firmware_secure_boot_verified'])
 
+    def test_dma_opt_in_requires_a_real_boolean_and_is_visible_in_plan(self):
+        path = self.source/'Contents/Info.plist'
+        original = path.read_bytes()
+        for value in (1, 'true', []):
+            info = plistlib.loads(original)
+            info['IOKitPersonalities']['LunarBridgeArc130VSamsungDiagnostic']['LBEnableDMAPreparation'] = value
+            path.write_bytes(plistlib.dumps(info))
+            with self.assertRaises(installer.InstallerError): installer.plan(self.efi, self.source)
+            self.assertEqual(self.config.read_bytes(), self.before)
+        info['IOKitPersonalities']['LunarBridgeArc130VSamsungDiagnostic']['LBEnableDMAPreparation'] = True
+        path.write_bytes(plistlib.dumps(info))
+        result, _, _, _ = installer.plan(self.efi, self.source)
+        self.assertTrue(result['dma_preparation_enabled'])
+        self.assertFalse(result['enabled_after_next_boot'])
+
     def test_refuses_security_policy_bypass_and_vault_without_writes(self):
         for value in (True, 1, 'false'):
             self.change_config(lambda d: d['UEFI']['Quirks'].update(DisableSecurityPolicy=value))

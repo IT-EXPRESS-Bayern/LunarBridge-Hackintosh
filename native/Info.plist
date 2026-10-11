@@ -29,6 +29,7 @@
             <key>IOUserClientClass</key><string>LunarBridgeUserClient</string>
             <key>IOUserClientDefaultLocking</key><true/>
             <key>LBEnableMMIORead</key><false/>
+            <key>LBEnableDMAPreparation</key><false/>
             <key>LBDebugLogging</key><false/>
         </dict>
     </dict>

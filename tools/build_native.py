@@ -21,6 +21,7 @@ def main():
     parser.add_argument('--out', type=Path, default=Path('build/native'))
     parser.add_argument('--debug-log', action='store_true')
     parser.add_argument('--mmio-read', action='store_true', help='Opt in to the guarded one-time GMD register sample')
+    parser.add_argument('--dma-prepare', action='store_true', help='Opt in to device-mapper DMA preparation; no GPU binding or submission')
     args = parser.parse_args()
     if sys.platform != 'darwin':
         raise SystemExit('Kext-Linken benötigt den macOS-Linker. Unter Windows build_gpu.py für Objektprüfungen verwenden.')
@@ -35,6 +36,7 @@ def main():
     sources = [root/'gpu-prototype/lnl_platform.cpp', root/'gpu-prototype/lb_diagnostics.cpp',
                root/'gpu-prototype/lb_gpu_memory.cpp', root/'gpu-prototype/lb_guc_transport.cpp',
                root/'gpu-prototype/lb_guc_firmware.cpp',
+               root/'native/LBDMAContext.cpp', root/'native/LBDMAQuarantine.cpp',
                root/'native/LunarBridgeDriver.cpp', root/'native/KmodInfo.cpp']
     common = [clang, '-arch', 'x86_64', '-mmacosx-version-min=12.0', '-std=c++17', '-O2',
               '-Wall', '-Wextra', '-Werror', '-Wno-unused-parameter', '-fno-exceptions', '-fno-rtti',
@@ -59,6 +61,7 @@ def main():
     personality = info['IOKitPersonalities']['LunarBridgeArc130VSamsungDiagnostic']
     personality['LBDebugLogging'] = args.debug_log
     personality['LBEnableMMIORead'] = args.mmio_read
+    personality['LBEnableDMAPreparation'] = args.dma_prepare
     (kext/'Contents/Info.plist').write_bytes(plistlib.dumps(info, sort_keys=False))
     report = {'artifact': 'LunarBridge.kext', 'stage': 'unsigned native diagnostic build',
               'source_commit': os.environ.get('GITHUB_SHA'), 'macos_version': platform.mac_ver()[0],
@@ -66,11 +69,15 @@ def main():
               'entry_glue': 'project-owned KmodInfo.cpp; no static SDK library linked',
               'binary_sha256': hashlib.sha256(binary.read_bytes()).hexdigest(), 'inspection': inspection,
               'mmio_enabled': args.mmio_read, 'debug_logging': args.debug_log,
+              'dma_preparation_enabled': args.dma_prepare,
+              'native_dma_hardware_tested': False,
               'native_hardware_tested': False, 'gpu_execution_implemented': False,
               'metal_implemented': False, 'firmware_secure_boot_verified': False,
               'commands': commands}
     (args.out/'native-build-report.json').write_text(json.dumps(report, indent=2)+'\n', encoding='utf-8')
     source_names = ('native/LunarBridgeDriver.cpp', 'native/LunarBridgeDriver.h',
+                    'native/LBDMAContext.cpp', 'native/LBDMAContext.h',
+                    'native/LBDMAQuarantine.cpp', 'native/LBDMAQuarantine.h',
                     'native/KmodInfo.cpp', 'native/Info.plist', 'gpu-prototype/lnl_platform.cpp',
                     'gpu-prototype/lnl_platform.h', 'gpu-prototype/lb_diagnostics.cpp',
                     'gpu-prototype/lb_diagnostics.h', 'gpu-prototype/SOURCE-NOTICES.txt',
@@ -79,7 +86,7 @@ def main():
                     'gpu-prototype/lb_guc_firmware.cpp', 'gpu-prototype/lb_guc_firmware.h',
                     'tools/build_native.py')
     reference = {key: report[key] for key in ('source_commit', 'macos_version', 'compiler_version',
-                 'entry_glue', 'binary_sha256', 'mmio_enabled', 'debug_logging',
+                 'entry_glue', 'binary_sha256', 'mmio_enabled', 'debug_logging', 'dma_preparation_enabled',
                  'native_hardware_tested', 'gpu_execution_implemented', 'metal_implemented')}
     reference['source_files_sha256'] = {name: hashlib.sha256((root/name).read_bytes()).hexdigest()
                                       for name in source_names}
@@ -94,7 +101,7 @@ def main():
               'tools/collect_macos.py', 'tools/analyze_trace.py', 'tools/lb_wire.py',
               'docs/INSTALLER.md', 'docs/DIAGNOSTICS.md', 'docs/NATIVE_BACKEND.md',
               'docs/GPU_DESIGN.md', 'docs/HARDWARE_SUPPORT.md', 'docs/LICENSING.md',
-              'docs/GPU_FOUNDATION.md', 'docs/DRIVER_MODULES.md',
+              'docs/GPU_FOUNDATION.md', 'docs/DMA_BACKEND.md', 'docs/DRIVER_MODULES.md',
               'docs/VALIDATION.md', 'docs/VALIDATION.json', 'README.md', 'README.de.md',
               '.github/ISSUE_TEMPLATE/native-diagnostics.yml',
               'LICENSE', 'NOTICE', 'LICENSE-STATUS.txt', 'LICENSES/MIT-Intel.txt')]

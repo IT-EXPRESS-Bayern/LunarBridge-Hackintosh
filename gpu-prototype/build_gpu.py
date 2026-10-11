@@ -20,16 +20,20 @@ common = [str(args.compiler.resolve()), 'c++', '-std=c++17', '-O2', '-Wall',
           '-Wextra', '-Werror', '-fno-exceptions', '-fno-rtti']
 dll = args.host_dir.resolve() / 'lnl_host.dll'
 commands = [common + ['-target', 'x86_64-windows-gnu', '-shared', '-nostdlib',
+                     '-DLB_DMA_HOST_TEST',
                      '-Wl,--entry,DllMain', str(root / 'lnl_platform.cpp'),
                      str(root / 'lb_diagnostics.cpp'),
                      str(root / 'lb_gpu_memory.cpp'), str(root / 'lb_guc_transport.cpp'),
                      str(root / 'lb_guc_firmware.cpp'),
+                     str(root.parent/'native/LBDMAContext.cpp'),
+                     str(root.parent/'native/LBDMAQuarantine.cpp'),
+                     str(root.parent/'tests/dma_adapter_fake.cpp'),
                      str(root / 'host_dll_entry.cpp'), '-o', str(dll)]]
 sources = [(name, root / (name + '.cpp')) for name in
            ['lnl_platform', 'LunarLakePCIProbe', 'lb_diagnostics', 'lb_gpu_memory',
             'lb_guc_transport', 'lb_guc_firmware']]
 sources += [(name, root.parent / 'native' / (name + '.cpp')) for name in
-            ['LunarBridgeDriver', 'KmodInfo']]
+            ['LBDMAContext', 'LBDMAQuarantine', 'LunarBridgeDriver', 'KmodInfo']]
 for name, source in sources:
     command = common + ['-target', 'x86_64-macos', '-mmacosx-version-min=12.0',
                         '-ffreestanding', '-c', str(source),

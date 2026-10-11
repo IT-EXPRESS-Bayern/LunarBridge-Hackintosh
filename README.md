@@ -11,8 +11,8 @@ The project has a built native diagnostic kext, CPU-buffer service and host
 validation tools. **GPU execution, Metal acceleration and a qualified bootable
 EFI have not been implemented or demonstrated.**
 
-Latest [validation](docs/VALIDATION.md): **84 Windows host tests passed**, nine
-successful compiler invocations and eight macOS objects. The native macOS workflow
+Latest [validation](docs/VALIDATION.md): **131 Windows host tests passed**, eleven
+successful compiler invocations and ten macOS objects. The native macOS workflow
 has linked a real diagnostic Kext; **zero target macOS hardware tests have passed**.
 
 ## Current work
@@ -23,10 +23,11 @@ has linked a real diagnostic Kext; **zero target macOS hardware tests have passe
 | GMD_ID decoder | Graphics/media offsets, version fields, mapping bounds | 20,000 synthetic values and boundary cases |
 | Native IOKit diagnostic service | Narrow Samsung/Arc personality, PCI snapshot, opt-in GMD read preflight | Compiled against external SDK headers; no native MMIO/device test |
 | Native CPU memory client | Administrator-only IOUserClient, isolated zeroed buffers, size/client limits | Source compiled; allocation policy executed under Windows; native lifecycle untested |
+| Native DMA preparation | Exact PCI mapper, bounded IODMACommand preparation, validated CPU PTE staging and retained cleanup quarantine | 30 adapter and 10 ownership tests with fake IOKit; default off, zero target-device DMA tests |
 | Tracker and traces | ABI 1, bounded sequence ring, fixed events/status/context, macOS collector and triage | C++ ring tests and simulated IOKit/decoder/privacy tests; no target-device report |
 | Xe2 memory foundation | Owner-isolated GPU-VA reservations, PTE encoding, page-table planning and DMA-list staging in CPU memory | Part of 31 foundation tests; no native allocation/binding/TLB programming |
 | GuC foundation | Bounded CSS firmware parser, HXG/CT message codecs and CPU shadow rings | Part of 31 foundation tests; no authenticated firmware boot or hardware transport |
-| GPU OpenCore installer | Explicit EFI plan/install/rollback, checksums, backups and conflict detection | 20 isolated transaction/format/module-boundary tests; no real EFI modified |
+| GPU OpenCore installer | Explicit EFI plan/install/rollback, checksums, backups and conflict detection | 21 isolated transaction/format/module-boundary tests; no real EFI modified |
 | Arc GPU execution / Metal / display | Research only | Zero native macOS hardware tests |
 
 The first GPU milestone is a correctly completed operation through one user
@@ -58,11 +59,13 @@ python gpu-prototype/build_gpu.py --compiler C:/path/to/zig.exe --sdk C:/path/to
 python gpu-prototype/test_gpu.py build/host/lnl_host.dll
 python gpu-prototype/test_diagnostics.py build/host/lnl_host.dll
 python gpu-prototype/test_gpu_foundation.py build/host/lnl_host.dll
+python tests/test_dma_adapter.py
+python tests/test_dma_quarantine.py
 python tests/test_trace_tools.py
 python tests/test_installer.py
 ```
 
-This builds a Windows DLL and **eight macOS object files**. It does not link,
+This builds a Windows DLL and **ten macOS object files**. It does not link,
 sign, install or load a macOS GPU driver. Source checks and synthetic fixtures
 cannot establish physical GPU compatibility.
 
@@ -81,7 +84,8 @@ Building does not load a kext or test the Arc GPU. See [installer](docs/INSTALLE
 for the genuine kernel bundle and installer archive with corresponding source, and
 [diagnostics](docs/DIAGNOSTICS.md) for collection and failure tracking.
 
-MMIO is off by default. The native CPU buffer is not GPU-bound; GPU submission
+MMIO and DMA preparation are off by default. The [DMA adapter](docs/DMA_BACKEND.md)
+does not publish GPU page tables. The native CPU buffer is not GPU-bound; GPU submission
 returns `Unsupported`. Neither CPU mapping nor PCI identification is Metal acceleration.
 The installer preserves Secure Boot settings and refuses policy bypass or
 Vault-protected modifications. Firmware trust and actual boot behavior remain
@@ -99,8 +103,8 @@ Windows on the internal disk and firmware UEFI Secure Boot remain acceptance
 requirements. This repository does not substitute a VM for native macOS.
 
 CPU-side GPU-VA, PTE, CSS and CT handling are documented in
-[GPU foundations](docs/GPU_FOUNDATION.md). The native service does not yet call
-these helpers for DMA binding or GuC execution.
+[GPU foundations](docs/GPU_FOUNDATION.md). The native DMA adapter uses the
+owner arena and PTE-staging helpers; GPU binding and GuC execution remain unimplemented.
 
 ## Independent modules
 

@@ -8,8 +8,8 @@ Installer und Tests unter Windows. Eine echte native Diagnose-Kext ist gebaut.
 **GPU-Ausführung, Arc-Metal-Beschleunigung und eine qualifizierte bootfähige EFI
 liegen noch nicht vor.**
 
-[Geprüfter Stand](docs/VALIDATION.md): **84 bestandene Prüfungen unter Windows**,
-neun erfolgreiche Compiler-Aufrufe und acht macOS-Objektdateien.
+[Geprüfter Stand](docs/VALIDATION.md): **131 bestandene Prüfungen unter Windows**,
+elf erfolgreiche Compiler-Aufrufe und zehn macOS-Objektdateien.
 Der GitHub-macOS-Build hat eine echte Diagnose-Kext gelinkt.
 **Keine bestandene native macOS-Geräteprobe**.
 
@@ -21,10 +21,11 @@ Der GitHub-macOS-Build hat eine echte Diagnose-Kext gelinkt.
 | GMD_ID-Auswertung | Grafik-/Media-Registeradressen, Versionsfelder und Bereichsprüfung | Synthetische Registerwerte und Grenzfälle prüfbar; kein echter Registerzugriff |
 | Nativer IOKit-Diagnosetreiber | Enge Samsung-/Arc-Zuordnung, PCI-Snapshot und expliziter GMD-Lesepfad mit Vorbedingungen | Quellcode als macOS-Objektdatei kompiliert; kein nativer Register-/Gerätetest |
 | Nativer CPU-Speicheranschluss | Administrativer User-Client, eigene genullte Puffer und Größen-/Clientgrenzen | Quellcode kompiliert, portable Speicherregeln unter Windows ausgeführt; native Mappings ungeprüft |
+| Nativer DMA-Anschluss | Exakter PCI-Mapper, begrenzte Vorbereitung, PTE-Staging und gehaltene Fehlerquarantäne | 30 Adapter- und zehn Ownership-Tests mit simuliertem IOKit; standardmäßig aus, keine Geräteprobe |
 | Tracker und Traces | Fester ABI, begrenzter Ereignisring, Sammler und Fehlerbericht | C++-Ringpuffer und simulierte IOKit-/Auswertungsfälle geprüft |
 | Xe2-Speichergrundlagen | Getrennte GPU-VA-Reservierungen, PTE-Encoding, Tabellenplanung und DMA-Listen im CPU-Speicher | Teil von 31 Grundlagenprüfungen; echte DMA-Bindung und GPU-Tabellen fehlen |
 | GuC-Grundlagen | CSS-Headerprüfung, HXG-/CT-Nachrichten und begrenzte CPU-Schattenringe | Teil von 31 Grundlagenprüfungen; kein authentifizierter Firmwarestart oder Hardwaretransport |
-| Grafik-Installer für OpenCore | Planen, sichern, installieren und zurücknehmen; Prüfsummen und Modulgrenzen | 20 Prüfungen an künstlichen EFI-Verzeichnissen; keine echte EFI geändert |
+| Grafik-Installer für OpenCore | Planen, sichern, installieren und zurücknehmen; Prüfsummen und Modulgrenzen | 21 Prüfungen an künstlichen EFI-Verzeichnissen; keine echte EFI geändert |
 | Grafikbeschleunigung, Display und Metal | Architekturvergleich und mögliche Portierungsstellen | Noch keine native Hardwarevalidierung |
 
 Die Windows-Treiberkomponenten wurden lokal anhand ihrer Dateimetadaten und
@@ -37,8 +38,9 @@ Der untersuchte Weg verbindet eine mögliche Metal-Übersetzung, einen
 Xe2-fähigen Shader-Compiler, einen neuen nativen macOS-Anschluss und portierte
 Teile des Linux-Xe-Treibers. Der Diagnose-/CPU-Pufferanschluss liegt als eigener
 Quellcode vor. GPU-VA-, PTE- und GuC-Formate sind inzwischen als CPU-seitige
-[Grundlagen](docs/GPU_FOUNDATION.md) implementiert; die native DMA-/GPU-Bindung,
-Firmware-Kommunikation, Ausführungswarteschlangen und Metal-Anbindung fehlen.
+[Grundlagen](docs/GPU_FOUNDATION.md) implementiert. Der [native DMA-Adapter](docs/DMA_BACKEND.md)
+bereitet Speicher mit Geräte-Mapper vor und muss am Zielgerät geprüft werden.
+GPU-Bindung, Firmware-Kommunikation, Ausführungswarteschlangen und Metal-Anbindung fehlen.
 [Architektur und konkrete Quellstellen](docs/GPU_DESIGN.md)
 erklären, welche Teile als Referenz dienen und welche noch fehlen.
 
@@ -49,7 +51,8 @@ Eine zusätzliche Geräte-ID in einem alten Xe-LP-Treiber reicht daher nicht aus
 
 I2C ist in das eigene [LunarBridge-I2C-Repository](https://github.com/IT-EXPRESS-Bayern/LunarBridge-I2C)
 ausgegliedert. Es baut fünf getrennte Kexts; die GPIO-Portierung und native
-Touchpad-/Touchscreen-Proben bleiben offen. Alle größeren Module haben eigene
+Touchpad-/Touchscreen-Proben bleiben offen. Der experimentelle Samsung-GPI1-Port
+ist implementiert und standardmäßig deaktiviert. Alle größeren Module haben eigene
 [öffentliche Repositories und Paketgrenzen](docs/DRIVER_MODULES.md), darunter
 HDR/Samsung, native Software, Windows-Programme, Kamera und OpenCore.
 

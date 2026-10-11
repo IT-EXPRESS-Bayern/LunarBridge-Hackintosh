@@ -25,13 +25,18 @@ class TraceBatch(c.Structure):
 class BufferInfo(c.Structure):
     _fields_ = [('bytes', c.c_uint64)] + [(n, c.c_uint32) for n in ('abi', 'alignment', 'cpuShared', 'gpuBound')]
 
+class DMAInfo(c.Structure):
+    _fields_ = [('bytes', c.c_uint64)] + [(n, c.c_uint32) for n in (
+        'abi', 'segments', 'pteEntries', 'deviceMapperUsed', 'dmaPrepared', 'gpuBound')]
+
 EVENTS = {
     1: 'driver_start', 2: 'pci_identified', 3: 'mmio_read_blocked', 4: 'bar_mapping_failed',
     5: 'gmd_registers_read', 6: 'gmd_values_invalid', 7: 'diagnostics_ready', 8: 'driver_stop',
     20: 'client_opened', 21: 'client_closed', 22: 'cpu_buffer_requested',
     23: 'cpu_buffer_allocated', 24: 'cpu_buffer_failed', 25: 'cpu_mapping_requested',
     26: 'method_rejected', 27: 'gpu_submit_unsupported', 28: 'buffer_reference_released',
-    29: 'client_rejected'
+    29: 'client_rejected', 40: 'dma_prepared', 41: 'dma_preparation_failed',
+    42: 'dma_reference_released', 43: 'dma_release_failed'
 }
 POLICIES = {
     0: 'allowed_by_preflight', 1: 'explicit_opt_in_missing', 2: 'unsupported_pci',
@@ -58,7 +63,24 @@ def decode_snapshot(data):
     result['claims_gpu_execution'] = bool(s.capabilities & 0x10000)
     result['claims_metal'] = bool(s.capabilities & 0x20000)
     result['metal_execution_verified'] = False
+    result['dma_preparation_enabled'] = bool(s.flags & 32)
     return result
+
+def decode_dma_info(data):
+    if len(data) != c.sizeof(DMAInfo): raise ValueError('DMA info length mismatch')
+    d = DMAInfo.from_buffer_copy(data)
+    if d.abi != 1 or d.gpuBound != 0 or d.deviceMapperUsed not in (0, 1) or \
+       d.dmaPrepared not in (0, 1) or d.deviceMapperUsed != d.dmaPrepared:
+        raise ValueError('DMA info ABI/flags mismatch')
+    if d.dmaPrepared:
+        if not d.bytes or d.bytes > 1024*1024 or d.bytes % 4096 or \
+           d.segments != d.bytes // 4096 or d.pteEntries != d.segments:
+            raise ValueError('DMA info page/count mismatch')
+    elif d.bytes or d.segments or d.pteEntries:
+        raise ValueError('DMA info inactive state mismatch')
+    return {'bytes': int(d.bytes), 'segments': int(d.segments), 'pte_entries': int(d.pteEntries),
+            'device_mapper_used': bool(d.deviceMapperUsed), 'dma_prepared': bool(d.dmaPrepared),
+            'gpu_bound': False, 'gpu_execution_tested': False, 'dma_cleanup_verified': False}
 
 def decode_batch(data):
     if len(data) != c.sizeof(TraceBatch): raise ValueError('Trace length mismatch')
