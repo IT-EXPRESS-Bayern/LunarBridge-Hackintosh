@@ -30,6 +30,13 @@ __pycache__/
 *.kext/
 *.dmg
 *.pkg
+*.pkg.fdmdownload
+*.framework/
+*.metallib
+*.rtlib
+*.kc
+*.kc.*
+dyld_shared_cache_*
 *.aml
 *.dsl
 *.pfx

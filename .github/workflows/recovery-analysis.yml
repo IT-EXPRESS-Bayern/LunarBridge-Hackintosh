@@ -1,0 +1,48 @@
+name: Recovery graphics static analysis
+
+on:
+  push:
+    paths:
+      - tools/recovery_graphics.py
+      - tests/test_recovery_graphics.py
+      - .github/workflows/recovery-analysis.yml
+      - docs/RECOVERY_GRAPHICS.md
+      - docs/RECOVERY_GRAPHICS.json
+  pull_request:
+    paths:
+      - tools/recovery_graphics.py
+      - tests/test_recovery_graphics.py
+      - .github/workflows/recovery-analysis.yml
+      - docs/RECOVERY_GRAPHICS.md
+      - docs/RECOVERY_GRAPHICS.json
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  formats:
+    name: Synthetic format boundaries on ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: '3.13'
+      - name: Run synthetic byte and metadata boundaries
+        run: python -B -X utf8 tests/test_recovery_graphics.py --report build/recovery-graphics-test-report.json
+      - name: Retain source hashes and synthetic test counts
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        with:
+          name: LunarBridge-Recovery-Analysis-${{ matrix.os }}
+          path: build/recovery-graphics-test-report.json
+          if-no-files-found: error
+          retention-days: 14

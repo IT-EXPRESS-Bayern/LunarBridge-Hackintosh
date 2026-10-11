@@ -11,6 +11,12 @@
 
 [Deutsch](README.de.md) · [Repository](https://github.com/IT-EXPRESS-Bayern/LunarBridge-Hackintosh) · [Verified evidence](docs/VALIDATION.md)
 
+The `research/metal-contract` branch also contains [offline recovery graphics
+analysis](docs/RECOVERY_GRAPHICS.md): actual Metal/IOAccelerator observations,
+an original read-only parser, 32 synthetic format tests and reproducible steps
+for contributors. The source image was inspected on Windows before installing
+macOS; native Arc acceleration remains unqualified.
+
 LunarBridge currently provides a built **native diagnostic Kext**, tracker and
 trace tools, an OpenCore installer with rollback, and tested CPU-side Xe2 shader
 and memory components. **Native Arc 130V GPU execution, a Metal provider and
