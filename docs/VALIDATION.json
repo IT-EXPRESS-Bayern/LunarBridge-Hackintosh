@@ -173,7 +173,7 @@
     "parallel_kernel_lifetime_tested": false
   },
   "pinned_reference_files_sha256_verified": 16,
-  "total_host_tests_passed": 434,
+  "total_host_tests_passed": 444,
   "macos_object_count": 14,
   "native_diagnostic_source_compiled": true,
   "native_diagnostic_kext_linked": true,
@@ -506,17 +506,17 @@
     "native_target_hardware_tests": 0
   },
   "metal_shader_compiler_harness_tests": {
-    "tests_run": 58,
+    "tests_run": 64,
     "failures": 0,
     "errors": 0,
     "skipped": 0,
     "successful": true,
     "source_files_sha256": {
       "gpu-toolchain/xe2_compute_probe.metal": "2626f1a6f99fdc145e10718b8ced5d5007aff51c07e2bf26ba9ffb8a5a2f0c5c",
-      "tools/metal_shader_ci.py": "c19a364f735894dfaf4720ecc213e6be74343b2b9ea0200426443f1b33cbbc36",
-      "tests/test_metal_shader.py": "a29340caabb8aa34a4fd2b599e3c5f9ff987542439fa738b96fac022852af8ef",
+      "tools/metal_shader_ci.py": "ffec8003e608a20f4fff9c62f15e3797db610f69234ef0d7d6b2110b9251ea5d",
+      "tests/test_metal_shader.py": "36e086803ad82581cfca039f2946dbf6a3b20610ec4ffe3192587aa2ccad2064",
       ".github/workflows/metal-shader.yml": "3e8ddfc404409e4d27eb59e1d9987b41607fac81c280358bfb9393ae1ad12401",
-      "docs/METAL_SHADER_BRIDGE.md": "1ee25e93790e87c8ee65569a29c9d14ac4e98c9f2b032ebbcdc60e6ec65fa812",
+      "docs/METAL_SHADER_BRIDGE.md": "d20040611171efbb7cf0466adf4a187303eb1c1e0e85b159c65021e86f885435",
       "gpu-toolchain/xe2_integer_probe.cl": "0c1593c962ac806dc64a8e05804965dee375e6669fa846987c8263bfa03745a5"
     },
     "test_type": "MSL/AIR/Shader SPIR-V/reflection parser and bounded process runner with explicit offline doubles",
@@ -716,15 +716,15 @@
     "native_target_hardware_tests": 0
   },
   "mesa_cpu_harness_tests": {
-    "tests_run": 25,
+    "tests_run": 29,
     "failures": 0,
     "errors": 0,
     "skipped": 0,
     "successful": true,
     "scope": "Executed host guards, provenance, wheel hashes, Mach-O formats and actual bounded process timeout; no Mesa parser built locally",
     "source_files_sha256": {
-      "tools/mesa_cpu_ci.py": "70a984169227bd463a9d19840e61d08f6878d605e4d5e87adb52a90ca5cffc10",
-      "tests/test_mesa_cpu.py": "c816f94b909e458ebc243fc16378a90d181199020eba354af5c36437d41e2d56",
+      "tools/mesa_cpu_ci.py": "64b28702fc4b594d872e8720c291e0956455e43ec5b09828ce3e336cc3c7deec",
+      "tests/test_mesa_cpu.py": "7a682f627e4b57bce842a3ed483d3cd4574f2f2bbbe9479ed1599687a8881439",
       ".github/workflows/mesa-cpu.yml": "e5bce50493825b1182d30e9cbc16aad926c2b9620bc19b4f9cc5ea9345f68c72"
     },
     "native_target_hardware_tests": 0

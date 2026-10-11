@@ -197,9 +197,74 @@ class CpuBoundaries(unittest.TestCase):
                     if name == "compiled-database":
                         return json.dumps([{"directory": str(root), "file": "outside.c"}]).encode()
                     return b""
-            with patch.object(module, "bounded_file", side_effect=AssertionError("outside file read")):
+            with patch.object(module, "bounded_file", side_effect=AssertionError("outside file read")), patch.object(module, "hash_compiled_source", side_effect=AssertionError("outside source hash")):
                 with self.assertRaises(module.BuildError):
                     module.source_reference(source, build, {"NINJA": "not-executed"}, FakeSteps(), {})
+
+    def test_large_generated_source_hashes_in_small_reads_without_global_limit_change(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "generated.c"
+            prefix = b"/* source-size-boundary */\r\n"
+            chunk = prefix + b"x" * (64 * 1024 - len(prefix))
+            self.assertEqual(len(chunk), 64 * 1024)
+            repetitions = 513
+            digest = hashlib.sha256()
+            blob = hashlib.sha1(f"blob {len(chunk) * repetitions}\0".encode("ascii"))
+            with path.open("wb") as stream:
+                for _ in range(repetitions):
+                    stream.write(chunk)
+                    digest.update(chunk)
+                    blob.update(chunk)
+            original_read = module.os.read
+            counts = []
+            def checked_read(fd, size):
+                self.assertLessEqual(size, 64 * 1024)
+                counts.append(size)
+                return original_read(fd, size)
+            with patch.object(module.os, "read", side_effect=checked_read):
+                report = module.hash_compiled_source(path)
+            self.assertEqual(report["bytes"], 33619968)
+            self.assertEqual(report["sha256"], digest.hexdigest())
+            self.assertEqual(report["git_blob"], blob.hexdigest())
+            self.assertEqual(report["leading_header"], chunk[:16384])
+            self.assertGreater(len(counts), 512)
+            self.assertEqual(module.MAX_BYTES, 32 * 1024 * 1024)
+            with self.assertRaisesRegex(module.BuildError, "file-type-or-size-rejected"):
+                module.bounded_file(path)
+
+    def test_compiled_source_directory_or_oversize_rejected_without_reads(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            with patch.object(module.os, "open", side_effect=AssertionError("directory opened")):
+                with self.assertRaisesRegex(module.BuildError, "compiled-source-non-regular-file"):
+                    module.hash_compiled_source(root)
+            path = root / "oversize.c"
+            path.write_bytes(b"12345")
+            with patch.object(module.os, "read", side_effect=AssertionError("oversize read")):
+                with self.assertRaisesRegex(module.BuildError, "compiled-source-type-or-size-rejected"):
+                    module.hash_compiled_source(path, limit=4)
+            with patch.object(module.os, "open", side_effect=AssertionError("invalid bound opened")):
+                with self.assertRaisesRegex(module.BuildError, "compiled-source-bound-invalid"):
+                    module.hash_compiled_source(path, limit=module.MAX_COMPILED_SOURCE_BYTES + 1)
+
+    def test_compiled_source_shortened_or_grown_during_hash_cannot_qualify(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "changing.c"
+            path.write_bytes(b"12345")
+            for reads in ([b"1", b""], [b"123456"]):
+                with self.subTest(reads=reads), patch.object(module.os, "read", side_effect=reads):
+                    with self.assertRaisesRegex(module.BuildError, "compiled-source-changed-during-hash"):
+                        module.hash_compiled_source(path)
+
+    def test_compiled_source_deadline_closes_descriptor_before_any_read(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "deadline.c"
+            path.write_bytes(b"12345")
+            original_close = module.os.close
+            with patch.object(module.time, "monotonic", side_effect=[0, 16]), patch.object(module.os, "read", side_effect=AssertionError("expired source read")), patch.object(module.os, "close", wraps=original_close) as closed:
+                with self.assertRaisesRegex(module.BuildError, "compiled-source-hash-deadline"):
+                    module.hash_compiled_source(path)
+                closed.assert_called_once()
 
     def test_sdk_sysroot_reaches_compile_and_link_flags_without_mutating_input(self):
         with tempfile.TemporaryDirectory(prefix="cpu sdk boundary ") as directory:

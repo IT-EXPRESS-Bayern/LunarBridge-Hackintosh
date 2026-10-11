@@ -24,6 +24,7 @@ import zipfile
 MESA_PIN = "e24dc5bd1e7fe6101bdc866fb16a15a8fcae1aae"
 SOURCE_REPOSITORY = "https://github.com/mirror/mesa"
 MAX_BYTES = 32 * 1024 * 1024
+MAX_COMPILED_SOURCE_BYTES = 128 * 1024 * 1024
 PACKAGES = {"meson": "1.9.1", "ninja": "1.13.0", "Mako": "1.3.10",
             "MarkupSafe": "3.0.2", "packaging": "25.0", "PyYAML": "6.0.3"}
 PURE_WHEEL_HASHES = {
@@ -73,6 +74,47 @@ def bounded_file(path: Path, limit: int = MAX_BYTES) -> bytes:
 
 def sha256(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
+
+
+def hash_compiled_source(path: Path, *, limit: int = MAX_COMPILED_SOURCE_BYTES,
+                         timeout: float = 15) -> dict:
+    """Hash large generated C inputs without loading the full source into memory."""
+    if (type(limit) is not int or not 0 < limit <= MAX_COMPILED_SOURCE_BYTES
+            or type(timeout) not in (int, float) or not 0 < timeout <= 15):
+        raise BuildError("compiled-source-bound-invalid")
+    if not stat.S_ISREG(path.stat().st_mode):
+        raise BuildError("compiled-source-non-regular-file")
+    fd = os.open(path, os.O_RDONLY | getattr(os, "O_NONBLOCK", 0) | getattr(os, "O_BINARY", 0))
+    try:
+        info = os.fstat(fd)
+        if not stat.S_ISREG(info.st_mode) or not 0 <= info.st_size <= limit:
+            raise BuildError("compiled-source-type-or-size-rejected")
+        digest = hashlib.sha256()
+        blob = hashlib.sha1(f"blob {info.st_size}\0".encode("ascii"))
+        header = bytearray()
+        count = 0
+        deadline = time.monotonic() + timeout
+        while True:
+            if time.monotonic() >= deadline:
+                raise BuildError("compiled-source-hash-deadline")
+            chunk = os.read(fd, 64 * 1024)
+            if not chunk:
+                break
+            count += len(chunk)
+            if count > info.st_size or count > limit:
+                raise BuildError("compiled-source-changed-during-hash")
+            digest.update(chunk)
+            blob.update(chunk)
+            if len(header) < 16384:
+                header.extend(chunk[:16384 - len(header)])
+        final = os.fstat(fd)
+        if (count != info.st_size or final.st_size != info.st_size
+                or final.st_mtime_ns != info.st_mtime_ns or final.st_ctime_ns != info.st_ctime_ns):
+            raise BuildError("compiled-source-changed-during-hash")
+        return {"bytes": count, "sha256": digest.hexdigest(), "git_blob": blob.hexdigest(),
+                "leading_header": bytes(header)}
+    finally:
+        os.close(fd)
 
 
 def qualify_macho(data: bytes) -> dict:
@@ -298,15 +340,14 @@ def source_reference(source: Path, build: Path, environment: dict, steps: Steps,
         path = (Path(entry["directory"]) / entry["file"]).resolve()
         if not path.is_relative_to(source) and not path.is_relative_to(build):
             raise BuildError("compiled-source-outside-qualified-roots")
-        data = bounded_file(path)
+        data = hash_compiled_source(path)
         if path.is_relative_to(source):
             relative = path.relative_to(source).as_posix()
-            blob = hashlib.sha1(f"blob {len(data)}\0".encode("ascii") + data).hexdigest()
-            if blob != blobs.get(relative):
+            if data["git_blob"] != blobs.get(relative):
                 raise BuildError("compiled-source-blob-mismatch")
             label = "upstream/" + relative
             # Preserve original leading source copyright/license blocks as well as Mesa's license document.
-            decoded = data[:16384].decode("utf-8", errors="replace")
+            decoded = data["leading_header"].decode("utf-8", errors="replace")
             blocks = re.findall(r"\A\s*((?:/\*.*?\*/\s*)+)", decoded, flags=re.S)
             if blocks:
                 license_headers.append({"source": relative, "leading_header": blocks[0]})
@@ -314,7 +355,7 @@ def source_reference(source: Path, build: Path, environment: dict, steps: Steps,
             label = "generated/" + path.relative_to(build).as_posix()
         else:
             raise BuildError("compiled-source-outside-qualified-roots")
-        files[label] = {"path": label, "bytes": len(data), "sha256": sha256(data)}
+        files[label] = {"path": label, "bytes": data["bytes"], "sha256": data["sha256"]}
     if not files or "upstream/src/compiler/spirv/spirv2nir.c" not in files:
         raise BuildError("compiled-source-database-incomplete")
     compiler_scope = qualify_parser_inputs(list(files))

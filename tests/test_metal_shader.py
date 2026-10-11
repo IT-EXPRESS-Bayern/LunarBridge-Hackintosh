@@ -83,6 +83,10 @@ def lock_fixture():
             'checksum = "' + 'a' * 64 + '"\n').encode()
 
 
+def metal_help_fixture():
+    return b'OVERVIEW: synthetic offline Metal help fixture\nUSAGE: metal [options] inputs\n  -frecord-sources Record sources\n'
+
+
 class ShaderBoundaries(unittest.TestCase):
     def parse_reflection(self, value):
         return checker.inspect_reflection(json.dumps(value).encode())
@@ -116,6 +120,8 @@ class ShaderBoundaries(unittest.TestCase):
                     stage, value = 'metal-version', (0, b'Metal version 32023.883')
                 elif '--show-sdk-version' in command:
                     stage, value = 'macos-sdk-version', (0, b'26.4')
+                elif executable == 'xcrun' and '--help' in command:
+                    stage, value = 'metal-compile-help', (0, metal_help_fixture())
                 elif executable == 'xcrun' and '-c' in command:
                     stage, value = 'msl-to-air', (0, b'')
                     (cwd / 'xe2_compute_probe.air').write_bytes(b'invalid' if invalid_air else air)
@@ -502,6 +508,96 @@ class ShaderBoundaries(unittest.TestCase):
         self.assertNotIn('own-air.ll', files)
         self.assertNotIn('cargo-resolve', [call['stage'] for call in calls])
         self.assertNotIn('/Users/', json.dumps(report))
+
+    def test_named_air_source_flags_and_debug_roots_are_associated_through_numeric_nodes(self):
+        original = (b'!air.source_file_name = !{!1}\n!1 = !{!2}\n!2 = !{!"/Users/PRIVATE-ID/source"}\n'
+                    b'!llvm.module.flags = !{!3}\n!3 = !{!4}\n!4 = !{!"/home/PRIVATE-ID/flag"}\n'
+                    b'!llvm.dbg.cu = !{!5}\n!5 = !DICompileUnit(file: !6)\n'
+                    b'!6 = !DIFile(filename: "source", directory: "/Users/PRIVATE-ID")\n')
+        summary = checker.classify_private_air_metadata(original)
+        self.assertEqual(summary['observations'], 3)
+        for category in ('air.source_file_name', 'llvm.module.flags', 'llvm.dbg.cu'):
+            self.assertEqual(summary['categories'][category], 1)
+        self.assertEqual(summary['categories']['other_metadata'], 0)
+        self.assertFalse(summary['classification_incomplete'])
+        self.assertNotIn('PRIVATE-ID', json.dumps(summary))
+
+    def test_named_air_roots_refuse_quoted_references_and_mark_shared_roots_incomplete(self):
+        quoted = (b'!air.source_file_name = !{!1}\n!1 = !{!"!2"}\n'
+                  b'!2 = !{!"/Users/PRIVATE-ID/unreferenced"}\n'
+                  b'!air.source_file_name_extra = !{!3}\n!3 = !{!"/Users/PRIVATE-ID/unrelated"}\n')
+        summary = checker.classify_private_air_metadata(quoted)
+        self.assertEqual(summary['categories']['air.source_file_name'], 0)
+        self.assertEqual(summary['categories']['other_metadata'], 2)
+        shared = (b'!air.source_file_name = !{!1}\n!llvm.module.flags = !{!1}\n'
+                  b'!1 = !{!2}\n!2 = !{!1, !"/Users/PRIVATE-ID/shared"}\n')
+        summary = checker.classify_private_air_metadata(shared)
+        self.assertTrue(summary['classification_incomplete'])
+        self.assertEqual(summary['observations'], 1)
+        self.assertNotIn('PRIVATE-ID', json.dumps(summary))
+
+    def test_named_air_root_traversal_cutoff_never_becomes_unique_field_or_shader_success(self):
+        original = b'!air.source_file_name = !{!0}\n'
+        original += b''.join(('!' + str(index) + ' = !{!' + str(index + 1) + '}\n').encode()
+                             for index in range(checker.MAX_PRIVATE_IR_REFERENCES))
+        original += ('!' + str(checker.MAX_PRIVATE_IR_REFERENCES) + ' = !{!"/Users/PRIVATE-ID/outside"}\n').encode()
+        summary = checker.classify_private_air_metadata(original)
+        self.assertTrue(summary['classification_incomplete'])
+        self.assertEqual(summary['categories']['air.source_file_name'], 0)
+        self.assertEqual(summary['categories']['other_metadata'], 1)
+        self.assertEqual(summary['original_llvm_text_sha256'], hashlib.sha256(original).hexdigest())
+        with self.assertRaisesRegex(checker.ShaderError, '^AIR_PRIVATE_PATH_METADATA$'):
+            checker.inspect_air(air_fixture()[0], air_fixture()[1] + original)
+
+    def test_metal_help_exports_only_exact_advertised_options_hash_and_bounded_size(self):
+        original = b'USAGE: metal [options] inputs\n'
+        original += b''.join(('  ' + option + '=<value> /Users/PRIVATE-ID/help\n').encode()
+                             for option in checker.METAL_HELP_OPTIONS)
+        summary = checker.inspect_metal_help(original)
+        self.assertEqual(summary['known_options_advertised'], dict.fromkeys(checker.METAL_HELP_OPTIONS, True))
+        self.assertEqual(summary['original_help_sha256'], hashlib.sha256(original).hexdigest())
+        self.assertEqual(summary['original_help_bytes'], len(original))
+        self.assertEqual(summary['known_options_applied'], [])
+        self.assertNotIn('PRIVATE-ID', json.dumps(summary))
+        noise = b'USAGE: metal inputs\n -ffile-prefix-map-unrelated=hidden\n note: -fdebug-prefix-map\n'
+        self.assertFalse(any(checker.inspect_metal_help(noise)['known_options_advertised'].values()))
+        for raw in (b'', b'\xff', b'version only', 'USAGE: metal', bytes(checker.MAX_CAPTURE + 1)):
+            with self.assertRaisesRegex(checker.ShaderError, '^METAL_HELP_UNVERIFIED$'):
+                checker.inspect_metal_help(raw)
+
+    def test_metal_help_failure_timeout_or_invalid_banner_prevents_compilation_and_cargo(self):
+        for outcome, code in ((checker.ShaderError('STEP_TIMEOUT'), 'STEP_TIMEOUT'),
+                              ((1, b'private failure'), 'METAL_HELP_UNVERIFIED'),
+                              ((0, b'not help'), 'METAL_HELP_UNVERIFIED')):
+            report, files, calls = self.partial_air_cli(outcomes={'metal-compile-help': outcome})
+            self.assertEqual((report['phase'], report['code']), ('metal-compile-help', code))
+            self.assertIsNone(report['metal_compile_help'])
+            self.assertEqual(report['outputs_sha256'], {})
+            self.assertFalse(report['air_compilation_verified'])
+            self.assertNotIn('msl-to-air', [call['stage'] for call in calls])
+            self.assertNotIn('cargo-resolve', [call['stage'] for call in calls])
+            self.assertNotIn('own-air.ll', files)
+
+    def test_actual_help_probe_precedes_air_and_advertised_flags_are_never_applied(self):
+        original = air_fixture()[1].replace(b'/Users/private/input.air', b'input.air')
+        original += b'!air.source_file_name = !{!8}\n!8 = !{!"/Users/PRIVATE-ID/source"}\n'
+        report, files, calls = self.partial_air_cli(llvm=original)
+        stages = [call['stage'] for call in calls]
+        self.assertLess(stages.index('metal-compile-help'), stages.index('msl-to-air'))
+        help_call = calls[stages.index('metal-compile-help')]
+        self.assertEqual(help_call['timeout'], 60)
+        self.assertEqual(help_call['command'][1:], ['-sdk', 'macosx', 'metal', '--help'])
+        self.assertEqual(report['metal_compile_help']['known_options_applied'], [])
+        self.assertTrue(report['metal_compile_help']['known_options_advertised']['-frecord-sources'])
+        compile_call = calls[stages.index('msl-to-air')]
+        self.assertEqual(compile_call['command'][1:], ['-sdk', 'macosx', 'metal', '-c',
+                         'xe2_compute_probe.metal', '-o', 'xe2_compute_probe.air'])
+        self.assertEqual(report['air_private_metadata']['categories']['air.source_file_name'], 1)
+        self.assertEqual(report['code'], 'AIR_PRIVATE_PATH_METADATA')
+        self.assertEqual(report['outputs_sha256'], {})
+        self.assertFalse(report['shader_translation_verified'])
+        self.assertNotIn('cargo-resolve', stages)
+        self.assertNotIn('own-air.ll', files)
 
     def test_lock_snapshot_schema_checksum_duplicate_comment_and_paths_are_bounded(self):
         valid = lock_fixture()

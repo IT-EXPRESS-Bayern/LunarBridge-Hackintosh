@@ -48,13 +48,21 @@ PROGRESS_CATEGORIES = ('index', 'download', 'compile', 'check', 'finish', 'unkno
 MAX_PROGRESS_OBSERVATIONS = 4096
 MAX_PROGRESS_LINE = 1024
 PRIVATE_IR_CATEGORIES = ('source_filename', 'di_file', 'di_compile_unit', 'compiler_option',
-                         'compiler_identity', 'module_id', 'other_metadata', 'other_ir')
+                         'compiler_identity', 'module_id', 'other_metadata', 'other_ir',
+                         'air.source_file_name', 'llvm.module.flags', 'llvm.dbg.cu')
+PRIVATE_IR_ROOT_CATEGORIES = {'air.compile_options': 'compiler_option',
+                              'llvm.commandline': 'compiler_option', 'llvm.ident': 'compiler_identity',
+                              'air.source_file_name': 'air.source_file_name',
+                              'llvm.module.flags': 'llvm.module.flags', 'llvm.dbg.cu': 'llvm.dbg.cu'}
+METAL_HELP_OPTIONS = ('-ffile-prefix-map', '-fdebug-prefix-map', '-fmacro-prefix-map',
+                     '-frecord-sources', '-fno-record-sources')
 MAX_PRIVATE_IR_OBSERVATIONS = 64
 MAX_PRIVATE_IR_LINES = 65536
 MAX_PRIVATE_IR_REFERENCES = 4096
 COMMAND_STAGES = frozenset(('cargo-version', 'rustc-version', 'llvm-dis-version', 'spirv-val-version',
                            'metal-discovery', 'metal-version', 'ci-metal-toolchain-download',
                            'metal-discovery-after-download', 'metal-version-after-download', 'macos-sdk-version',
+                           'metal-compile-help',
                            'msl-to-air', 'air-llvm-dis', 'cargo-resolve', 'cargo-build', 'cargo-metadata'))
 COMMAND_ERRORS = frozenset(('STEP_TIMEOUT', 'STEP_TIMEOUT_INVALID', 'PROCESS_GROUPS_REQUIRED',
                            'PROCESS_GROUP_CLEANUP_FAILED', 'STEP_TERMINATION_UNCONFIRMED',
@@ -124,11 +132,12 @@ def classify_private_air_metadata(raw, *, include_module_id=False):
     lines = raw.split(b'\n', MAX_PRIVATE_IR_LINES)
     incomplete = len(lines) > MAX_PRIVATE_IR_LINES
     lines = lines[:MAX_PRIVATE_IR_LINES]
-    nodes, roots, references = {}, {'compiler_option': set(), 'compiler_identity': set()}, 0
+    nodes, roots, references = {}, {category: set() for category in PRIVATE_IR_ROOT_CATEGORIES.values()}, 0
     for raw_line in lines:
         line = raw_line.decode('utf-8').strip()
         node = re.match(r'^!(\d{1,10})\s*=', line)
-        root = re.match(r'^!(air\.compile_options|llvm\.commandline|llvm\.ident)\s*=', line)
+        root = re.match(r'^!([A-Za-z_][A-Za-z0-9_.]*)\s*=', line)
+        root = root if root and root.group(1) in PRIVATE_IR_ROOT_CATEGORIES else None
         if not node and not root:
             continue
         selected = set()
@@ -146,8 +155,7 @@ def classify_private_air_metadata(raw, *, include_module_id=False):
             else:
                 nodes[node.group(1)] = selected
         if root:
-            category = 'compiler_identity' if root.group(1) == 'llvm.ident' else 'compiler_option'
-            roots[category].update(selected)
+            roots[PRIVATE_IR_ROOT_CATEGORIES[root.group(1)]].update(selected)
     for category, seeds in roots.items():
         todo, reached = list(seeds), set()
         while todo and len(reached) < MAX_PRIVATE_IR_REFERENCES:
@@ -169,19 +177,23 @@ def classify_private_air_metadata(raw, *, include_module_id=False):
             limit_reached = True
             break
         node = re.match(r'^!(\d{1,10})\s*=', line)
+        root = re.match(r'^!([A-Za-z_][A-Za-z0-9_.]*)\s*=', line)
+        associated = [category for category, identities in roots.items()
+                      if (node and node.group(1) in identities) or
+                      (root and PRIVATE_IR_ROOT_CATEGORIES.get(root.group(1)) == category)]
+        # Shared roots are an explicitly incomplete classification, never an
+        # asserted unique private-field cause. The original byte hash stays exact.
+        incomplete |= len(associated) > 1
         if module_id:
             category = 'module_id'
         elif re.match(r'^source_filename\s*=', line):
             category = 'source_filename'
+        elif associated:
+            category = associated[0]
         elif re.search(r'!DIFile\s*\(', line):
             category = 'di_file'
         elif re.search(r'!DICompileUnit\s*\(', line):
             category = 'di_compile_unit'
-        elif re.match(r'^!(air\.compile_options|llvm\.commandline)\s*=', line) or (
-                node and node.group(1) in roots['compiler_option']):
-            category = 'compiler_option'
-        elif re.match(r'^!llvm\.ident\s*=', line) or (node and node.group(1) in roots['compiler_identity']):
-            category = 'compiler_identity'
         else:
             category = 'other_metadata' if line.startswith('!') else 'other_ir'
         counts[category] += 1
@@ -190,6 +202,20 @@ def classify_private_air_metadata(raw, *, include_module_id=False):
             'original_llvm_text_sha256': sha(raw), 'categories': counts,
             'observations': len(observations), 'line_hashes': observations,
             'observation_limit_reached': limit_reached, 'classification_incomplete': bool(incomplete)}
+
+
+def inspect_metal_help(raw):
+    """Report advertised fixed flags only; presence is not tested flag behavior."""
+    need(isinstance(raw, bytes) and 0 < len(raw) <= MAX_CAPTURE, 'METAL_HELP_UNVERIFIED')
+    try:
+        text = raw.decode('utf-8')
+    except UnicodeError as error:
+        raise ShaderError('METAL_HELP_UNVERIFIED') from error
+    need(re.search(r'^\s*usage\s*:', text, re.M | re.I) is not None, 'METAL_HELP_UNVERIFIED')
+    advertised = {name: re.search(r'^\s*' + re.escape(name) + r'(?=[\s=<,]|$)', text, re.M) is not None
+                  for name in METAL_HELP_OPTIONS}
+    return {'original_help_sha256': sha(raw), 'original_help_bytes': len(raw),
+            'known_options_advertised': advertised, 'known_options_applied': []}
 
 
 def inspect_air(data, llvm_text):
@@ -739,6 +765,7 @@ def main(argv=None):
               'metal_provider_registered': False, 'arc130v_backend_verified': False,
               'target_hardware_identity_verified': False, 'display_acceleration_verified': False,
               'cpu_fallback_used': False, 'metal_toolchain_download': {'attempted': False},
+              'metal_compile_help': None,
               'command_steps': [], 'architecture': 'x86_64',
               'timeouts_seconds': {'probe': METAL_PROBE_TIMEOUT, 'cargo_build': CARGO_BUILD_TIMEOUT,
                                    'cargo_resolve': CARGO_RESOLVE_TIMEOUT,
@@ -806,6 +833,11 @@ def main(argv=None):
                 [required['xcrun'], '-sdk', 'macosx', '--show-sdk-version'], directory, report, 15)
             need(status == 0 and version(sdk) is not None, 'MACOS_SDK_UNVERIFIED')
             report['sdk_version'] = version(sdk)
+            status, help_text = reported_step('metal-compile-help',
+                [required['xcrun'], '-sdk', 'macosx', 'metal', '--help'], directory, report, 60,
+                env=environment, stdout_only=True)
+            need(status == 0, 'METAL_HELP_UNVERIFIED')
+            report['metal_compile_help'] = inspect_metal_help(help_text)
             environment['METAL2VULKAN_LLVM_DIS'] = str(Path(required['llvm-dis']).resolve())
             environment['METAL2VULKAN_SPIRV_VAL'] = str(Path(required['spirv-val']).resolve())
             # Real owned AIR is useful evidence even if the later cold Rust
