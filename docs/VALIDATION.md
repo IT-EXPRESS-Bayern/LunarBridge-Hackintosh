@@ -41,14 +41,18 @@ and has no code signature. Its exact source commit differs from later documentat
 commits; the commit and hashes are retained in VALIDATION.json and the packaged
 SOURCE-REFERENCE.json. The successful link is separate from target-device loading.
 
-The build from `cb47a2de119440731a44a14105df4a4192613123` includes the Xe2
-memory and GuC CPU helpers. Their defined symbols were inspected in the actual
-kernel binary, and all 16 corresponding-source hashes were verified from the
-downloaded installer package. Internal task and plan files are absent. These
-symbols do not establish GPU page-table binding, GuC startup or GPU execution.
-That earlier artifact predates the native DMA adapter and its cleanup quarantine.
-Their current source compiles into real objects; a new native link/build must
-be recorded against its exact source commit before package delivery.
+The build from `112bb25c2050c9b95e1130e65a8b11ee8962d865` includes the Xe2
+memory and GuC CPU helpers, native DMA adapter and eight-slot cleanup quarantine.
+Their defined symbols were inspected in the actual kernel binary. All 20
+corresponding-source hashes were verified from the downloaded installer package
+and compared byte-for-byte with that exact Git commit. The actual packaged CLI
+completed plan, install and rollback in a synthetic EFI; its original config
+bytes were restored. Internal task and plan files are absent.
+
+DMA preparation is disabled in the delivered bundle and requires explicit
+build-time and probe-time opt-in. Neither DMA operation nor quarantine cleanup
+has been exercised on the Samsung. The linked symbols do not establish GPU
+page-table binding, GuC startup, GPU execution or Metal acceleration.
 
 The machine-readable [validation record](VALIDATION.json) includes artifact
 hashes and explicit test boundaries. Compiler commands containing local
