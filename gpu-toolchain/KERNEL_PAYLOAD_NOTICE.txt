@@ -1,0 +1,28 @@
+Own kernel CPU payload preparation and tests: GPL-3.0-only.
+Full project license: ../LICENSE.
+
+The implementation is independently written. Numeric constants, field layout
+and relocation semantics were checked against intel/compute-runtime commit
+7323fcafa8979708e73f1865c61cb9790b367948:
+
+shared/source/device_binary_format/zebin/zeinfo.h
+shared/source/device_binary_format/zebin/zeinfo_decoder.cpp
+shared/source/kernel/kernel_descriptor.h
+shared/source/kernel/implicit_args_base.h
+shared/source/command_container/command_encoder_xehp_and_later.inl
+shared/source/generated/xe2_hpg_core/hw_cmds_generated_xe2_hpg_core.inl
+shared/source/compiler_interface/linker.h
+shared/source/compiler_interface/linker.cpp
+shared/source/device_binary_format/zebin/zebin_elf.h
+
+Copyright (C) Intel Corporation, years as recorded in each pinned source header.
+SPDX-License-Identifier: MIT. The full upstream MIT permission text is included
+in this directory's existing NOTICE. Individual complete file hashes, header
+notices, immutable URLs and source seams are in KERNEL_PAYLOAD_SOURCES.json.
+No complete upstream implementation or generated command header is copied.
+
+External compiler candidates in KERNEL_PAYLOAD.md are inspected references.
+No metal2vulkan, Reims, Diligent, Mesa, SPIRV-Cross or IGC library is linked or
+redistributed by this component. Their licenses are not changed by our GPL.
+The pinned ABI reference is not a claim about the source revision of the
+installed Windows Intel compiler. Historical hardware evidence is preserved.

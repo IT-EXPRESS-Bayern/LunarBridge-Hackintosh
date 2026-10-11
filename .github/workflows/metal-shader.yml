@@ -1,0 +1,127 @@
+name: Metal AIR to Shader SPIR-V
+
+on:
+  push:
+    paths:
+      - gpu-toolchain/xe2_compute_probe.metal
+      - gpu-toolchain/xe2_integer_probe.cl
+      - tools/metal_shader_ci.py
+      - tests/test_metal_shader.py
+      - .github/workflows/metal-shader.yml
+      - docs/METAL_SHADER_BRIDGE.md
+  pull_request:
+    paths:
+      - gpu-toolchain/xe2_compute_probe.metal
+      - gpu-toolchain/xe2_integer_probe.cl
+      - tools/metal_shader_ci.py
+      - tests/test_metal_shader.py
+      - .github/workflows/metal-shader.yml
+      - docs/METAL_SHADER_BRIDGE.md
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  boundaries:
+    name: Compiler harness boundaries on Windows
+    runs-on: windows-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: '3.13'
+      - name: Run offline compiler boundaries
+        shell: pwsh
+        run: |
+          python -B -X utf8 tests/test_metal_shader.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Upload sanitized boundary evidence
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        with:
+          name: LunarBridge-Metal-Shader-Windows
+          path: tests/metal-shader-test-report.json
+          if-no-files-found: warn
+          retention-days: 14
+  shader:
+    name: Own MSL and AIR translation on Intel macOS CI
+    runs-on: macos-26-intel
+    timeout-minutes: 15
+    steps:
+      - name: Checkout own source
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: '3.13'
+      - name: Checkout exact external converter
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3
+        with:
+          repository: steelbrain/metal2vulkan
+          ref: 43c46ac8a24adf1a6e872b8a52c706ec9614fad0
+          path: build/metal2vulkan-source
+          persist-credentials: false
+      - name: Prepare LLVM and SPIR-V tools on the ephemeral CI host
+        timeout-minutes: 5
+        shell: bash
+        run: |
+          if ! command -v spirv-val >/dev/null || ! test -x /usr/local/opt/llvm/bin/llvm-dis; then
+            brew install llvm spirv-tools || true
+          fi
+          echo '/usr/local/opt/llvm/bin' >> "$GITHUB_PATH"
+          echo '/usr/local/bin' >> "$GITHUB_PATH"
+      - name: Compile and qualify the shader chain
+        shell: bash
+        run: |
+          set +e
+          python3 -B tools/metal_shader_ci.py --context ci-host --converter-source build/metal2vulkan-source --allow-ci-metal-download
+          status=$?
+          set -e
+          if [ "$status" -ne 0 ] && [ "$status" -ne 2 ]; then exit "$status"; fi
+          python3 -B - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          directory = Path('build/metal-shader-artifacts')
+          report = json.loads((directory / 'report.json').read_text())
+          assert report['context'] == 'ci-host'
+          assert report['source_commit'] == os.environ['GITHUB_SHA']
+          assert report['architecture'] == 'x86_64'
+          for name, digest in report['source_files_sha256'].items():
+              assert hashlib.sha256(Path(name).read_bytes()).hexdigest() == digest
+          assert report['converter']['commit'] == '43c46ac8a24adf1a6e872b8a52c706ec9614fad0'
+          for key in ('gpu_execution_verified', 'metal_provider_registered', 'arc130v_backend_verified',
+                      'target_hardware_identity_verified', 'display_acceleration_verified', 'cpu_fallback_used'):
+              assert report[key] is False
+          assert report['state'] in ('passed', 'unverified')
+          if report['state'] == 'passed':
+              assert report['shader_translation_verified'] is True
+              assert report['converter_build_verified'] is report['air_compilation_verified'] is True
+              assert report['spirv']['independent_validator_passed'] is True
+              assert report['reflection']['reflection_version'] == 55
+              assert report['converter']['reflection_schema_version'] == 55
+              assert report['converter']['reflection_schema_source_sha256'] == 'a9ccc05d22e417594181b6f39222476fb4fd66d7dc887e7d8af32a5ec451d576'
+              assert report['reflection']['count_bytes'] == 4
+              for name, digest in report['outputs_sha256'].items():
+                  assert hashlib.sha256((directory / name).read_bytes()).hexdigest() == digest
+          else:
+              assert report['shader_translation_verified'] is False
+          print('Shader compiler evidence checked; native Arc submission and Metal registration remain unverified.')
+          PY
+          if [ "$status" -eq 2 ]; then
+            echo '::warning::Compiler chain remains unverified; inspect the fixed phase/code in report.json.'
+          fi
+      - name: Upload own shader outputs and sanitized provenance
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        with:
+          name: LunarBridge-Metal-Shader-CI
+          path: build/metal-shader-artifacts/
+          if-no-files-found: warn
+          retention-days: 14

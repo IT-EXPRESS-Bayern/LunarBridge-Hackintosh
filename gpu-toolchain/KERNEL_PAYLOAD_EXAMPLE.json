@@ -1,0 +1,138 @@
+{
+  "schema": "lunarbridge-own-opencl-xe2-payload-v1",
+  "status": "cpu_template_prepared_with_unresolved_gpu_bindings",
+  "kernel_name": "lunarbridge_xe2_probe",
+  "intel_runtime_abi_reference_commit": "7323fcafa8979708e73f1865c61cb9790b367948",
+  "own_program_sha256": "1e0127eb0886d686e0c002c75b233fb44b936d193b82d09e34097146523e18c1",
+  "historical_windows_fixture_authentication": true,
+  "new_gpu_execution_performed": false,
+  "shader_compilation_performed": false,
+  "air_msl_translation_implemented": false,
+  "native_gpu_bindings_implemented": false,
+  "native_gpu_submission_implemented": false,
+  "native_macos_metal_execution_demonstrated": false,
+  "dispatch_ready": false,
+  "layout": {
+    "abi": "Intel OpenCL Zebin; not Vulkan Shader SPIR-V",
+    "simd_size": 32,
+    "grf_count": 128,
+    "argument_data_end": 44,
+    "cross_thread_bytes": 64,
+    "inline_bytes": 32,
+    "indirect_cross_thread_bytes": 32,
+    "per_thread_data_offset_after_inline": 32,
+    "cross_thread_hex": "00000000000000000000000020000000010000000100000000000000000000000000000000000000400000000000000000000000000000000000000000000000",
+    "inline_hex": "0000000000000000000000002000000001000000010000000000000000000000",
+    "indirect_hex": "0000000000000000400000000000000000000000000000000000000000000000",
+    "cross_thread_sha256": "4d5ad373f940e983651b8675226b400b87f8c2b131d4abe05dfb47a8d7d3aec9",
+    "inline_sha256": "870e68b8b0394fbe78264670fcb62ac5e144d8bac043bd96a68bc3a0e853e569",
+    "indirect_sha256": "79a257d3b1260eae2c407b55a33c28e19777c185b5254ab051442d2353b35464",
+    "padding_offset": 44,
+    "padding_bytes": 20,
+    "padding_is_zero": true
+  },
+  "planned_dispatch": {
+    "work_dimensions": 1,
+    "global_offset": [
+      0,
+      0,
+      0
+    ],
+    "global_size": [
+      64,
+      1,
+      1
+    ],
+    "enqueued_local_size": [
+      32,
+      1,
+      1
+    ],
+    "group_count": [
+      2,
+      1,
+      1
+    ],
+    "count_argument": 64,
+    "planned_local_size_was_hardware_qualified": false,
+    "historical_windows_launch_requested_local_size": null,
+    "historical_windows_effective_local_size_known": false,
+    "minimum_input_buffer_bytes": 256,
+    "minimum_output_buffer_bytes": 256,
+    "local_id_bytes_per_simd_thread_from_metadata": 64,
+    "local_id_payload_generated": false,
+    "hardware_local_id_generation_selected": false,
+    "entry_offset_skip_per_thread_data_load_from_metadata": 128,
+    "entrypoint_selection_implemented": false,
+    "walker_command_encoded": false,
+    "implicit_args_required": false,
+    "debugger_active": false,
+    "stack_calls_enabled": false
+  },
+  "unresolved_bindings": [
+    {
+      "role": "input",
+      "argument_index": 0,
+      "cross_thread_offset": 24,
+      "segment": "inline",
+      "segment_offset": 24,
+      "pointer_bytes": 8,
+      "access": "readonly",
+      "minimum_buffer_bytes": 256,
+      "resolved": false,
+      "placeholder_uint64": 0,
+      "requires": "native validated GPU-VA and DMA mapping"
+    },
+    {
+      "role": "output",
+      "argument_index": 1,
+      "cross_thread_offset": 32,
+      "segment": "indirect",
+      "segment_offset": 0,
+      "pointer_bytes": 8,
+      "access": "readwrite",
+      "minimum_buffer_bytes": 256,
+      "resolved": false,
+      "placeholder_uint64": 0,
+      "requires": "native validated GPU-VA and DMA mapping"
+    }
+  ],
+  "isa_link": {
+    "bytes": 896,
+    "original_sha256": "52168f1f1ee471ccc41d02256f225a55ca866bf08d599b2b2344fca7d43f1930",
+    "prepared_sha256": "52168f1f1ee471ccc41d02256f225a55ca866bf08d599b2b2344fca7d43f1930",
+    "bytes_changed": 0,
+    "implicit_args_bytes": 0,
+    "relocations": [
+      {
+        "target_section": ".text.lunarbridge_xe2_probe",
+        "offset": 76,
+        "type": 2,
+        "type_name": "R_ZE_SYM_ADDR_32",
+        "symbol": "__INTEL_PATCH_CROSS_THREAD_OFFSET_OFF_R0",
+        "patch_bytes": 4,
+        "original_uint32": 0,
+        "resolved_uint32": 0,
+        "action": "preserve_original_zero_without_implicit_args"
+      },
+      {
+        "target_section": ".text.lunarbridge_xe2_probe",
+        "offset": 156,
+        "type": 2,
+        "type_name": "R_ZE_SYM_ADDR_32",
+        "symbol": "__INTEL_PATCH_CROSS_THREAD_OFFSET_OFF_R0",
+        "patch_bytes": 4,
+        "original_uint32": 0,
+        "resolved_uint32": 0,
+        "action": "preserve_original_zero_without_implicit_args"
+      }
+    ]
+  },
+  "remaining_native_requirements": [
+    "validated GPU-VA ownership and DMA bindings for both buffers",
+    "per-thread local-ID/entrypoint/WALKER handling",
+    "ISA/indirect heap allocation and Xe2 command encoding",
+    "native queue, GuC scheduling, completion and synchronization",
+    "Metal provider and a separately validated AIR/MSL compiler route"
+  ]
+}

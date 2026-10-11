@@ -1,0 +1,361 @@
+{
+  "schema": "lunarbridge-own-payload-primary-references-v1",
+  "whole_upstream_implementations_distributed": false,
+  "installed_windows_compiler_source_revision_inferred": false,
+  "intel_runtime_commit_is_abi_reference_only": true,
+  "files": [
+    {
+      "repository": "intel/compute-runtime",
+      "commit": "7323fcafa8979708e73f1865c61cb9790b367948",
+      "source": "shared/source/device_binary_format/zebin/zeinfo_decoder.cpp",
+      "url": "https://raw.githubusercontent.com/intel/compute-runtime/7323fcafa8979708e73f1865c61cb9790b367948/shared/source/device_binary_format/zebin/zeinfo_decoder.cpp",
+      "bytes": 117321,
+      "sha256": "d4cba79eb15f90f5a7dae280af38c3d3ce13f2e684551bc06d902ac7f81b90f1",
+      "license": "MIT",
+      "header_notices": [
+        "Copyright (C) 2023-2026 Intel Corporation",
+        "SPDX-License-Identifier: MIT"
+      ],
+      "reviewed_seams": [
+        "populateKernelPayloadArgument: max(offset+size)",
+        "decodeZeInfoKernelPayloadArguments: alignUp(size, 32)",
+        "populateKernelExecutionEnvironment: requiresImplicitArgs/useStackCalls/inlineData"
+      ]
+    },
+    {
+      "repository": "intel/compute-runtime",
+      "commit": "7323fcafa8979708e73f1865c61cb9790b367948",
+      "source": "shared/source/kernel/kernel_descriptor.h",
+      "url": "https://raw.githubusercontent.com/intel/compute-runtime/7323fcafa8979708e73f1865c61cb9790b367948/shared/source/kernel/kernel_descriptor.h",
+      "bytes": 13234,
+      "sha256": "c4e2400173c9b74d8e0b182f668be6ee6e9e2c029ae826085d6a9239db10036b",
+      "license": "MIT",
+      "header_notices": [
+        "Copyright (C) 2020-2026 Intel Corporation",
+        "SPDX-License-Identifier: MIT"
+      ],
+      "reviewed_seams": [
+        "KernelDescriptor::getPerThreadDataOffset"
+      ]
+    },
+    {
+      "repository": "intel/compute-runtime",
+      "commit": "7323fcafa8979708e73f1865c61cb9790b367948",
+      "source": "shared/source/kernel/implicit_args_base.h",
+      "url": "https://raw.githubusercontent.com/intel/compute-runtime/7323fcafa8979708e73f1865c61cb9790b367948/shared/source/kernel/implicit_args_base.h",
+      "bytes": 4579,
+      "sha256": "da9232f02b066a85da54789e4ba50850d8d29917e35e416c032a36e93e7f406d",
+      "license": "MIT",
+      "header_notices": [
+        "Copyright (C) 2025-2026 Intel Corporation",
+        "SPDX-License-Identifier: MIT"
+      ],
+      "reviewed_seams": []
+    },
+    {
+      "repository": "intel/compute-runtime",
+      "commit": "7323fcafa8979708e73f1865c61cb9790b367948",
+      "source": "shared/source/device_binary_format/zebin/zeinfo.h",
+      "url": "https://raw.githubusercontent.com/intel/compute-runtime/7323fcafa8979708e73f1865c61cb9790b367948/shared/source/device_binary_format/zebin/zeinfo.h",
+      "bytes": 33442,
+      "sha256": "a47f85a76495fb331ed5cb41a86a7172feafc51f8770c67fdbcc38f18f8123ea",
+      "license": "MIT",
+      "header_notices": [
+        "Copyright (C) 2023-2026 Intel Corporation",
+        "SPDX-License-Identifier: MIT"
+      ],
+      "reviewed_seams": [
+        "Defaults::hasStackCalls=false",
+        "Defaults::requireImplicitArgBuffer=false"
+      ]
+    },
+    {
+      "repository": "intel/compute-runtime",
+      "commit": "7323fcafa8979708e73f1865c61cb9790b367948",
+      "source": "opencl/source/kernel/kernel.cpp",
+      "url": "https://raw.githubusercontent.com/intel/compute-runtime/7323fcafa8979708e73f1865c61cb9790b367948/opencl/source/kernel/kernel.cpp",
+      "bytes": 109886,
+      "sha256": "2bf22cbe76f119fc7c0653e03a94c4b486b5de63adb7911629c7724fa6f67137",
+      "license": "MIT",
+      "header_notices": [
+        "Copyright (C) 2018-2026 Intel Corporation",
+        "SPDX-License-Identifier: MIT"
+      ],
+      "reviewed_seams": []
+    },
+    {
+      "repository": "intel/compute-runtime",
+      "commit": "7323fcafa8979708e73f1865c61cb9790b367948",
+      "source": "shared/source/command_container/command_encoder.inl",
+      "url": "https://raw.githubusercontent.com/intel/compute-runtime/7323fcafa8979708e73f1865c61cb9790b367948/shared/source/command_container/command_encoder.inl",
+      "bytes": 75866,
+      "sha256": "50275d9854cbacb39015dcb92713d55184f3e051d2a1fb3c642663727a56c3dc",
+      "license": "MIT",
+      "header_notices": [
+        "Copyright (C) 2020-2026 Intel Corporation",
+        "SPDX-License-Identifier: MIT"
+      ],
+      "reviewed_seams": []
+    },
+    {
+      "repository": "intel/compute-runtime",
+      "commit": "7323fcafa8979708e73f1865c61cb9790b367948",
+      "source": "shared/source/command_container/command_encoder_xehp_and_later.inl",
+      "url": "https://raw.githubusercontent.com/intel/compute-runtime/7323fcafa8979708e73f1865c61cb9790b367948/shared/source/command_container/command_encoder_xehp_and_later.inl",
+      "bytes": 70657,
+      "sha256": "50bc42527c3e27cda21da9394cc21e815c7697bcee314c2fb622b02a2472be8d",
+      "license": "MIT",
+      "header_notices": [
+        "Copyright (C) 2020-2026 Intel Corporation",
+        "SPDX-License-Identifier: MIT"
+      ],
+      "reviewed_seams": [
+        "first min(WalkerInlineSize, CrossThreadSize) bytes copied inline"
+      ]
+    },
+    {
+      "repository": "intel/compute-runtime",
+      "commit": "7323fcafa8979708e73f1865c61cb9790b367948",
+      "source": "shared/source/command_container/command_encoder_heap_addressing.inl",
+      "url": "https://raw.githubusercontent.com/intel/compute-runtime/7323fcafa8979708e73f1865c61cb9790b367948/shared/source/command_container/command_encoder_heap_addressing.inl",
+      "bytes": 1021,
+      "sha256": "677fb03f93ef03efa931a417fc910d2529afb3adfcd4d0c7cd2996ef850c9b28",
+      "license": "MIT",
+      "header_notices": [
+        "Copyright (C) 2024-2026 Intel Corporation",
+        "SPDX-License-Identifier: MIT"
+      ],
+      "reviewed_seams": []
+    },
+    {
+      "repository": "intel/compute-runtime",
+      "commit": "7323fcafa8979708e73f1865c61cb9790b367948",
+      "source": "shared/source/command_container/command_encoder_xe2_hpg_core_and_later.inl",
+      "url": "https://raw.githubusercontent.com/intel/compute-runtime/7323fcafa8979708e73f1865c61cb9790b367948/shared/source/command_container/command_encoder_xe2_hpg_core_and_later.inl",
+      "bytes": 10493,
+      "sha256": "678e793f17db6b90fb8b7008ae17771f321e335676c45235b39ea2d6324985af",
+      "license": "MIT",
+      "header_notices": [
+        "Copyright (C) 2024-2026 Intel Corporation",
+        "SPDX-License-Identifier: MIT"
+      ],
+      "reviewed_seams": []
+    },
+    {
+      "repository": "intel/compute-runtime",
+      "commit": "7323fcafa8979708e73f1865c61cb9790b367948",
+      "source": "shared/source/generated/xe2_hpg_core/hw_cmds_generated_xe2_hpg_core.inl",
+      "url": "https://raw.githubusercontent.com/intel/compute-runtime/7323fcafa8979708e73f1865c61cb9790b367948/shared/source/generated/xe2_hpg_core/hw_cmds_generated_xe2_hpg_core.inl",
+      "bytes": 338983,
+      "sha256": "694afcd0816c977da61fed759513921159044dcfa4d841dac3d1683eb2062e0c",
+      "license": "MIT",
+      "header_notices": [
+        "Copyright (C) 2024-2026 Intel Corporation",
+        "SPDX-License-Identifier: MIT"
+      ],
+      "reviewed_seams": [
+        "COMPUTE_WALKER::InlineData[8]",
+        "COMPUTE_WALKER::getInlineDataSize"
+      ]
+    },
+    {
+      "repository": "intel/compute-runtime",
+      "commit": "7323fcafa8979708e73f1865c61cb9790b367948",
+      "source": "shared/source/compiler_interface/linker.cpp",
+      "url": "https://raw.githubusercontent.com/intel/compute-runtime/7323fcafa8979708e73f1865c61cb9790b367948/shared/source/compiler_interface/linker.cpp",
+      "bytes": 40752,
+      "sha256": "8096f0cb26e9be2a7137f1d7ac851ef1eee179031f15810e6f0192656626acac",
+      "license": "MIT",
+      "header_notices": [
+        "Copyright (C) 2019-2026 Intel Corporation",
+        "SPDX-License-Identifier: MIT"
+      ],
+      "reviewed_seams": [
+        "Linker::resolveImplicitArgs"
+      ]
+    },
+    {
+      "repository": "intel/compute-runtime",
+      "commit": "7323fcafa8979708e73f1865c61cb9790b367948",
+      "source": "shared/source/compiler_interface/linker.h",
+      "url": "https://raw.githubusercontent.com/intel/compute-runtime/7323fcafa8979708e73f1865c61cb9790b367948/shared/source/compiler_interface/linker.h",
+      "bytes": 12036,
+      "sha256": "476891ae3223d88701c7cf162cfce3cdd1bef703211b67adddfd987ae2c1e518",
+      "license": "MIT",
+      "header_notices": [
+        "Copyright (C) 2019-2026 Intel Corporation",
+        "SPDX-License-Identifier: MIT"
+      ],
+      "reviewed_seams": [
+        "implicitArgsRelocationSymbolName"
+      ]
+    },
+    {
+      "repository": "intel/compute-runtime",
+      "commit": "7323fcafa8979708e73f1865c61cb9790b367948",
+      "source": "shared/source/device_binary_format/zebin/zebin_elf.h",
+      "url": "https://raw.githubusercontent.com/intel/compute-runtime/7323fcafa8979708e73f1865c61cb9790b367948/shared/source/device_binary_format/zebin/zebin_elf.h",
+      "bytes": 4682,
+      "sha256": "a2f88da148bb3807a1430d166f05f7f8faea8ba0bedaa717020080cba95829aa",
+      "license": "MIT",
+      "header_notices": [
+        "Copyright (C) 2020-2026 Intel Corporation",
+        "SPDX-License-Identifier: MIT"
+      ],
+      "reviewed_seams": []
+    },
+    {
+      "repository": "intel/compute-runtime",
+      "commit": "7323fcafa8979708e73f1865c61cb9790b367948",
+      "source": "LICENSE.md",
+      "url": "https://raw.githubusercontent.com/intel/compute-runtime/7323fcafa8979708e73f1865c61cb9790b367948/LICENSE.md",
+      "bytes": 1074,
+      "sha256": "987a002c6c9eb75290d9937735641ef4f4b670591ee79e1ac8edebe16a81872e",
+      "license": "MIT",
+      "header_notices": [
+        "Copyright (C) 2021 Intel Corporation"
+      ],
+      "reviewed_seams": []
+    },
+    {
+      "repository": "intel/intel-graphics-compiler",
+      "commit": "6f81427a0be7c7c017d5be3f049dabec393cf788",
+      "source": "README.md",
+      "url": "https://raw.githubusercontent.com/intel/intel-graphics-compiler/6f81427a0be7c7c017d5be3f049dabec393cf788/README.md",
+      "bytes": 2900,
+      "sha256": "2ee93e9c9e19ec48fc486bcdf0fada05483f7ef59aa68c2e4ab05dcda6ccda3c",
+      "license": "MIT",
+      "header_notices": [
+        "Copyright (C) 2019-2024 Intel Corporation",
+        "SPDX-License-Identifier: MIT"
+      ],
+      "reviewed_seams": []
+    },
+    {
+      "repository": "intel/intel-graphics-compiler",
+      "commit": "6f81427a0be7c7c017d5be3f049dabec393cf788",
+      "source": "LICENSE.md",
+      "url": "https://raw.githubusercontent.com/intel/intel-graphics-compiler/6f81427a0be7c7c017d5be3f049dabec393cf788/LICENSE.md",
+      "bytes": 237,
+      "sha256": "8b2cd951f44d1fbe6adcf112e1f3a0cc989c89c8889a1c48dea5f7ece10ba9c9",
+      "license": "MIT",
+      "header_notices": [
+        "Copyright (C) 2019-2021 Intel Corporation",
+        "SPDX-License-Identifier: MIT"
+      ],
+      "reviewed_seams": []
+    },
+    {
+      "repository": "steelbrain/metal2vulkan",
+      "commit": "43c46ac8a24adf1a6e872b8a52c706ec9614fad0",
+      "source": "README.md",
+      "url": "https://raw.githubusercontent.com/steelbrain/metal2vulkan/43c46ac8a24adf1a6e872b8a52c706ec9614fad0/README.md",
+      "bytes": 6358,
+      "sha256": "5e406a5a04ca5b287d3399c0ec760e62044a4b6d1fb3a8f2f191589788d408c0",
+      "license": "LGPL-3.0-or-later",
+      "header_notices": [],
+      "reviewed_seams": []
+    },
+    {
+      "repository": "steelbrain/metal2vulkan",
+      "commit": "43c46ac8a24adf1a6e872b8a52c706ec9614fad0",
+      "source": "LICENSE",
+      "url": "https://raw.githubusercontent.com/steelbrain/metal2vulkan/43c46ac8a24adf1a6e872b8a52c706ec9614fad0/LICENSE",
+      "bytes": 7652,
+      "sha256": "e3a994d82e644b03a792a930f574002658412f62407f5fee083f2555c5f23118",
+      "license": "LGPL-3.0-or-later",
+      "header_notices": [
+        "Copyright (C) 2007 Free Software Foundation, Inc. <https://fsf.org/"
+      ],
+      "reviewed_seams": []
+    },
+    {
+      "repository": "steelbrain/metal2vulkan",
+      "commit": "43c46ac8a24adf1a6e872b8a52c706ec9614fad0",
+      "source": "docs/ARCHITECTURE.md",
+      "url": "https://raw.githubusercontent.com/steelbrain/metal2vulkan/43c46ac8a24adf1a6e872b8a52c706ec9614fad0/docs/ARCHITECTURE.md",
+      "bytes": 12330,
+      "sha256": "2ec16494eda6048a8de604bc31a44ca0a38087bd2158ca6478a2da4b350b235d",
+      "license": "LGPL-3.0-or-later",
+      "header_notices": [],
+      "reviewed_seams": []
+    },
+    {
+      "repository": "steelbrain/reims-vgpu",
+      "commit": "69a57dd69a6958e946c03b73e02db331f330f435",
+      "source": "README.md",
+      "url": "https://raw.githubusercontent.com/steelbrain/reims-vgpu/69a57dd69a6958e946c03b73e02db331f330f435/README.md",
+      "bytes": 13099,
+      "sha256": "b37fb3b2c96eada1a4eb47b6efbed665e0e5ca91cb85cc3c1428fb9026718d56",
+      "license": "LGPL-3.0-or-later",
+      "header_notices": [],
+      "reviewed_seams": []
+    },
+    {
+      "repository": "steelbrain/reims-vgpu",
+      "commit": "69a57dd69a6958e946c03b73e02db331f330f435",
+      "source": "LICENSE",
+      "url": "https://raw.githubusercontent.com/steelbrain/reims-vgpu/69a57dd69a6958e946c03b73e02db331f330f435/LICENSE",
+      "bytes": 7652,
+      "sha256": "e3a994d82e644b03a792a930f574002658412f62407f5fee083f2555c5f23118",
+      "license": "LGPL-3.0-or-later",
+      "header_notices": [
+        "Copyright (C) 2007 Free Software Foundation, Inc. <https://fsf.org/"
+      ],
+      "reviewed_seams": []
+    },
+    {
+      "repository": "DiligentGraphics/DiligentCore",
+      "commit": "074060cfd1db73064d7a18cf40df86af6531520c",
+      "source": "README.md",
+      "url": "https://raw.githubusercontent.com/DiligentGraphics/DiligentCore/074060cfd1db73064d7a18cf40df86af6531520c/README.md",
+      "bytes": 41518,
+      "sha256": "30553d955effa5daa6b092867140fc0a5b858ec90f4d7c07986227cca7d37d6b",
+      "license": "Apache-2.0",
+      "header_notices": [],
+      "reviewed_seams": []
+    },
+    {
+      "repository": "DiligentGraphics/DiligentCore",
+      "commit": "074060cfd1db73064d7a18cf40df86af6531520c",
+      "source": "License.txt",
+      "url": "https://raw.githubusercontent.com/DiligentGraphics/DiligentCore/074060cfd1db73064d7a18cf40df86af6531520c/License.txt",
+      "bytes": 10173,
+      "sha256": "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9",
+      "license": "Apache-2.0",
+      "header_notices": [],
+      "reviewed_seams": []
+    },
+    {
+      "repository": "KhronosGroup/SPIRV-Cross",
+      "commit": "aa217aeb6c9f0ace7a0ab233b28807edf45eb165",
+      "source": "README.md",
+      "url": "https://raw.githubusercontent.com/KhronosGroup/SPIRV-Cross/aa217aeb6c9f0ace7a0ab233b28807edf45eb165/README.md",
+      "bytes": 23308,
+      "sha256": "a5274d3a59afc6d3cd33cdc63be7a72000400d81be5906110d6f7cb12999d1e6",
+      "license": "CC-BY-4.0",
+      "header_notices": [
+        "Copyright 2020-2021 The Khronos Group, Inc.",
+        "SPDX-License-Identifier: CC-BY-4.0"
+      ],
+      "reviewed_seams": []
+    },
+    {
+      "repository": "KhronosGroup/SPIRV-Cross",
+      "commit": "aa217aeb6c9f0ace7a0ab233b28807edf45eb165",
+      "source": "LICENSE",
+      "url": "https://raw.githubusercontent.com/KhronosGroup/SPIRV-Cross/aa217aeb6c9f0ace7a0ab233b28807edf45eb165/LICENSE",
+      "bytes": 11358,
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "license": "Apache-2.0",
+      "header_notices": [],
+      "reviewed_seams": []
+    }
+  ],
+  "additional_primary_documentation": [
+    "https://developer.apple.com/library/archive/documentation/Miscellaneous/Conceptual/MetalProgrammingGuide/Dev-Technique/Dev-Technique.html",
+    "https://docs.mesa3d.org/drivers/anv.html",
+    "https://docs.mesa3d.org/nir/index.html",
+    "https://docs.mesa3d.org/license.html"
+  ]
+}

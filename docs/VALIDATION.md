@@ -17,6 +17,8 @@ x86_64 macOS Mach-O object files; these are local build outputs excluded from Gi
 | Trace/collector tools | 27 tests passed | ABI/length/order checks, forcewake status and retained cleanup, privacy, DMA double opt-in, error triage, simulated IOKit failures and real object-format checks |
 | GPU OpenCore installer | 23 tests passed | Isolated EFI transactions and failures, concurrent edits, policy/Vault refusal, DMA/forcewake flag types, effective MMIO/flush exposure and module boundaries |
 | Own shader toolchain | 37 offline tests passed | Actual recorded own Windows GPU result bytes; device qualification, bounded ELF/Zebin and relocation validation; no GPU initialized by tests |
+| Own Xe2 CPU payload | 37 offline tests passed | Authenticated own Zebin, 64/32/32-byte layout, unresolved pointer holes, original zero ImplicitArgs relocations and bounded planned group dimensions; no GPU job |
+| Metal shader compiler harness | 35 offline tests passed | Bounded MSL/AIR/Shader SPIR-V/reflection and supervised process cleanup; controlled doubles, no native compiler or GPU execution |
 | Pinned GPU test references | 16 SHA256 values verified | Exact external inputs including forcewake, MMIO and LNL workaround association; no vendored Linux driver |
 | macOS object format | Twelve Mach-O objects verified | Actual x86_64 object compilation and parser inspection; these objects are rejected by the installer |
 | Native macOS link workflow | Real diagnostic Kext linked | Pinned external SDK and macOS linker; source commit, hashes and unsigned status in VALIDATION.json; no target-hardware loading |
@@ -28,7 +30,7 @@ machine inventory or a native device test. I2C source and build qualification
 now belong to the independent LunarBridge-I2C repository and are not counted
 as graphics-repository tests.
 
-All **250 graphics-repository core Windows tests passed** without skips. The installer fixtures contain
+All **322 graphics-repository core Windows tests passed** without skips. The installer fixtures contain
 no runnable macOS/EFI code. Simulated IOKit calls are marked as simulated and
 cannot establish native device access. No real EFI or external SSD was changed.
 
@@ -51,7 +53,7 @@ at source `c4872003430ff804977ac76356f7f0537677a12b` built the real x86_64
 `Metal-Minimaltest.mm` executable on Intel macOS 26.6.1 and executed its shader.
 All 65,536 outputs matched, with completion handler and completed command status
 observed and no CPU fallback. Its additional Windows job passed 18 harness
-boundary tests. These are counted separately from the 250 core tests above.
+boundary tests. These are counted separately from the 322 core tests above.
 Both downloaded report archives passed hash and CRC checks; all five distinct
 source files were compared with that exact Git commit. The binary itself is not
 uploaded. [METAL_VALIDATION.json](METAL_VALIDATION.json) records the evidence and
@@ -63,12 +65,15 @@ and has no code signature. Its exact source commit differs from later documentat
 commits; the commit and hashes are retained in VALIDATION.json and the packaged
 SOURCE-REFERENCE.json. The successful link is separate from target-device loading.
 
-The build from `112bb25c2050c9b95e1130e65a8b11ee8962d865` includes the Xe2
-memory and GuC CPU helpers, native DMA adapter and eight-slot cleanup quarantine.
-Their defined symbols were inspected in the actual kernel binary. All 20
+The [native build 38125102141](https://github.com/IT-EXPRESS-Bayern/LunarBridge-Hackintosh/actions/runs/38125102141)
+from `36c16c9bd644d5682d2ffc4cfbb146f14d982824` includes the Xe2 memory and
+GuC CPU helpers, native DMA adapter, eight-slot cleanup quarantine and new
+Forcewake protocol/adapter. Both diagnostic and optional Forcewake profiles
+passed. Their defined symbols were inspected in the actual 74,312-byte kernel
+binary. All 24
 corresponding-source hashes were verified from the downloaded installer package
 and compared byte-for-byte with that exact Git commit. The actual packaged CLI
-completed plan, install and rollback in a synthetic EFI; its original config
+completed plan, install and rollback for both profiles in separate synthetic EFIs; each original config
 bytes were restored. Internal task and plan files are absent.
 
 DMA preparation is disabled in the delivered bundle and requires explicit
