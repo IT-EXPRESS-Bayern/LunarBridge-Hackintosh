@@ -44,7 +44,10 @@ for name, source in sources:
                         '-ffreestanding', '-c', str(source),
                         '-o', str(args.object_dir.resolve() / (name + '.o'))]
     command += ['-DKERNEL', '-DKERNEL_PRIVATE', '-D__KERNEL__', '-mkernel',
-                '-fapple-kext', '-mno-sse', '-mno-sse2', '-mno-mmx', '-mno-red-zone',
+                # Match the native kernel build; this does not prove a safe
+                # kernel stack budget and must not change the Windows DLL.
+                '-fapple-kext', '-fno-stack-check',
+                '-mno-sse', '-mno-sse2', '-mno-mmx', '-mno-red-zone',
                 '-nostdinc', '-nostdinc++', '-I', str(args.sdk.resolve() / 'Headers'),
                 '-Wno-unused-parameter', '-UTARGET_IPHONE_SIMULATOR', '-UTARGET_OS_NANO']
     commands.append(command)

@@ -9,6 +9,7 @@ on:
       - 'gpu-prototype/**'
       - 'gpu-toolchain/**'
       - 'tests/test_forcewake*.py'
+      - 'tests/test_kernel_build_contract.py'
       - 'tests/forcewake_adapter_fake.*'
       - 'installer/**'
       - 'tools/build_native.py'
@@ -62,6 +63,10 @@ jobs:
           python3 tests/test_guc_scheduler.py build/queue/libgpuqueue.dylib
       - name: Build real kernel bundle and installer archive
         run: python3 tools/build_native.py --sdk build/dependencies/MacKernelSDK --out build/native ${{ matrix.options }}
+      - name: Check actual kernel binary for Darwin userspace stack probes
+        run: |
+          python3 tests/test_kernel_build_contract.py
+          python3 tests/test_kernel_build_contract.py --binary build/native/LunarBridge.kext/Contents/MacOS/LunarBridge
       - name: Preserve unsigned diagnostic build
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:

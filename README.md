@@ -65,16 +65,18 @@ flowchart TD
 | Own CPU shader payload | **Done — CPU format** | 37 payload tests plus 37 historical inspector tests; GPU pointers remain unresolved. [Payload contract](gpu-toolchain/KERNEL_PAYLOAD.md) |
 | GGTT write plan | **Complete — CPU planner** | 31 tests / 132 actual C++ calls; integrated host DLL and macOS object build, no hardware binding. [GGTT](docs/GGTT_BINDING.md) |
 | GuC scheduler codec | **Complete — CPU protocol** | 25 tests at the production C++ codec; register/mode/submit/deregister messages, no live firmware or queue. [Scheduler contract](docs/GUC_SCHEDULER.md) |
-| MSL → AIR → Shader SPIR-V | **In progress — compiler qualification** | 39 offline tests passed; first actual compiler attempt timed out before translation. The fixed workflow requires verified compiler output. [Compiler bridge](docs/METAL_SHADER_BRIDGE.md) |
+| MSL → AIR → Shader SPIR-V | **In progress — compiler qualification** | 52 offline tests passed; Metal tool discovery qualified on real CI, converter build timed out. The revised workflow preserves partial AIR and requires verified translation. [Compiler bridge](docs/METAL_SHADER_BRIDGE.md) |
+| Mesa CPU parser | **In progress — native build qualification** | 21 offline tests passed; a separate Intel-macOS CI builds pinned `spirv2nir`. Native GPU execution remains open. [Backend seams](docs/METAL_BACKEND_SEAMS.md) |
 | Native memory + execution | **Blocked — implementation missing** | GPU-VA binding, programmed PAT2, global GGTT ownership, GuC startup and queue submission remain missing. [Architecture](docs/GPU_DESIGN.md) |
 | Metal provider + display | **Blocked — implementation missing** | No LunarBridge system Metal provider, accelerated display or WindowServer integration. [Hardware scope](docs/HARDWARE_SUPPORT.md) |
 
-The verified diagnostic artifact comes from [build 38125102141](https://github.com/IT-EXPRESS-Bayern/LunarBridge-Hackintosh/actions/runs/38125102141)
-at source [36c16c9](https://github.com/IT-EXPRESS-Bayern/LunarBridge-Hackintosh/commit/36c16c9bd644d5682d2ffc4cfbb146f14d982824):
-a **74,312-byte kernel binary**, 24 corresponding-source files checked against
+The verified diagnostic artifact comes from [build 38128683057](https://github.com/IT-EXPRESS-Bayern/LunarBridge-Hackintosh/actions/runs/38128683057)
+at source [755ba09](https://github.com/IT-EXPRESS-Bayern/LunarBridge-Hackintosh/commit/755ba0932882bdf8d0519f1c4822867cc140a7cf):
+a **79,080-byte kernel binary**, 28 corresponding-source files checked against
 that commit, and packaged installer CLI plan/install/rollback checks for both
-profiles in synthetic EFIs. Later payload, GGTT and compiler work has separate
-evidence; it is not implicitly included in that historical artifact.
+profiles in synthetic EFIs. The binary contains the GGTT planner and GuC
+scheduler codec. Later compiler work has its own evidence and is separate
+from this diagnostic artifact.
 
 A separate [Metal smoke test](docs/METAL_VALIDATION.json) passed on an Intel
 macOS CI host with 65,536 correct outputs. It used that host's existing Metal

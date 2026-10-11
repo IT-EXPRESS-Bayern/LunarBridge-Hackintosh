@@ -12,7 +12,14 @@ shader compilation. Its artifact hash and exact source were checked; the
 workflow's original green result did not establish compiler success. The
 workflow now fails when the compiler report remains unverified.
 
-The 39 Windows offline boundary tests passed locally with zero failures,
+The second actual run,
+[38129324218](https://github.com/IT-EXPRESS-Bayern/LunarBridge-Hackintosh/actions/runs/38129324218),
+qualified discovery and version checks for Xcode's Metal compiler, then returned
+`unverified / converter-build / STEP_TIMEOUT` after the 300-second Cargo deadline.
+That report does not identify whether dependency resolution or compilation was
+still active. No AIR or Shader SPIR-V output was produced by that attempt.
+
+The 52 Windows offline boundary tests passed locally with zero failures,
 errors or skips. They include the actual no-write Windows host guard;
 process-group cleanup uses controlled process doubles and an actual held-pipe
 CPU regression supervised by a separate 13-second deadline. These checks do
@@ -61,8 +68,16 @@ An active reader owns its buffered stream; the caller never synchronously
 closes a stream whose read is still blocked. Failed kill/reap/drain returns
 an unverified cleanup error and cannot become compiler success.
 Metal discovery and version checks each allow 60 seconds and record separate
-fixed stages with timeout and completion details. The Cargo build may take
-up to 300 seconds. In an expressly enabled, ephemeral GitHub CI environment,
+fixed stages with timeout and completion details. Our MSL is compiled to AIR
+and inspected through `llvm-dis` before Cargo starts. Actual MSL, AIR and LLVM
+output hashes are retained even if the later converter build fails; partial
+AIR evidence cannot become verified Shader SPIR-V or GPU execution.
+Cargo dependency resolution has a 300-second deadline and records an actual
+generated lockfile when available. The converter build uses `cargo build
+--locked` with a 900-second deadline and rejects changes to that lockfile.
+Sanitized progress records only bounded phase categories, counters and elapsed
+time, without raw log lines, package names or local paths. In an expressly
+enabled, ephemeral GitHub CI environment,
 an unavailable compiler or cleanly terminated initial probe timeout permits
 one `xcodebuild -downloadComponent MetalToolchain` attempt, also bounded to
 300 seconds. Its trigger, completion and elapsed time are recorded. Cleanup
@@ -77,7 +92,8 @@ and a sanitized report. It records the actual converter source-tree digest,
 compiler and validator executable hashes, tool versions, resolved dependency
 checksums/licenses, own-source hashes and output hashes. External converter
 source and raw compiler output are excluded. Existing OpenCL fixtures stay
-unchanged. Cargo.lock is generated from the selected source, so Rust/crates
+unchanged. Cargo.lock is generated from the selected source before the locked
+build, so Rust/crates
 and LLVM versions still need comparison when reproducing an earlier run.
 
 Own code is GPL-3.0-only. The external converter retains its original
@@ -86,7 +102,9 @@ The implementation uses its documented CLI and `serde` reflection feature;
 it does not publish Apple SDK/compiler binaries or captured system shaders.
 The next backend stage is Shader SPIR-V to ANV/NIR Xe2 machine code with a
 native memory/submission path. This compiler bridge supplies neither that
-backend nor the private macOS system-provider ABI.
+backend nor the private macOS system-provider ABI. The pinned
+[Mesa backend seams](METAL_BACKEND_SEAMS.md) describe the separate CPU parser,
+descriptor lowering, BRW compiler and native submission work.
 
 Primary contracts: [metal2vulkan CLI](https://github.com/steelbrain/metal2vulkan/blob/43c46ac8a24adf1a6e872b8a52c706ec9614fad0/src/main.rs),
 [reflection Rust schema](https://github.com/steelbrain/metal2vulkan/blob/43c46ac8a24adf1a6e872b8a52c706ec9614fad0/src/reflect/mod.rs),

@@ -1,0 +1,91 @@
+name: Mesa CPU SPIR-V parser
+
+on:
+  push:
+    paths:
+      - tools/mesa_cpu_ci.py
+      - tests/test_mesa_cpu.py
+      - .github/workflows/mesa-cpu.yml
+  pull_request:
+    paths:
+      - tools/mesa_cpu_ci.py
+      - tests/test_mesa_cpu.py
+      - .github/workflows/mesa-cpu.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  boundaries:
+    name: CPU harness boundaries on Windows
+    runs-on: windows-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: '3.12'
+      - name: Check hostguard and bounded formats
+        shell: pwsh
+        run: |
+          python -B -X utf8 tests/test_mesa_cpu.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -B tools/mesa_cpu_ci.py --source unavailable
+          if ($LASTEXITCODE -ne 2) { exit 1 }
+          exit 0
+  parser:
+    name: Real CPU parser build on Intel macOS CI
+    runs-on: macos-26-intel
+    timeout-minutes: 30
+    steps:
+      - name: Checkout own harness
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: '3.12'
+      - name: Checkout exact external Mesa source
+        timeout-minutes: 1
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3
+        with:
+          repository: mirror/mesa
+          ref: e24dc5bd1e7fe6101bdc866fb16a15a8fcae1aae
+          path: build/mesa-pinned-source
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Check CPU harness boundaries
+        run: python3 -B tests/test_mesa_cpu.py
+      - name: Configure and build real spirv2nir
+        shell: bash
+        run: |
+          set +e
+          python3 -B tools/mesa_cpu_ci.py --source build/mesa-pinned-source
+          status=$?
+          set -e
+          MESA_CPU_CLI_EXIT="$status" python3 -B - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          from tools.mesa_cpu_ci import qualification_exit_code
+          try:
+              report = json.loads(Path("build/mesa-cpu-report/report.json").read_text(encoding="utf-8"))
+          except (OSError, ValueError):
+              report = {}
+          raise SystemExit(qualification_exit_code(report, int(os.environ["MESA_CPU_CLI_EXIT"])))
+          PY
+      - name: Upload CPU parser and sanitized provenance
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        with:
+          name: LunarBridge-Mesa-CPU-Parser
+          path: |
+            build/mesa-cpu-report/report.json
+            build/mesa-cpu-report/SOURCE_REFERENCE.json
+            build/mesa-cpu-report/parser/spirv2nir
+            build/mesa-cpu-report/LICENSES
+          if-no-files-found: warn
+          retention-days: 14

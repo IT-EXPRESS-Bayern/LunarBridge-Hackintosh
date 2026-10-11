@@ -43,7 +43,11 @@ def main():
                root/'native/LunarBridgeDriver.cpp', root/'native/KmodInfo.cpp']
     common = [clang, '-arch', 'x86_64', '-mmacosx-version-min=12.0', '-std=c++17', '-O2',
               '-Wall', '-Wextra', '-Werror', '-Wno-unused-parameter', '-fno-exceptions', '-fno-rtti',
-              '-ffreestanding', '-fapple-kext', '-mkernel', '-DKERNEL', '-DKERNEL_PRIVATE', '-D__KERNEL__',
+              # XNU xnu-12377.1.9 iokit/conf/Makefile.x86_64 also uses this
+              # for kernel code. It excludes the userspace Darwin stack probe;
+              # kernel stack-size budgeting remains a separate requirement.
+              '-ffreestanding', '-fapple-kext', '-mkernel', '-fno-stack-check',
+              '-DKERNEL', '-DKERNEL_PRIVATE', '-D__KERNEL__',
               '-mno-sse', '-mno-sse2', '-mno-mmx', '-mno-red-zone', '-nostdinc', '-nostdinc++',
               '-I', str(args.sdk/'Headers'), '-UTARGET_IPHONE_SIMULATOR', '-UTARGET_OS_NANO']
     for source in sources:

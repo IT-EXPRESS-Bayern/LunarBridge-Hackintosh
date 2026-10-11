@@ -50,7 +50,7 @@ jobs:
   shader:
     name: Own MSL and AIR translation on Intel macOS CI
     runs-on: macos-26-intel
-    timeout-minutes: 15
+    timeout-minutes: 25
     steps:
       - name: Checkout own source
         uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3
@@ -85,14 +85,20 @@ jobs:
           if [ "$status" -ne 0 ] && [ "$status" -ne 2 ]; then exit "$status"; fi
           python3 -B - <<'PY'
           import hashlib
+          import importlib.util
           import json
+          import math
           import os
           from pathlib import Path
           directory = Path('build/metal-shader-artifacts')
           report = json.loads((directory / 'report.json').read_text())
+          spec = importlib.util.spec_from_file_location('shader_parser', Path('tools/metal_shader_ci.py'))
+          parser = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(parser)
           assert report['context'] == 'ci-host'
           assert report['source_commit'] == os.environ['GITHUB_SHA']
           assert report['architecture'] == 'x86_64'
+          assert set(report['source_files_sha256']) == set(parser.SOURCE_NAMES)
           for name, digest in report['source_files_sha256'].items():
               assert hashlib.sha256(Path(name).read_bytes()).hexdigest() == digest
           assert report['converter']['commit'] == '43c46ac8a24adf1a6e872b8a52c706ec9614fad0'
@@ -100,6 +106,41 @@ jobs:
                       'target_hardware_identity_verified', 'display_acceleration_verified', 'cpu_fallback_used'):
               assert report[key] is False
           assert report['state'] in ('passed', 'unverified')
+          assert report['timeouts_seconds'] == {'probe': 60, 'cargo_build': 900,
+              'cargo_resolve': 300, 'ci_metal_download': 300}
+          assert set(report['outputs_sha256']) <= set(parser.OWN_OUTPUT_NAMES)
+          for name, digest in report['outputs_sha256'].items():
+              assert hashlib.sha256((directory / name).read_bytes()).hexdigest() == digest
+          if 'xe2_compute_probe.metal' in report['outputs_sha256']:
+              assert (directory / 'xe2_compute_probe.metal').read_bytes() == Path('gpu-toolchain/xe2_compute_probe.metal').read_bytes()
+          if report['air_llvm_text_exported']:
+              assert report['air_compilation_verified'] is True
+              assert {'xe2_compute_probe.metal', 'xe2_compute_probe.air', 'own-air.ll'} <= set(report['outputs_sha256'])
+              llvm_text = (directory / 'own-air.ll').read_bytes()
+              parser.inspect_llvm_export(llvm_text)
+              assert parser.inspect_air((directory / 'xe2_compute_probe.air').read_bytes(), llvm_text) == report['air']
+          if report['cargo_lock'] is not None:
+              lock = (directory / 'Cargo.lock').read_bytes()
+              assert parser.lock_summary(lock) == {key: report['cargo_lock'][key] for key in
+                  ('sha256', 'format_version', 'package_count', 'registry_sources_and_checksums_checked')}
+          for step in report['command_steps']:
+              assert step['stage'] in parser.COMMAND_STAGES
+              progress = step.get('progress')
+              if 'progress' in step:
+                  assert type(progress) is dict
+              if progress:
+                  assert step['stage'] in ('cargo-resolve', 'cargo-build')
+                  assert set(progress) == {'categories', 'observations', 'last_category',
+                      'observation_limit_reached', 'elapsed_seconds'}
+                  assert set(progress['categories']) == set(parser.PROGRESS_CATEGORIES)
+                  assert all(type(n) is int and 0 <= n <= parser.MAX_PROGRESS_OBSERVATIONS
+                      for n in progress['categories'].values())
+                  assert type(progress['observations']) is int
+                  assert sum(progress['categories'].values()) == progress['observations'] <= parser.MAX_PROGRESS_OBSERVATIONS
+                  assert progress['last_category'] in (None, *parser.PROGRESS_CATEGORIES)
+                  assert type(progress['observation_limit_reached']) is bool
+                  assert type(progress['elapsed_seconds']) in (int, float)
+                  assert math.isfinite(progress['elapsed_seconds']) and progress['elapsed_seconds'] >= 0
           if report['state'] == 'passed':
               assert report['shader_translation_verified'] is True
               assert report['converter_build_verified'] is report['air_compilation_verified'] is True
@@ -108,11 +149,16 @@ jobs:
               assert report['converter']['reflection_schema_version'] == 55
               assert report['converter']['reflection_schema_source_sha256'] == 'a9ccc05d22e417594181b6f39222476fb4fd66d7dc887e7d8af32a5ec451d576'
               assert report['reflection']['count_bytes'] == 4
-              for name, digest in report['outputs_sha256'].items():
-                  assert hashlib.sha256((directory / name).read_bytes()).hexdigest() == digest
+              assert set(report['outputs_sha256']) == set(parser.OWN_OUTPUT_NAMES)
+              assert report['air_llvm_text_exported'] is True
+              assert report['cargo_lock']['resolver_completed'] is report['cargo_lock']['unchanged_after_build'] is True
+              assert hashlib.sha256((directory / 'Cargo.lock').read_bytes()).hexdigest() == report['dependencies']['cargo_lock_sha256']
+              assert parser.inspect_reflection((directory / 'reflection.json').read_bytes()) == report['reflection']
+              assert parser.inspect_spirv((directory / 'own-shader.spv').read_bytes()) == {
+                  key: value for key, value in report['spirv'].items() if key != 'independent_validator_passed'}
           else:
               assert report['shader_translation_verified'] is False
-          print('Shader compiler evidence checked; native Arc submission and Metal registration remain unverified.')
+          print('Available compiler evidence checked; native Arc submission and Metal registration remain unverified.')
           PY
           if [ "$status" -eq 2 ]; then
             echo '::error::Compiler chain remains unverified; inspect the fixed phase/code in report.json.'

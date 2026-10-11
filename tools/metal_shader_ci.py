@@ -42,15 +42,23 @@ MAX_SPIRV = 1024 * 1024
 MAX_CAPTURE = 4 * 1024 * 1024
 METAL_PROBE_TIMEOUT = 60
 METAL_DOWNLOAD_TIMEOUT = 300
+CARGO_RESOLVE_TIMEOUT = 300
+CARGO_BUILD_TIMEOUT = 900
+PROGRESS_CATEGORIES = ('index', 'download', 'compile', 'check', 'finish', 'unknown')
+MAX_PROGRESS_OBSERVATIONS = 4096
+MAX_PROGRESS_LINE = 1024
 COMMAND_STAGES = frozenset(('cargo-version', 'rustc-version', 'llvm-dis-version', 'spirv-val-version',
                            'metal-discovery', 'metal-version', 'ci-metal-toolchain-download',
-                           'metal-discovery-after-download', 'metal-version-after-download', 'macos-sdk-version'))
+                           'metal-discovery-after-download', 'metal-version-after-download', 'macos-sdk-version',
+                           'msl-to-air', 'air-llvm-dis', 'cargo-resolve', 'cargo-build', 'cargo-metadata'))
 COMMAND_ERRORS = frozenset(('STEP_TIMEOUT', 'STEP_TIMEOUT_INVALID', 'PROCESS_GROUPS_REQUIRED',
                            'PROCESS_GROUP_CLEANUP_FAILED', 'STEP_TERMINATION_UNCONFIRMED',
                            'STEP_OUTPUT_DRAIN_UNCONFIRMED', 'STEP_OUTPUT_LIMIT', 'STEP_OUTPUT_READ_FAILED'))
 SOURCE_NAMES = ('gpu-toolchain/xe2_compute_probe.metal', 'tools/metal_shader_ci.py',
                 'tests/test_metal_shader.py', '.github/workflows/metal-shader.yml',
                 'docs/METAL_SHADER_BRIDGE.md', 'gpu-toolchain/xe2_integer_probe.cl')
+OWN_OUTPUT_NAMES = ('xe2_compute_probe.metal', 'xe2_compute_probe.air', 'own-air.ll',
+                    'own-shader.spv', 'reflection.json')
 
 
 class ShaderError(ValueError):
@@ -269,20 +277,97 @@ def private_path(path, root):
     return resolved
 
 
-def run_step(command, directory, timeout=60, env=None, slow_step=None, stdout_only=False):
-    maximum = 300 if slow_step in ('cargo-build', 'toolchain-download') else 60
+class CargoProgress:
+    """Bounded categories only; stream text never enters the exported summary."""
+
+    def __init__(self):
+        self.lock = threading.Lock()
+        self.counts = dict.fromkeys(PROGRESS_CATEGORIES, 0)
+        self.observations = 0
+        self.last = None
+        self.limited = False
+        self.closed = False
+
+    def observe(self, line, truncated=False):
+        line = line.strip()
+        if not line and not truncated:
+            return
+        category = 'unknown'
+        if not truncated:
+            for prefix, selected in ((b'Updating ', 'index'), (b'Downloading ', 'download'),
+                                     (b'Downloaded ', 'download'), (b'Compiling ', 'compile'),
+                                     (b'Checking ', 'check'), (b'Finished ', 'finish')):
+                if line.startswith(prefix):
+                    category = selected
+                    break
+        with self.lock:
+            if self.closed:
+                return
+            if self.observations == MAX_PROGRESS_OBSERVATIONS:
+                self.limited = True
+                return
+            self.observations += 1
+            self.counts[category] += 1
+            self.last = category
+
+    def finish(self, target, elapsed):
+        with self.lock:
+            self.closed = True
+            target.update(categories=dict(self.counts), observations=self.observations,
+                          last_category=self.last, observation_limit_reached=self.limited,
+                          elapsed_seconds=round(elapsed, 3))
+
+
+class CargoProgressStream:
+    """Each pipe owns a short unfinished line; a shared collector owns counts."""
+
+    def __init__(self, collector):
+        self.collector = collector
+        self.pending = bytearray()
+        self.truncated = False
+
+    def feed(self, chunk, final=False):
+        pieces = chunk.split(b'\n')
+        for index, piece in enumerate(pieces):
+            if len(self.pending) + len(piece) > MAX_PROGRESS_LINE:
+                self.pending.clear()
+                self.truncated = True
+            elif not self.truncated:
+                self.pending.extend(piece)
+            if index < len(pieces) - 1:
+                self.collector.observe(bytes(self.pending), self.truncated)
+                self.pending.clear()
+                self.truncated = False
+        if final and (self.pending or self.truncated):
+            self.collector.observe(bytes(self.pending), self.truncated)
+            self.pending.clear()
+            self.truncated = False
+
+
+def run_step(command, directory, timeout=60, env=None, slow_step=None, stdout_only=False, progress=None):
+    maximum = CARGO_BUILD_TIMEOUT if slow_step == 'cargo-build' else (
+        CARGO_RESOLVE_TIMEOUT if slow_step == 'cargo-resolve' else (
+            METAL_DOWNLOAD_TIMEOUT if slow_step == 'toolchain-download' else 60))
     need(type(timeout) in (int, float) and 0 < timeout <= maximum, 'STEP_TIMEOUT_INVALID')
+    need(progress is None or (type(progress) is dict and not progress and
+         slow_step in ('cargo-resolve', 'cargo-build')), 'PROGRESS_REPORT_INVALID')
     need(os.name == 'posix', 'PROCESS_GROUPS_REQUIRED')
+    collector = CargoProgress() if progress is not None else None
+    started = time.monotonic()
     process = subprocess.Popen(command, cwd=directory, stdin=subprocess.DEVNULL,
                                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                env=env, start_new_session=True)
     captured, errors, overflow, reader_failed = bytearray(), bytearray(), threading.Event(), threading.Event()
     def drain(stream, destination):
+        observer = CargoProgressStream(collector) if collector is not None else None
         try:
             while True:
-                chunk = stream.read(65536)
+                read = getattr(stream, 'read1', stream.read) if observer is not None else stream.read
+                chunk = read(65536)
                 if not chunk:
                     break
+                if observer is not None:
+                    observer.feed(chunk)
                 if len(destination) + len(chunk) > MAX_CAPTURE:
                     overflow.set()
                     try:
@@ -294,6 +379,8 @@ def run_step(command, directory, timeout=60, env=None, slow_step=None, stdout_on
         except OSError:
             reader_failed.set()
         finally:
+            if observer is not None:
+                observer.feed(b'', final=True)
             # The owning reader closes its stream after read() returned. The
             # caller must never acquire a buffered-stream lock held by read().
             stream.close()
@@ -325,6 +412,8 @@ def run_step(command, directory, timeout=60, env=None, slow_step=None, stdout_on
                 error = 'STEP_OUTPUT_DRAIN_UNCONFIRMED'
             else:
                 stream.close()
+        if collector is not None:
+            collector.finish(progress, time.monotonic() - started)
     need(error is None, error or 'STEP_FAILURE')
     need(not overflow.is_set(), 'STEP_OUTPUT_LIMIT')
     need(not reader_failed.is_set(), 'STEP_OUTPUT_READ_FAILED')
@@ -336,12 +425,16 @@ def version(raw):
     return match.group(1).decode('ascii') if match else None
 
 
-def reported_step(stage, command, directory, report, timeout, **options):
+def reported_step(stage, command, directory, report, timeout, cargo_progress=False, **options):
     need(stage in COMMAND_STAGES, 'COMMAND_STAGE_INVALID')
     report['phase'] = stage
     detail = {'stage': stage, 'timeout_seconds': timeout, 'timed_out': False,
               'completed': False, 'returncode': None, 'code': 'NOT_STARTED'}
     report.setdefault('command_steps', []).append(detail)
+    if cargo_progress:
+        need(stage in ('cargo-resolve', 'cargo-build'), 'PROGRESS_REPORT_INVALID')
+        detail['progress'] = {}
+        options['progress'] = detail['progress']
     try:
         code, raw = run_step(command, directory, timeout=timeout, **options)
     except ShaderError as error:
@@ -473,12 +566,50 @@ def dependency_provenance(lock_data, metadata_raw):
     return {'cargo_lock_sha256': sha(lock_data), 'resolved_packages': sorted(result, key=lambda item: item['name'])}
 
 
-def write_report(path, value):
+def lock_summary(raw):
+    try:
+        value = tomllib.loads(raw.decode('utf-8'))
+    except (UnicodeError, ValueError) as error:
+        raise ShaderError('CARGO_LOCK_INVALID') from error
+    need(not any(marker in raw for marker in (b'/Users/', b'C:\\Users\\', b'C:\\\\Users\\\\', b'/home/')),
+         'CARGO_LOCK_PRIVATE_PATH')
+    comments = (b'# This file is automatically @generated by Cargo.',
+                b'# It is not intended for manual editing.')
+    need(all(line.strip() in comments for line in raw.splitlines() if line.lstrip().startswith(b'#')),
+         'CARGO_LOCK_COMMENT_UNVERIFIED')
+    need(set(value) == {'version', 'package'} and type(value['version']) is int and value['version'] in (3, 4) and
+         isinstance(value['package'], list) and 0 < len(value['package']) <= 4096, 'CARGO_LOCK_INVALID')
+    identities = set()
+    for item in value['package']:
+        need(isinstance(item, dict) and set(item) <= {'name', 'version', 'source', 'checksum', 'dependencies'} and
+             isinstance(item.get('name'), str) and re.fullmatch(r'[A-Za-z0-9_-]{1,80}', item['name']) and
+             isinstance(item.get('version'), str) and
+             re.fullmatch(r'[0-9]+\.[0-9]+\.[0-9]+(?:[-+][A-Za-z0-9.-]+)?', item['version']),
+             'CARGO_LOCK_PACKAGE_INVALID')
+        origin = item.get('source')
+        need(origin in (None, 'registry+https://github.com/rust-lang/crates.io-index'),
+             'CARGO_LOCK_SOURCE_UNVERIFIED')
+        need(('checksum' not in item if origin is None else
+              isinstance(item.get('checksum'), str) and re.fullmatch(r'[0-9a-f]{64}', item['checksum'])),
+             'CARGO_LOCK_CHECKSUM_UNVERIFIED')
+        identity = (item['name'], item['version'], origin)
+        need(identity not in identities, 'CARGO_LOCK_PACKAGE_DUPLICATE')
+        identities.add(identity)
+        dependencies = item.get('dependencies', [])
+        need(isinstance(dependencies, list) and len(dependencies) <= 4096 and all(
+            isinstance(dep, str) and re.fullmatch(r'[A-Za-z0-9_-]{1,80}(?: [0-9]+\.[0-9]+\.[0-9]+(?:[-+][A-Za-z0-9.-]+)?)?'
+                r'(?: \(registry\+https://github.com/rust-lang/crates.io-index\))?', dep)
+            for dep in dependencies), 'CARGO_LOCK_DEPENDENCY_INVALID')
+    return {'sha256': sha(raw), 'format_version': value['version'], 'package_count': len(identities),
+            'registry_sources_and_checksums_checked': True}
+
+
+def write_bytes_atomic(path, data):
     temporary = None
     try:
         with tempfile.NamedTemporaryFile(dir=path.parent, prefix='.shader-report-', delete=False) as stream:
             temporary = Path(stream.name)
-            stream.write((json.dumps(value, indent=2, allow_nan=False) + '\n').encode('utf-8'))
+            stream.write(data)
             stream.flush()
             os.fsync(stream.fileno())
         os.replace(temporary, path)
@@ -486,6 +617,23 @@ def write_report(path, value):
     finally:
         if temporary is not None:
             temporary.unlink(missing_ok=True)
+
+
+def write_report(path, value):
+    write_bytes_atomic(path, (json.dumps(value, indent=2, allow_nan=False) + '\n').encode('utf-8'))
+
+
+def retain_output(artifacts, report, name, data):
+    need(name in OWN_OUTPUT_NAMES and isinstance(data, bytes), 'OUTPUT_NAME_INVALID')
+    write_bytes_atomic(artifacts / name, data)
+    report['outputs_sha256'][name] = sha(data)
+
+
+def inspect_llvm_export(raw):
+    # inspect_air ignores llvm-dis's ModuleID comment for kernel semantics.
+    # An exported original file must additionally pass privacy in that comment.
+    need(not any(marker in raw for marker in (b'/Users/', b'C:\\Users\\', b'C:\\\\Users\\\\', b'/home/', b'\\Users\\')),
+         'AIR_LLVM_EXPORT_PRIVATE_PATH')
 
 
 def main(argv=None):
@@ -502,12 +650,14 @@ def main(argv=None):
               'code': 'NOT_STARTED', 'source_commit': None, 'source_files_sha256': {}, 'tools': [],
               'converter': None, 'dependencies': None, 'outputs_sha256': {}, 'air': None, 'spirv': None,
               'reflection': None, 'converter_build_verified': False, 'air_compilation_verified': False,
+              'air_llvm_text_exported': False, 'cargo_lock': None,
               'shader_translation_verified': False, 'gpu_execution_verified': False,
               'metal_provider_registered': False, 'arc130v_backend_verified': False,
               'target_hardware_identity_verified': False, 'display_acceleration_verified': False,
               'cpu_fallback_used': False, 'metal_toolchain_download': {'attempted': False},
               'command_steps': [], 'architecture': 'x86_64',
-              'timeouts_seconds': {'probe': METAL_PROBE_TIMEOUT, 'cargo_build': 300,
+              'timeouts_seconds': {'probe': METAL_PROBE_TIMEOUT, 'cargo_build': CARGO_BUILD_TIMEOUT,
+                                   'cargo_resolve': CARGO_RESOLVE_TIMEOUT,
                                    'ci_metal_download': METAL_DOWNLOAD_TIMEOUT}}
     artifacts = None
     try:
@@ -533,9 +683,10 @@ def main(argv=None):
                 environment.pop(name, None)
             environment['TMPDIR'] = str(directory)
             environment['METAL2VULKAN_REPRO_DIR'] = str(directory / 'repros')
+            environment['CARGO_TERM_COLOR'] = 'never'
             report['phase'] = 'converter-source'
             report['converter'], original_license = converter_provenance(source, directory)
-            (artifacts / 'CONVERTER-LICENSE.txt').write_bytes(original_license)
+            write_bytes_atomic(artifacts / 'CONVERTER-LICENSE.txt', original_license)
             report['phase'] = 'toolchain'
             required = {name: shutil.which(name) for name in ('cargo', 'rustc', 'llvm-dis', 'spirv-val', 'xcrun')}
             need(all(required.values()), 'REQUIRED_TOOL_MISSING')
@@ -573,37 +724,74 @@ def main(argv=None):
             report['sdk_version'] = version(sdk)
             environment['METAL2VULKAN_LLVM_DIS'] = str(Path(required['llvm-dis']).resolve())
             environment['METAL2VULKAN_SPIRV_VAL'] = str(Path(required['spirv-val']).resolve())
+            # Real owned AIR is useful evidence even if the later cold Rust
+            # build times out. Preserve original bytes only after qualification.
+            msl = read_regular(root / 'gpu-toolchain/xe2_compute_probe.metal')
+            (directory / 'xe2_compute_probe.metal').write_bytes(msl)
+            status, _ = reported_step('msl-to-air',
+                [required['xcrun'], '-sdk', 'macosx', 'metal', '-c',
+                 'xe2_compute_probe.metal', '-o', 'xe2_compute_probe.air'], directory, report, 60, env=environment)
+            need(status == 0, 'MSL_AIR_COMPILATION_FAILED')
+            status, _ = reported_step('air-llvm-dis',
+                [required['llvm-dis'], 'xe2_compute_probe.air', '-o', 'own-air.ll'],
+                directory, report, 60, env=environment)
+            need(status == 0, 'AIR_LLVM_DIS_FAILED')
+            report['phase'] = 'air-llvm-contract'
+            air = read_regular(directory / 'xe2_compute_probe.air')
+            llvm_text = read_regular(directory / 'own-air.ll')
+            report['air'] = inspect_air(air, llvm_text)
+            retain_output(artifacts, report, 'xe2_compute_probe.metal', msl)
+            retain_output(artifacts, report, 'xe2_compute_probe.air', air)
+            report['air_compilation_verified'] = True
+            inspect_llvm_export(llvm_text)
+            retain_output(artifacts, report, 'own-air.ll', llvm_text)
+            report['air_llvm_text_exported'] = True
+            report['code'] = 'AIR_PARTIAL_EVIDENCE_READY'
+            write_report(artifacts / 'report.json', report)
+
+            # Source remains the exact selected checkout. Cargo itself creates
+            # the lockfile; no hand-written lock or unqualified cache is used.
+            lock_path, lock = source / 'Cargo.lock', None
+            resolve_status = None
+            try:
+                resolve_status, _ = reported_step('cargo-resolve',
+                    [required['cargo'], 'generate-lockfile', '--manifest-path', str(source / 'Cargo.toml')],
+                    directory, report, CARGO_RESOLVE_TIMEOUT, env=environment,
+                    slow_step='cargo-resolve', cargo_progress=True)
+            finally:
+                if lock_path.exists() or lock_path.is_symlink():
+                    lock = read_regular(lock_path)
+                    summary = lock_summary(lock)
+                    write_bytes_atomic(artifacts / 'Cargo.lock', lock)
+                    report['cargo_lock'] = summary | {'resolver_completed': resolve_status == 0,
+                                                     'unchanged_after_build': None}
+                    write_report(artifacts / 'report.json', report)
+            need(resolve_status == 0, 'CARGO_RESOLUTION_FAILED')
+            need(lock is not None, 'CARGO_LOCK_MISSING')
             report['phase'] = 'converter-build'
-            status, _ = run_step([required['cargo'], 'build', '--manifest-path', str(source / 'Cargo.toml'),
-                                  '-p', 'metal2vulkan', '--bin', 'metal2vulkan', '--features', 'serde', '--release',
-                                  '--target-dir', str(directory / 'cargo-target')], directory, 300,
-                                 env=environment, slow_step='cargo-build')
+            try:
+                status, _ = reported_step('cargo-build',
+                    [required['cargo'], 'build', '--manifest-path', str(source / 'Cargo.toml'),
+                     '-p', 'metal2vulkan', '--bin', 'metal2vulkan', '--features', 'serde', '--release', '--locked',
+                     '--target-dir', str(directory / 'cargo-target')], directory, report, CARGO_BUILD_TIMEOUT,
+                    env=environment, slow_step='cargo-build', cargo_progress=True)
+            finally:
+                report['cargo_lock']['unchanged_after_build'] = read_regular(lock_path) == lock
+                need(report['cargo_lock']['unchanged_after_build'], 'CARGO_LOCK_CHANGED')
             need(status == 0, 'CONVERTER_BUILD_FAILED')
             executable = directory / 'cargo-target/release/metal2vulkan'
             report['converter']['executable_sha256'] = sha(read_regular(executable, 128 * 1024 * 1024))
             report['converter_build_verified'] = True
             report['phase'] = 'dependency-provenance'
-            lock = read_regular(source / 'Cargo.lock')
-            status, metadata = run_step([required['cargo'], 'metadata', '--manifest-path', str(source / 'Cargo.toml'),
-                                        '--format-version', '1', '--locked', '--features', 'serde'], directory,
-                                       60, env=environment, stdout_only=True)
+            status, metadata = reported_step('cargo-metadata',
+                [required['cargo'], 'metadata', '--manifest-path', str(source / 'Cargo.toml'),
+                 '--format-version', '1', '--locked', '--features', 'serde'], directory, report,
+                60, env=environment, stdout_only=True)
             need(status == 0, 'CARGO_METADATA_FAILED')
+            need(read_regular(lock_path) == lock, 'CARGO_LOCK_CHANGED')
+            report['phase'] = 'dependency-provenance'
             report['dependencies'] = dependency_provenance(lock, metadata)
-            (artifacts / 'Cargo.lock').write_bytes(lock)
             write_report(artifacts / 'dependencies.json', report['dependencies'])
-            report['phase'] = 'msl-to-air'
-            msl = read_regular(root / 'gpu-toolchain/xe2_compute_probe.metal')
-            (directory / 'xe2_compute_probe.metal').write_bytes(msl)
-            status, _ = run_step([required['xcrun'], '-sdk', 'macosx', 'metal', '-c',
-                                  'xe2_compute_probe.metal', '-o', 'xe2_compute_probe.air'], directory, 60, env=environment)
-            need(status == 0, 'MSL_AIR_COMPILATION_FAILED')
-            report['phase'] = 'air-llvm-contract'
-            status, _ = run_step([required['llvm-dis'], 'xe2_compute_probe.air', '-o', 'own-air.ll'],
-                                 directory, 60, env=environment)
-            need(status == 0, 'AIR_LLVM_DIS_FAILED')
-            air = read_regular(directory / 'xe2_compute_probe.air')
-            report['air'] = inspect_air(air, read_regular(directory / 'own-air.ll'))
-            report['air_compilation_verified'] = True
             report['phase'] = 'air-to-spirv'
             status, _ = run_step([str(executable), 'xe2_compute_probe.air', 'own-shader.spv', '--stage', 'kernel',
                                   '--local', '64,1,1', '--whole-workgroups', '--emit-meta', 'own-reflection.json'],
@@ -621,10 +809,8 @@ def main(argv=None):
             report['reflection'] = inspect_reflection(reflection)
             # Only our own generated shader outputs and licenses/provenance leave
             # scratch space. No vendor sources, tool logs, user IDs or native GPU claim.
-            for name, data in (('xe2_compute_probe.metal', msl), ('xe2_compute_probe.air', air),
-                               ('own-shader.spv', spirv), ('reflection.json', reflection)):
-                (artifacts / name).write_bytes(data)
-                report['outputs_sha256'][name] = sha(data)
+            for name, data in (('own-shader.spv', spirv), ('reflection.json', reflection)):
+                retain_output(artifacts, report, name, data)
             report.update(state='passed', phase='completed', code='SHADER_TRANSLATION_VERIFIED',
                           shader_translation_verified=True)
     except ShaderError as error:

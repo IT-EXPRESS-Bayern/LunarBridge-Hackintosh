@@ -66,17 +66,18 @@ flowchart TD
 | Eigene CPU-Shader-Payload | **Fertig — CPU-Format** | 37 Payloadtests plus 37 historische Inspectorprüfungen; GPU-Pointer bleiben offen. [Payloadvertrag](gpu-toolchain/KERNEL_PAYLOAD.md) |
 | GGTT-Schreibplan | **Fertig — CPU-Planer** | 31 Tests / 132 echte C++-Aufrufe; Host-DLL und macOS-Objektbuild integriert, keine Hardwarebindung. [GGTT](docs/GGTT_BINDING.md) |
 | GuC-Schedulercodec | **Fertig — CPU-Protokoll** | 25 Prüfungen des tatsächlichen C++-Codecs; Register-/Mode-/Submit-/Deregister-Nachrichten, keine laufende Firmware oder Queue. [Schedulervertrag](docs/GUC_SCHEDULER.md) |
-| MSL → AIR → Shader-SPIR-V | **In Arbeit — Compilerqualifikation** | 39 Offlineprüfungen bestanden; erster echter Compilerlauf mit Timeout vor der Übersetzung. Der korrigierte Workflow fordert geprüfte Compilerausgabe. [Compilerbrücke](docs/METAL_SHADER_BRIDGE.md) |
+| MSL → AIR → Shader-SPIR-V | **In Arbeit — Compilerqualifikation** | 52 Offlineprüfungen bestanden; Metal-Werkzeuge in echter CI geprüft, Converterbau mit Timeout. Der überarbeitete Workflow erhält Teilnachweise für AIR und fordert geprüfte Übersetzung. [Compilerbrücke](docs/METAL_SHADER_BRIDGE.md) |
+| Mesa-CPU-Parser | **In Arbeit — nativer Baunachweis** | 21 Offlineprüfungen bestanden; eine separate Intel-macOS-CI baut das gepinnte `spirv2nir`. Native GPU-Ausführung bleibt offen. [Backend-Anschlüsse](docs/METAL_BACKEND_SEAMS.md) |
 | Nativer Speicher + Ausführung | **Blockiert — Implementierung fehlt** | GPU-VA-Bindung, programmierter PAT2, globale GGTT-Ownership, GuC-Start und Queue-Submission fehlen. [Architektur](docs/GPU_DESIGN.md) |
 | Metal-Anbieter + Display | **Blockiert — Implementierung fehlt** | Kein LunarBridge-System-Metal-Anbieter, keine beschleunigte Ausgabe oder WindowServer-Anbindung. [Hardwareumfang](docs/HARDWARE_SUPPORT.md) |
 
-Das geprüfte Diagnosepaket stammt aus [Build 38125102141](https://github.com/IT-EXPRESS-Bayern/LunarBridge-Hackintosh/actions/runs/38125102141)
-zum Quellstand [36c16c9](https://github.com/IT-EXPRESS-Bayern/LunarBridge-Hackintosh/commit/36c16c9bd644d5682d2ffc4cfbb146f14d982824):
-**74.312 Byte Kernelbinary**, 24 entsprechende Quelldateien gegen diesen Commit
+Das geprüfte Diagnosepaket stammt aus [Build 38128683057](https://github.com/IT-EXPRESS-Bayern/LunarBridge-Hackintosh/actions/runs/38128683057)
+zum Quellstand [755ba09](https://github.com/IT-EXPRESS-Bayern/LunarBridge-Hackintosh/commit/755ba0932882bdf8d0519f1c4822867cc140a7cf):
+**79.080 Byte Kernelbinary**, 28 entsprechende Quelldateien gegen diesen Commit
 geprüft und erfolgreiche `plan`-/`install`-/`rollback`-Aufrufe der tatsächlich
-verpackten Installer-CLI für beide Profile in künstlichen EFIs. Spätere Payload-,
-GGTT- und Compilerarbeit hat eigene Nachweise und gehört dadurch nicht
-automatisch zu diesem historischen Paket.
+verpackten Installer-CLI für beide Profile in künstlichen EFIs. GGTT-Planer
+und GuC-Schedulercodec sind im Binary enthalten. Spätere Compilerarbeit hat
+eigene Nachweise und bleibt vom Diagnosepaket getrennt.
 
 Ein separater [Metal-Funktionstest](docs/METAL_VALIDATION.json) bestand auf
 einem Intel-macOS-CI-Host mit 65.536 korrekten Ausgaben. Er nutzte dessen

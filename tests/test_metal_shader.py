@@ -14,6 +14,7 @@ import struct
 import subprocess
 import sys
 import tempfile
+import textwrap
 import unittest
 from unittest import mock
 
@@ -75,9 +76,101 @@ def fake_process(output=b'ok', error=b'', waits=None):
     return process
 
 
+def lock_fixture():
+    return ('version = 4\n[[package]]\nname = "metal2vulkan"\nversion = "0.1.0"\n'
+            '[[package]]\nname = "serde"\nversion = "1.0.0"\n'
+            'source = "registry+https://github.com/rust-lang/crates.io-index"\n'
+            'checksum = "' + 'a' * 64 + '"\n').encode()
+
+
 class ShaderBoundaries(unittest.TestCase):
     def parse_reflection(self, value):
         return checker.inspect_reflection(json.dumps(value).encode())
+
+    def partial_air_cli(self, *, outcomes=None, write_lock=True, llvm=None,
+                        mutate_build_lock=False, mutate_metadata_lock=False, invalid_air=False):
+        # CPU-only fixtures exercise preservation/failure ordering. Every
+        # scenario remains unverified; these bytes are not real compiler proof.
+        with temporary_directory() as name:
+            directory = Path(name)
+            source = directory / 'source'
+            source.mkdir()
+            (source / 'Cargo.toml').write_bytes(b'[package]\nname="offline-fixture"\n')
+            tools = {tool: directory / tool for tool in ('cargo', 'rustc', 'llvm-dis', 'spirv-val', 'xcrun', 'metal')}
+            for path in tools.values():
+                path.write_bytes(b'synthetic offline executable fixture')
+            air, default_llvm = air_fixture()
+            default_llvm = default_llvm.replace(b'/Users/private/input.air', b'xe2_compute_probe.air')
+            llvm = default_llvm if llvm is None else llvm
+            calls, outcomes = [], outcomes or {}
+            versions = {'cargo': b'cargo 1.98.0', 'rustc': b'rustc 1.98.0',
+                        'llvm-dis': b'LLVM 22.1.8', 'spirv-val': b'SPIRV-Tools 2026.3'}
+
+            def step(command, cwd, timeout=60, **options):
+                executable = Path(command[0]).name
+                if command[1:] == ['--version']:
+                    stage, value = executable + '-version', (0, versions[executable])
+                elif '-find' in command:
+                    stage, value = 'metal-discovery', (0, str(tools['metal']).encode())
+                elif 'metal' in command and '--version' in command:
+                    stage, value = 'metal-version', (0, b'Metal version 32023.883')
+                elif '--show-sdk-version' in command:
+                    stage, value = 'macos-sdk-version', (0, b'26.4')
+                elif executable == 'xcrun' and '-c' in command:
+                    stage, value = 'msl-to-air', (0, b'')
+                    (cwd / 'xe2_compute_probe.air').write_bytes(b'invalid' if invalid_air else air)
+                elif executable == 'llvm-dis':
+                    stage, value = 'air-llvm-dis', (0, b'')
+                    (cwd / 'own-air.ll').write_bytes(llvm)
+                elif command[1] == 'generate-lockfile':
+                    stage, value = 'cargo-resolve', (0, b'')
+                    if write_lock:
+                        (source / 'Cargo.lock').write_bytes(lock_fixture())
+                elif command[1] == 'build':
+                    stage, value = 'cargo-build', checker.ShaderError('STEP_TIMEOUT')
+                    if mutate_build_lock:
+                        (source / 'Cargo.lock').write_bytes(lock_fixture() + b'\n')
+                    target = cwd / 'cargo-target/release/metal2vulkan'
+                    target.parent.mkdir(parents=True)
+                    target.write_bytes(b'synthetic offline converter fixture')
+                elif command[1] == 'metadata':
+                    stage, value = 'cargo-metadata', checker.ShaderError('STEP_TIMEOUT')
+                    if mutate_metadata_lock:
+                        (source / 'Cargo.lock').write_bytes(lock_fixture() + b'\n')
+                else:
+                    raise AssertionError('No full shader/GPU success is permitted in this fixture')
+                calls.append({'stage': stage, 'timeout': timeout, 'command': command})
+                if 'progress' in options:
+                    monitor = checker.CargoProgress()
+                    monitor.observe(b'Updating crates.io index' if stage == 'cargo-resolve' else b'Compiling PRIVATE-CRATE v1 /Users/PRIVATE-ID')
+                    monitor.finish(options['progress'], 0.125)
+                selected = outcomes.get(stage, value)
+                if isinstance(selected, Exception):
+                    raise selected
+                return selected
+
+            output = io.StringIO()
+            with mock.patch.object(checker.sys, 'platform', 'darwin'), \
+                 mock.patch.object(checker.platform, 'machine', return_value='x86_64'), \
+                 mock.patch.dict(checker.os.environ, {'GITHUB_ACTIONS': 'true', 'CI': 'true', 'GITHUB_SHA': 'a' * 40}), \
+                 mock.patch.object(checker.shutil, 'which', side_effect=lambda tool: str(tools[Path(tool).name])), \
+                 mock.patch.object(checker, 'converter_provenance', return_value=(
+                     {'commit': checker.CONVERTER_PIN}, b'synthetic offline license fixture')), \
+                 mock.patch.object(checker, 'run_step', side_effect=step), contextlib.redirect_stdout(output):
+                status = checker.main(['--context', 'ci-host', '--converter-source', str(source),
+                                       '--artifact-root', str(directory / 'artifacts')])
+            files = {path.name: path.read_bytes() for path in (directory / 'artifacts').iterdir()}
+            report = json.loads(files['report.json'])
+            self.assertEqual(status, 2)
+            self.assertEqual(report['state'], 'unverified')
+            for key in ('shader_translation_verified', 'gpu_execution_verified', 'metal_provider_registered',
+                        'arc130v_backend_verified', 'target_hardware_identity_verified',
+                        'display_acceleration_verified', 'cpu_fallback_used'):
+                self.assertIs(report[key], False)
+            for marker in (name, 'PRIVATE-CRATE', 'PRIVATE-ID'):
+                self.assertNotIn(marker, json.dumps(report))
+                self.assertNotIn(marker, output.getvalue())
+            return report, files, calls
 
     def metal_probe_cli(self, context, *, allow=False, outcomes=None, authorized_ci=True):
         # Offline control-flow fixtures. No compiler/component installer runs,
@@ -226,6 +319,251 @@ class ShaderBoundaries(unittest.TestCase):
             self.assertFalse(report['metal_toolchain_download']['attempted'])
             self.assertFalse(any(item['stage'] == 'ci-metal-toolchain-download' for item in calls))
             self.assertNotIn('private-unexpected-error', json.dumps(report))
+
+    def test_partial_air_original_bytes_survive_later_cargo_timeout(self):
+        report, files, calls = self.partial_air_cli()
+        self.assertEqual((report['phase'], report['code']), ('cargo-build', 'STEP_TIMEOUT'))
+        self.assertTrue(report['air_compilation_verified'])
+        self.assertTrue(report['air_llvm_text_exported'])
+        self.assertFalse(report['converter_build_verified'])
+        self.assertEqual(set(report['outputs_sha256']), {'xe2_compute_probe.metal', 'xe2_compute_probe.air', 'own-air.ll'})
+        for name, digest in report['outputs_sha256'].items():
+            self.assertEqual(hashlib.sha256(files[name]).hexdigest(), digest)
+        self.assertEqual(files['xe2_compute_probe.metal'], (ROOT / 'gpu-toolchain/xe2_compute_probe.metal').read_bytes())
+        self.assertEqual(files['xe2_compute_probe.air'], air_fixture()[0])
+        self.assertEqual(files['own-air.ll'], air_fixture()[1].replace(b'/Users/private/input.air', b'xe2_compute_probe.air'))
+        self.assertEqual(files['Cargo.lock'], lock_fixture())
+        self.assertEqual(report['cargo_lock']['sha256'], hashlib.sha256(lock_fixture()).hexdigest())
+        self.assertTrue(report['cargo_lock']['resolver_completed'])
+        self.assertTrue(report['cargo_lock']['unchanged_after_build'])
+        self.assertIsNone(report['dependencies'])
+        stages = [call['stage'] for call in calls]
+        self.assertLess(stages.index('air-llvm-dis'), stages.index('cargo-resolve'))
+        self.assertLess(stages.index('cargo-resolve'), stages.index('cargo-build'))
+        build = next(call for call in calls if call['stage'] == 'cargo-build')
+        self.assertIn('--locked', build['command'])
+        self.assertEqual(build['timeout'], 900)
+        self.assertEqual(report['command_steps'][-1]['progress']['last_category'], 'compile')
+
+    def test_resolver_timeout_preserves_only_actual_existing_lock_snapshot(self):
+        for existing in (False, True):
+            report, files, calls = self.partial_air_cli(write_lock=existing,
+                outcomes={'cargo-resolve': checker.ShaderError('STEP_TIMEOUT')})
+            self.assertEqual((report['phase'], report['code']), ('cargo-resolve', 'STEP_TIMEOUT'))
+            self.assertTrue(report['air_compilation_verified'])
+            self.assertEqual('Cargo.lock' in files, existing)
+            self.assertEqual(report['cargo_lock'] is not None, existing)
+            if existing:
+                self.assertFalse(report['cargo_lock']['resolver_completed'])
+                self.assertIsNone(report['cargo_lock']['unchanged_after_build'])
+            self.assertNotIn('cargo-build', [call['stage'] for call in calls])
+            self.assertEqual(report['command_steps'][-1]['progress']['last_category'], 'index')
+
+    def test_resolver_nonzero_or_missing_lock_never_starts_locked_build(self):
+        for options, expected in (({'outcomes': {'cargo-resolve': (101, b'private error')}}, 'CARGO_RESOLUTION_FAILED'),
+                                  ({'write_lock': False}, 'CARGO_LOCK_MISSING')):
+            report, _, calls = self.partial_air_cli(**options)
+            self.assertEqual(report['phase'], 'cargo-resolve')
+            self.assertEqual(report['code'], expected)
+            self.assertNotIn('cargo-build', [call['stage'] for call in calls])
+            self.assertFalse(report['converter_build_verified'])
+
+    def test_locked_build_and_metadata_refuse_changed_lock_without_replacing_snapshot(self):
+        for metadata in (False, True):
+            options = {'mutate_build_lock': not metadata, 'mutate_metadata_lock': metadata}
+            if metadata:
+                options['outcomes'] = {'cargo-build': (0, b''), 'cargo-metadata': (0, b'{}')}
+            report, files, calls = self.partial_air_cli(**options)
+            self.assertEqual(report['code'], 'CARGO_LOCK_CHANGED')
+            self.assertEqual(files['Cargo.lock'], lock_fixture())
+            self.assertIsNone(report['dependencies'])
+            if metadata:
+                self.assertIn('--locked', calls[-1]['command'])
+            else:
+                self.assertFalse(report['cargo_lock']['unchanged_after_build'])
+
+    def test_failed_air_or_disassembly_cannot_start_cargo_or_export_unqualified_bytes(self):
+        for options, expected in (({'invalid_air': True}, 'AIR_SIZE_INVALID'),
+                                  ({'llvm': air_fixture()[1] + b'!2 = !{!"/Users/PRIVATE-ID/source"}\n'}, 'AIR_PRIVATE_PATH_METADATA'),
+                                  ({'outcomes': {'msl-to-air': (1, b'')}}, 'MSL_AIR_COMPILATION_FAILED'),
+                                  ({'outcomes': {'air-llvm-dis': (1, b'')}}, 'AIR_LLVM_DIS_FAILED')):
+            report, files, calls = self.partial_air_cli(**options)
+            self.assertEqual(report['code'], expected)
+            self.assertFalse(report['air_compilation_verified'])
+            self.assertEqual(report['outputs_sha256'], {})
+            self.assertNotIn('cargo-resolve', [call['stage'] for call in calls])
+            self.assertNotIn('own-air.ll', files)
+
+    def test_private_moduleid_prevents_original_llvm_export_without_silent_rewrite(self):
+        original = air_fixture()[1]
+        report, files, calls = self.partial_air_cli(llvm=original)
+        self.assertEqual(report['code'], 'AIR_LLVM_EXPORT_PRIVATE_PATH')
+        self.assertTrue(report['air_compilation_verified'])
+        self.assertFalse(report['air_llvm_text_exported'])
+        self.assertEqual(set(report['outputs_sha256']), {'xe2_compute_probe.metal', 'xe2_compute_probe.air'})
+        self.assertNotIn('own-air.ll', files)
+        self.assertNotIn('cargo-resolve', [call['stage'] for call in calls])
+        self.assertIn(b'/Users/private/input.air', original)
+
+    def test_lock_snapshot_schema_checksum_duplicate_comment_and_paths_are_bounded(self):
+        valid = lock_fixture()
+        summary = checker.lock_summary(valid)
+        self.assertEqual(summary['sha256'], hashlib.sha256(valid).hexdigest())
+        self.assertEqual(summary['package_count'], 2)
+        mutations = (valid.replace(b'version = 4', b'version = true'),
+            valid.replace(b'version = 4', b'version = 5'), valid + b'\nextra = "private"\n',
+            valid.replace(b'a' * 64, b'bad-checksum'),
+            valid.replace(b'registry+https://github.com/rust-lang/crates.io-index', b'git+https://user:token@example.invalid'),
+            valid + b'\n# /Users/PRIVATE-ID\n', valid + b'\n# token=private\n',
+            valid + b'\n[[package]]\nname="metal2vulkan"\nversion="0.1.0"\n',
+            valid + b'\ndependencies=["/home/private"]\n',
+            valid.replace(b'name = "serde"', b'name = "../private"'),
+            valid.replace(b'checksum = "', b'checksum = true\nold_checksum = "'))
+        for raw in mutations:
+            with self.assertRaises(checker.ShaderError):
+                checker.lock_summary(raw)
+
+    def test_progress_categories_fragment_bounds_and_final_snapshot_exclude_raw_text(self):
+        collector = checker.CargoProgress()
+        stream = checker.CargoProgressStream(collector)
+        stream.feed(b'Updat')
+        stream.feed(b'ing crates.io index\nDownloading PRIVATE-CRATE\nCompil')
+        stream.feed(b'ing PRIVATE-CRATE /Users/PRIVATE-ID\nChecking secret\nFinished release\n')
+        stream.feed(b'x' * (checker.MAX_PROGRESS_LINE + 1) + b'\nprivate trailing', final=True)
+        target = {}
+        collector.finish(target, 1.234)
+        self.assertEqual(target['categories'], {'index': 1, 'download': 1, 'compile': 1,
+                                               'check': 1, 'finish': 1, 'unknown': 2})
+        before = copy.deepcopy(target)
+        collector.observe(b'Compiling after-finalization')
+        self.assertEqual(target, before)
+        self.assertNotIn('PRIVATE', json.dumps(target))
+        limited = checker.CargoProgress()
+        for _ in range(checker.MAX_PROGRESS_OBSERVATIONS + 3):
+            limited.observe(b'Compiling secret')
+        summary = {}
+        limited.finish(summary, 0.5)
+        self.assertEqual(summary['observations'], checker.MAX_PROGRESS_OBSERVATIONS)
+        self.assertTrue(summary['observation_limit_reached'])
+
+    def test_optional_progress_survives_actual_supervised_timeout_and_retains_cleanup(self):
+        process = fake_process(output=b'Updating crates.io index\n',
+                               error=b'Compiling PRIVATE-CRATE /Users/PRIVATE-ID\n',
+                               waits=[subprocess.TimeoutExpired(['synthetic'], 1), 0])
+        report = {}
+        with mock.patch.object(checker.os, 'name', 'posix'), \
+             mock.patch.object(checker.signal, 'SIGKILL', 9, create=True), \
+             mock.patch.object(checker.subprocess, 'Popen', return_value=process), \
+             mock.patch.object(checker.os, 'killpg', create=True) as kill:
+            with self.assertRaisesRegex(checker.ShaderError, '^STEP_TIMEOUT$'):
+                checker.reported_step('cargo-build', ['synthetic'], ROOT, report, 1,
+                                      slow_step='cargo-build', cargo_progress=True)
+        detail = report['command_steps'][0]
+        self.assertTrue(detail['timed_out'])
+        self.assertFalse(detail['completed'])
+        self.assertEqual(detail['progress']['categories']['index'], 1)
+        self.assertEqual(detail['progress']['categories']['compile'], 1)
+        self.assertGreaterEqual(detail['progress']['elapsed_seconds'], 0)
+        self.assertNotIn('PRIVATE', json.dumps(report))
+        kill.assert_called_with(process.pid, 9)
+        self.assertEqual([call.kwargs['timeout'] for call in process.wait.call_args_list], [1, 5])
+        self.assertTrue(process.stdout.closed)
+        self.assertTrue(process.stderr.closed)
+
+    def test_slow_step_budgets_and_progress_authorization_precede_process_launch(self):
+        with mock.patch.object(checker.subprocess, 'Popen', side_effect=AssertionError('no process')):
+            for timeout, slow in ((901, 'cargo-build'), (301, 'cargo-resolve'), (301, 'toolchain-download'),
+                                  (61, None), (900, 'unknown-step'), (True, 'cargo-build')):
+                with self.assertRaisesRegex(checker.ShaderError, '^STEP_TIMEOUT_INVALID$'):
+                    checker.run_step(['synthetic'], ROOT, timeout, slow_step=slow)
+            for progress, slow in (([], 'cargo-build'), ({'raw': 'private'}, 'cargo-build'), ({}, None)):
+                with self.assertRaisesRegex(checker.ShaderError, '^PROGRESS_REPORT_INVALID$'):
+                    checker.run_step(['synthetic'], ROOT, 1, slow_step=slow, progress=progress)
+        for timeout, slow in ((900, 'cargo-build'), (300, 'cargo-resolve'), (60, None)):
+            process = fake_process()
+            with mock.patch.object(checker.os, 'name', 'posix'), \
+                 mock.patch.object(checker.signal, 'SIGKILL', 9, create=True), \
+                 mock.patch.object(checker.subprocess, 'Popen', return_value=process), \
+                 mock.patch.object(checker.os, 'killpg', create=True):
+                checker.run_step(['synthetic'], ROOT, timeout, slow_step=slow)
+            self.assertEqual(process.wait.call_args_list[0].kwargs['timeout'], timeout)
+
+    def test_optional_progress_never_closes_active_readers_or_claims_success(self):
+        process = fake_process()
+        reader = mock.Mock()
+        reader.is_alive.return_value = True
+        process.stdout.close = mock.Mock(side_effect=AssertionError('reader owns buffered pipe'))
+        process.stderr.close = mock.Mock(side_effect=AssertionError('reader owns buffered pipe'))
+        progress = {}
+        with mock.patch.object(checker.os, 'name', 'posix'), \
+             mock.patch.object(checker.signal, 'SIGKILL', 9, create=True), \
+             mock.patch.object(checker.subprocess, 'Popen', return_value=process), \
+             mock.patch.object(checker.os, 'killpg', create=True), \
+             mock.patch.object(checker.threading, 'Thread', return_value=reader):
+            with self.assertRaisesRegex(checker.ShaderError, '^STEP_OUTPUT_DRAIN_UNCONFIRMED$'):
+                checker.run_step(['synthetic'], ROOT, 1, slow_step='cargo-build', progress=progress)
+        process.stdout.close.assert_not_called()
+        process.stderr.close.assert_not_called()
+        self.assertEqual([call.kwargs['timeout'] for call in reader.join.call_args_list], [5, 5])
+        self.assertEqual(progress['observations'], 0)
+
+    def test_atomic_partial_output_failure_preserves_bytes_and_report_hash(self):
+        with temporary_directory() as name:
+            directory = Path(name)
+            path = directory / 'own-air.ll'
+            path.write_bytes(b'old verified bytes')
+            report = {'outputs_sha256': {'own-air.ll': hashlib.sha256(path.read_bytes()).hexdigest()}}
+            original = copy.deepcopy(report)
+            with mock.patch.object(checker.os, 'replace', side_effect=OSError('/Users/private')):
+                with self.assertRaises(OSError):
+                    checker.retain_output(directory, report, 'own-air.ll', b'new bytes')
+            self.assertEqual(path.read_bytes(), b'old verified bytes')
+            self.assertEqual(report, original)
+            self.assertEqual(list(directory.iterdir()), [path])
+
+    def test_actual_workflow_guard_accepts_partial_evidence_and_rejects_tampering(self):
+        report, files, _ = self.partial_air_cli()
+        workflow = (ROOT / '.github/workflows/metal-shader.yml').read_text()
+        self.assertIn('timeout-minutes: 25', workflow)
+        block = textwrap.dedent(workflow.split("python3 -B - <<'PY'\n", 1)[1].split('\n          PY', 1)[0])
+        with temporary_directory() as name:
+            directory = Path(name)
+            for source in checker.SOURCE_NAMES:
+                target = directory / source
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes((ROOT / source).read_bytes())
+            artifacts = directory / 'build/metal-shader-artifacts'
+            artifacts.mkdir(parents=True)
+            for filename, data in files.items():
+                (artifacts / filename).write_bytes(data)
+            environment = os.environ | {'GITHUB_SHA': 'a' * 40}
+            success = subprocess.run([sys.executable, '-B', '-X', 'utf8', '-c', block], cwd=directory,
+                                     env=environment, capture_output=True, timeout=15)
+            self.assertEqual(success.returncode, 0, success.stderr)
+            for mutation in ('bytes', 'missing-llvm', 'gpu-claim', 'translation-claim',
+                             'progress-extra', 'progress-observation-bool', 'progress-elapsed-bool', 'progress-nondict'):
+                candidate = copy.deepcopy(report)
+                (artifacts / 'own-air.ll').write_bytes(files['own-air.ll'])
+                if mutation == 'bytes':
+                    (artifacts / 'own-air.ll').write_bytes(b'tampered IR')
+                elif mutation == 'missing-llvm':
+                    (artifacts / 'own-air.ll').unlink()
+                elif mutation == 'gpu-claim':
+                    candidate['gpu_execution_verified'] = True
+                elif mutation == 'translation-claim':
+                    candidate['shader_translation_verified'] = True
+                elif mutation == 'progress-extra':
+                    candidate['command_steps'][-1]['progress']['raw'] = '/Users/PRIVATE-ID'
+                elif mutation == 'progress-observation-bool':
+                    candidate['command_steps'][-1]['progress']['observations'] = True
+                elif mutation == 'progress-elapsed-bool':
+                    candidate['command_steps'][-1]['progress']['elapsed_seconds'] = True
+                else:
+                    candidate['command_steps'][-1]['progress'] = []
+                (artifacts / 'report.json').write_text(json.dumps(candidate))
+                failure = subprocess.run([sys.executable, '-B', '-X', 'utf8', '-c', block], cwd=directory,
+                                         env=environment, capture_output=True, timeout=15)
+                self.assertNotEqual(failure.returncode, 0)
 
     def test_air_container_and_required_metadata_are_checked(self):
         data, llvm = air_fixture()
@@ -541,27 +879,32 @@ read_err, write_err = os.pipe()
 process = mock.Mock(pid=4321, returncode=0)
 process.stdout = os.fdopen(read_out, 'rb')
 process.stderr = os.fdopen(read_err, 'rb')
+progress = {} if sys.argv[2] == 'progress' else None
 try:
     with mock.patch.object(checker.os, 'name', 'posix'), \
          mock.patch.object(checker.signal, 'SIGKILL', 9, create=True), \
          mock.patch.object(checker.subprocess, 'Popen', return_value=process), \
          mock.patch.object(checker.os, 'killpg', side_effect=OSError('synthetic'), create=True):
         try:
-            checker.run_step(['synthetic-no-native-tool'], '.', 1)
+            checker.run_step(['synthetic-no-native-tool'], '.', 1,
+                             slow_step='cargo-build' if progress is not None else None, progress=progress)
         except checker.ShaderError as error:
-            print(json.dumps({'code': str(error), 'native_tool_executed': False}))
+            print(json.dumps({'code': str(error), 'native_tool_executed': False,
+                              'progress_enabled': progress is not None}))
         else:
             raise AssertionError('cleanup must not succeed')
 finally:
     os.close(write_out)
     os.close(write_err)
 '''
-        with temporary_directory() as name:
-            result = subprocess.run([sys.executable, '-B', '-c', worker, str(ROOT / 'tools/metal_shader_ci.py')],
-                                    cwd=name, stdin=subprocess.DEVNULL, capture_output=True, timeout=13)
-        self.assertEqual(result.returncode, 0)
-        self.assertEqual(json.loads(result.stdout), {'code': 'STEP_OUTPUT_DRAIN_UNCONFIRMED',
-                                                    'native_tool_executed': False})
+        for mode in ('plain', 'progress'):
+            with temporary_directory() as name:
+                result = subprocess.run([sys.executable, '-B', '-c', worker, str(ROOT / 'tools/metal_shader_ci.py'), mode],
+                                        cwd=name, stdin=subprocess.DEVNULL, capture_output=True, timeout=13)
+            self.assertEqual(result.returncode, 0)
+            self.assertEqual(json.loads(result.stdout), {'code': 'STEP_OUTPUT_DRAIN_UNCONFIRMED',
+                                                        'native_tool_executed': False,
+                                                        'progress_enabled': mode == 'progress'})
 
     def test_atomic_report_failure_preserves_existing_bytes_and_cleans_temporary(self):
         with temporary_directory() as name:

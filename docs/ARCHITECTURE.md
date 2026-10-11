@@ -7,7 +7,11 @@ Aufbau, Änderungen und Nachweise hier ergänzt.
 
 LunarBridge entwickelt den Grafikpfad für Intel Lunar Lake / Xe2 auf einem
 Samsung mit PCI `8086:64A0`, Subsystem `144D:C1DD`. Andere Geräte erhalten keine
-Unterstützungszusage durch eine zusätzliche PCI-ID.
+Unterstützungszusage durch eine zusätzliche PCI-ID. Die
+[Hardwarevarianten](HARDWARE_VARIANTS.md) belegen den gemeinsamen Linux-LNL-Match
+und die getrennten Anforderungen für Compute und OEM-Displaydaten. Der
+[Mesa-Compileranschluss](METAL_BACKEND_SEAMS.md) beschreibt die tatsächlichen
+NIR-/BRW-APIs, Bindungs- und Dispatchverträge für einen künftigen Xe2-Compiler.
 
 ```mermaid
 flowchart TD
