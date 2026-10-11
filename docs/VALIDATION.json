@@ -173,7 +173,7 @@
     "parallel_kernel_lifetime_tested": false
   },
   "pinned_reference_files_sha256_verified": 16,
-  "total_host_tests_passed": 426,
+  "total_host_tests_passed": 434,
   "macos_object_count": 14,
   "native_diagnostic_source_compiled": true,
   "native_diagnostic_kext_linked": true,
@@ -506,17 +506,17 @@
     "native_target_hardware_tests": 0
   },
   "metal_shader_compiler_harness_tests": {
-    "tests_run": 52,
+    "tests_run": 58,
     "failures": 0,
     "errors": 0,
     "skipped": 0,
     "successful": true,
     "source_files_sha256": {
       "gpu-toolchain/xe2_compute_probe.metal": "2626f1a6f99fdc145e10718b8ced5d5007aff51c07e2bf26ba9ffb8a5a2f0c5c",
-      "tools/metal_shader_ci.py": "d4563375512774a5a7ddbfd43c41a90e0f5143eef2c02eca8a7f15e87f9028b8",
-      "tests/test_metal_shader.py": "28ef2e050d0a0b731d22efc9d763e9e38c43a46b16354975fe1aef20bd611fea",
+      "tools/metal_shader_ci.py": "c19a364f735894dfaf4720ecc213e6be74343b2b9ea0200426443f1b33cbbc36",
+      "tests/test_metal_shader.py": "a29340caabb8aa34a4fd2b599e3c5f9ff987542439fa738b96fac022852af8ef",
       ".github/workflows/metal-shader.yml": "3e8ddfc404409e4d27eb59e1d9987b41607fac81c280358bfb9393ae1ad12401",
-      "docs/METAL_SHADER_BRIDGE.md": "7a5d515ddf0554382669ae45abb5150c8bf7dca90aee8f5ef25c91f069c304d5",
+      "docs/METAL_SHADER_BRIDGE.md": "1ee25e93790e87c8ee65569a29c9d14ac4e98c9f2b032ebbcdc60e6ec65fa812",
       "gpu-toolchain/xe2_integer_probe.cl": "0c1593c962ac806dc64a8e05804965dee375e6669fa846987c8263bfa03745a5"
     },
     "test_type": "MSL/AIR/Shader SPIR-V/reflection parser and bounded process runner with explicit offline doubles",
@@ -683,41 +683,22 @@
   "native_ggtt_binding_implemented": false,
   "native_guc_scheduler_implemented": false,
   "metal_shader_compiler_last_reviewed_ci": {
-    "source_commit": "536599a55eee8a874bfcbbc8f098306bd205f5dc",
-    "workflow_run_id": 38129324218,
-    "workflow_url": "https://github.com/IT-EXPRESS-Bayern/LunarBridge-Hackintosh/actions/runs/38129324218",
+    "source_commit": "3b7550d154ee017487c1858591af2d02f4cbed05",
+    "workflow_run_id": 38132276478,
+    "workflow_url": "https://github.com/IT-EXPRESS-Bayern/LunarBridge-Hackintosh/actions/runs/38132276478",
     "github_workflow_conclusion": "failure",
     "state": "unverified",
-    "actual_failure_phase": "converter-build",
-    "actual_failure_code": "STEP_TIMEOUT",
-    "metal_tool_discovery_and_version_verified": true,
-    "metal_tool_version": "32023.883",
-    "exact_own_git_source_files_checked": 6,
-    "artifact_authentication": [
-      {
-        "name": "LunarBridge-Metal-Shader-CI",
-        "id": 11698762617,
-        "bytes": 4367,
-        "sha256": "93f57d79dfc935804533e161213b2dd11bb32bc202761eda7bf2e5e834455981",
-        "github_digest_matches": true,
-        "all_zip_crc_verified": true
-      },
-      {
-        "name": "LunarBridge-Metal-Shader-Windows",
-        "id": 11698731939,
-        "bytes": 1994,
-        "sha256": "e98aaa5112f81cd0a9c4e7c141cb02e952444a13452c90acb1fc9d3e66b7855b",
-        "github_digest_matches": true,
-        "all_zip_crc_verified": true
-      }
-    ],
-    "actual_air_output_available": false,
-    "actual_shader_spirv_output_available": false,
-    "converter_build_verified": false,
+    "actual_failure_phase": "air-llvm-contract",
+    "actual_failure_code": "AIR_PRIVATE_PATH_METADATA",
+    "msl_to_air_command_completed_with_exit_zero": true,
+    "llvm_dis_command_completed_with_exit_zero": true,
+    "original_air_or_llvm_bytes_retained": false,
+    "cargo_started": false,
     "shader_translation_verified": false,
     "gpu_execution_verified": false,
     "metal_provider_registered": false,
-    "interpretation": "Real Metal tool probes passed; 300-second converter build timed out. Internal Cargo activity was not recorded, so resolution versus compilation remains unknown."
+    "exact_own_git_source_files_checked": 6,
+    "interpretation": "Actual compiler commands completed but AIR privacy qualification failed; no actual field value was retained. New bounded classification remains to be exercised on real CI."
   },
   "native_ggtt_and_guc_scheduler_cpu_helpers_linked": true,
   "kernel_build_contract_tests": {
@@ -735,15 +716,15 @@
     "native_target_hardware_tests": 0
   },
   "mesa_cpu_harness_tests": {
-    "tests_run": 23,
+    "tests_run": 25,
     "failures": 0,
     "errors": 0,
     "skipped": 0,
     "successful": true,
     "scope": "Executed host guards, provenance, wheel hashes, Mach-O formats and actual bounded process timeout; no Mesa parser built locally",
     "source_files_sha256": {
-      "tools/mesa_cpu_ci.py": "d373447b05ec1c265a89caf4622928fb3ae37dd1a4774da1385de4b066dd237c",
-      "tests/test_mesa_cpu.py": "00fe38099a2eadf3dc37ec2cebb85174abe016a68d81732822eade4debf0a378",
+      "tools/mesa_cpu_ci.py": "70a984169227bd463a9d19840e61d08f6878d605e4d5e87adb52a90ca5cffc10",
+      "tests/test_mesa_cpu.py": "c816f94b909e458ebc243fc16378a90d181199020eba354af5c36437d41e2d56",
       ".github/workflows/mesa-cpu.yml": "e5bce50493825b1182d30e9cbc16aad926c2b9620bc19b4f9cc5ea9345f68c72"
     },
     "native_target_hardware_tests": 0

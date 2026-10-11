@@ -18,11 +18,11 @@ x86_64 macOS Mach-O object files; these are local build outputs excluded from Gi
 | GPU OpenCore installer | 23 tests passed | Isolated EFI transactions and failures, concurrent edits, policy/Vault refusal, DMA/forcewake flag types, effective MMIO/flush exposure and module boundaries |
 | Own shader toolchain | 37 offline tests passed | Actual recorded own Windows GPU result bytes; device qualification, bounded ELF/Zebin and relocation validation; no GPU initialized by tests |
 | Own Xe2 CPU payload | 37 offline tests passed | Authenticated own Zebin, 64/32/32-byte layout, unresolved pointer holes, original zero ImplicitArgs relocations and bounded planned group dimensions; no GPU job |
-| Metal shader compiler harness | 52 offline tests passed | Bounded MSL/AIR/Shader SPIR-V/reflection and supervised process cleanup; controlled doubles, no native compiler or GPU execution |
+| Metal shader compiler harness | 58 offline tests passed | Bounded MSL/AIR/Shader SPIR-V/reflection and supervised process cleanup; controlled doubles, no native compiler or GPU execution |
 | GGTT planner | 31 tests passed / 132 C++ calls | Actual DMA/PPGTT to GGTT plan with independent PAT encoding, separate reservations, atomic failure and explicit missing hardware qualifications |
 | GuC scheduler codec | 25 tests passed | Actual 12-DW serial registration, FastRequest/event/error parsing, revision/owner/epoch and bounded fence ledger; CPU messages only |
 | Kernel build contract | 8 tests passed | Kernel-only stack-check flags and real Mach-O import boundaries; target load and stack budget remain open |
-| Mesa CPU build harness | 23 tests passed | Host guards, source and wheel provenance, actual process timeout and parser format boundaries; real Intel CI parser build pending |
+| Mesa CPU build harness | 25 tests passed | Host guards, source and wheel provenance, actual process timeout and parser format boundaries; real Intel CI parser build pending |
 | Pinned GPU test references | 16 SHA256 values verified | Exact external inputs including forcewake, MMIO and LNL workaround association; no vendored Linux driver |
 | macOS object format | Fourteen Mach-O objects verified | Actual x86_64 object compilation and parser inspection; these objects are rejected by the installer |
 | Native macOS link workflow | Real diagnostic Kext linked | Pinned external SDK and macOS linker; source commit, hashes and unsigned status in VALIDATION.json; no target-hardware loading |
@@ -34,7 +34,7 @@ machine inventory or a native device test. I2C source and build qualification
 now belong to the independent LunarBridge-I2C repository and are not counted
 as graphics-repository tests.
 
-All **426 graphics-repository core Windows tests passed** without skips. The installer fixtures contain
+All **434 graphics-repository core Windows tests passed** without skips. The installer fixtures contain
 no runnable macOS/EFI code. Simulated IOKit calls are marked as simulated and
 cannot establish native device access. No real EFI or external SSD was changed.
 
@@ -57,7 +57,7 @@ at source `c4872003430ff804977ac76356f7f0537677a12b` built the real x86_64
 `Metal-Minimaltest.mm` executable on Intel macOS 26.6.1 and executed its shader.
 All 65,536 outputs matched, with completion handler and completed command status
 observed and no CPU fallback. Its additional Windows job passed 18 harness
-boundary tests. These are counted separately from the 426 core tests above.
+boundary tests. These are counted separately from the 434 core tests above.
 Both downloaded report archives passed hash and CRC checks; all five distinct
 source files were compared with that exact Git commit. The binary itself is not
 uploaded. [METAL_VALIDATION.json](METAL_VALIDATION.json) records the evidence and
