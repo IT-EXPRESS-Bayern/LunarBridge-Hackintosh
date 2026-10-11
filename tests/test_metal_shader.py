@@ -15,6 +15,7 @@ import subprocess
 import sys
 import tempfile
 import textwrap
+from types import SimpleNamespace
 import unittest
 from unittest import mock
 
@@ -92,7 +93,8 @@ class ShaderBoundaries(unittest.TestCase):
         return checker.inspect_reflection(json.dumps(value).encode())
 
     def partial_air_cli(self, *, outcomes=None, write_lock=True, llvm=None,
-                        mutate_build_lock=False, mutate_metadata_lock=False, invalid_air=False):
+                        mutate_build_lock=False, mutate_metadata_lock=False, invalid_air=False,
+                        context='ci-host', temp_parent_error=None, cleanup_error=False):
         # CPU-only fixtures exercise preservation/failure ordering. Every
         # scenario remains unverified; these bytes are not real compiler proof.
         with temporary_directory() as name:
@@ -145,7 +147,11 @@ class ShaderBoundaries(unittest.TestCase):
                         (source / 'Cargo.lock').write_bytes(lock_fixture() + b'\n')
                 else:
                     raise AssertionError('No full shader/GPU success is permitted in this fixture')
-                calls.append({'stage': stage, 'timeout': timeout, 'command': command})
+                calls.append({'stage': stage, 'timeout': timeout, 'command': command,
+                              'workspace_name': cwd.name,
+                              'tmpdir_matches_workspace': options.get('env', {}).get('TMPDIR') == str(cwd),
+                              'original_msl': (cwd / 'xe2_compute_probe.metal').read_bytes()
+                                  if stage == 'msl-to-air' else None})
                 if 'progress' in options:
                     monitor = checker.CargoProgress()
                     monitor.observe(b'Updating crates.io index' if stage == 'cargo-resolve' else b'Compiling PRIVATE-CRATE v1 /Users/PRIVATE-ID')
@@ -156,14 +162,24 @@ class ShaderBoundaries(unittest.TestCase):
                 return selected
 
             output = io.StringIO()
+            checks = []
+            def own_directory(path, parent, identity):
+                checks.append(path)
+                if cleanup_error and len(checks) > 1:
+                    raise checker.ShaderError('COMPILER_TEMP_DIRECTORY_UNVERIFIED')
+                return checker.directory_identity(path.stat())
+
             with mock.patch.object(checker.sys, 'platform', 'darwin'), \
                  mock.patch.object(checker.platform, 'machine', return_value='x86_64'), \
                  mock.patch.dict(checker.os.environ, {'GITHUB_ACTIONS': 'true', 'CI': 'true', 'GITHUB_SHA': 'a' * 40}), \
                  mock.patch.object(checker.shutil, 'which', side_effect=lambda tool: str(tools[Path(tool).name])), \
                  mock.patch.object(checker, 'converter_provenance', return_value=(
                      {'commit': checker.CONVERTER_PIN}, b'synthetic offline license fixture')), \
+                 mock.patch.object(checker, 'verified_system_temp_parent',
+                     side_effect=temp_parent_error, return_value=(directory, checker.directory_identity(directory.stat()))), \
+                 mock.patch.object(checker, 'verify_owned_temp_directory', side_effect=own_directory), \
                  mock.patch.object(checker, 'run_step', side_effect=step), contextlib.redirect_stdout(output):
-                status = checker.main(['--context', 'ci-host', '--converter-source', str(source),
+                status = checker.main(['--context', context, '--converter-source', str(source),
                                        '--artifact-root', str(directory / 'artifacts')])
             files = {path.name: path.read_bytes() for path in (directory / 'artifacts').iterdir()}
             report = json.loads(files['report.json'])
@@ -230,6 +246,10 @@ class ShaderBoundaries(unittest.TestCase):
                  mock.patch.object(checker.shutil, 'which', side_effect=lambda tool: str(tools[Path(tool).name])), \
                  mock.patch.object(checker, 'converter_provenance', return_value=(
                      {'commit': checker.CONVERTER_PIN}, b'synthetic offline license fixture')), \
+                 mock.patch.object(checker, 'verified_system_temp_parent',
+                     return_value=(directory, checker.directory_identity(directory.stat()))), \
+                 mock.patch.object(checker, 'verify_owned_temp_directory',
+                     side_effect=lambda path, parent, identity: checker.directory_identity(path.stat())), \
                  mock.patch.object(checker, 'run_step', side_effect=step), \
                  contextlib.redirect_stdout(output):
                 status = checker.main(arguments)
@@ -243,6 +263,210 @@ class ShaderBoundaries(unittest.TestCase):
             self.assertNotIn(name, json.dumps(report))
             self.assertNotIn(name, output.getvalue())
             return report, calls
+
+    def test_system_temp_selection_requires_explicit_ephemeral_ci_and_full_commit(self):
+        environment = {'GITHUB_ACTIONS': 'true', 'CI': 'true', 'TMPDIR': '/Users/private/tmp'}
+        with mock.patch.dict(checker.os.environ, environment, clear=True):
+            self.assertTrue(checker.ephemeral_ci_context('ci-host', 'a' * 40))
+            for context, commit in (('target-probe', 'a' * 40), ('ci-host', None),
+                                    ('ci-host', ''), ('ci-host', 'a' * 39), ('ci-host', 'A' * 40),
+                                    ('ci-host', 'a' * 40 + '\n'), ('ci-host', True)):
+                self.assertFalse(checker.ephemeral_ci_context(context, commit))
+            for name, value in (('GITHUB_ACTIONS', 'false'), ('GITHUB_ACTIONS', 'TRUE'),
+                                ('CI', ''), ('CI', 'false')):
+                with mock.patch.dict(checker.os.environ, {name: value}):
+                    self.assertFalse(checker.ephemeral_ci_context('ci-host', 'a' * 40))
+
+    def test_system_temp_parent_requires_canonical_root_owned_sticky_directory(self):
+        import stat
+        directory = stat.S_IFDIR
+        def info(mode, owner=0, inode=7):
+            return SimpleNamespace(st_mode=mode, st_uid=owner, st_dev=5, st_ino=inode)
+        good = {'/': info(directory | 0o755, inode=1), '/private': info(directory | 0o755, inode=2),
+                '/private/tmp': info(directory | 0o1777)}
+        with mock.patch.object(checker.sys, 'platform', 'darwin'), \
+             mock.patch.object(checker.os, 'name', 'posix'), \
+             mock.patch.object(checker.os, 'getuid', return_value=501, create=True), \
+             mock.patch.object(checker.os.path, 'realpath', return_value='/private/tmp'), \
+             mock.patch.object(checker.os, 'lstat', side_effect=lambda path: good[str(path)]), \
+             mock.patch.dict(checker.os.environ, {'TMPDIR': '/Users/private/tmp'}):
+            parent, identity = checker.verified_system_temp_parent()
+            self.assertEqual(str(parent).replace('\\', '/'), '/private/tmp')
+            self.assertEqual(identity, checker.directory_identity(good['/private/tmp']))
+            for path, bad in (('/private/tmp', info(directory | 0o777)),
+                              ('/private/tmp', info(directory | 0o1777, owner=501)),
+                              ('/private/tmp', info(stat.S_IFLNK | 0o1777)),
+                              ('/private', info(directory | 0o777)),
+                              ('/private', info(directory | 0o755, owner=501)),
+                              ('/', info(stat.S_IFLNK | 0o755))):
+                changed = good | {path: bad}
+                with mock.patch.object(checker.os, 'lstat', side_effect=lambda value: changed[str(value)]):
+                    with self.assertRaisesRegex(checker.ShaderError, '^COMPILER_SYSTEM_TEMP_UNVERIFIED$'):
+                        checker.verified_system_temp_parent()
+            for resolved in ('/Users/private/tmp', '/var/folders/temporary', '/tmp'):
+                with mock.patch.object(checker.os.path, 'realpath', return_value=resolved):
+                    with self.assertRaisesRegex(checker.ShaderError, '^COMPILER_SYSTEM_TEMP_UNVERIFIED$'):
+                        checker.verified_system_temp_parent()
+            with mock.patch.object(checker.os, 'lstat', side_effect=OSError('/Users/PRIVATE-ID')):
+                with self.assertRaisesRegex(checker.ShaderError, '^COMPILER_SYSTEM_TEMP_UNVERIFIED$'):
+                    checker.verified_system_temp_parent()
+
+    def test_owned_temp_directory_checks_owner_mode_type_device_parent_and_canonical_child(self):
+        import stat
+        parent, child = ROOT / 'build/virtual-system-tmp', ROOT / 'build/virtual-system-tmp/owned-child'
+        def info(mode, owner=501, device=5, inode=8):
+            return SimpleNamespace(st_mode=mode, st_uid=owner, st_dev=device, st_ino=inode)
+        before = info(stat.S_IFDIR | 0o1777, owner=0, inode=2)
+        owned = info(stat.S_IFDIR | 0o700)
+        token = checker.directory_identity(before)
+        with mock.patch.object(checker.os, 'getuid', return_value=501, create=True), \
+             mock.patch.object(checker.os.path, 'realpath', return_value=str(child)), \
+             mock.patch.object(checker.os, 'lstat', side_effect=lambda path: before if path == parent else owned):
+            self.assertEqual(checker.verify_owned_temp_directory(child, parent, token),
+                             checker.directory_identity(owned))
+            for bad in (info(stat.S_IFLNK | 0o700), info(stat.S_IFREG | 0o700),
+                        info(stat.S_IFDIR | 0o755), info(stat.S_IFDIR | 0o700, owner=502),
+                        info(stat.S_IFDIR | 0o700, device=6)):
+                with mock.patch.object(checker.os, 'lstat', side_effect=lambda path: before if path == parent else bad):
+                    with self.assertRaisesRegex(checker.ShaderError, '^COMPILER_TEMP_DIRECTORY_UNVERIFIED$'):
+                        checker.verify_owned_temp_directory(child, parent, token)
+            with mock.patch.object(checker.os.path, 'realpath', return_value=str(parent / 'foreign-child')):
+                with self.assertRaisesRegex(checker.ShaderError, '^COMPILER_TEMP_DIRECTORY_UNVERIFIED$'):
+                    checker.verify_owned_temp_directory(child, parent, token)
+            with self.assertRaisesRegex(checker.ShaderError, '^COMPILER_TEMP_DIRECTORY_UNVERIFIED$'):
+                checker.verify_owned_temp_directory(child, parent, (5, 999, 0, before.st_mode))
+            with self.assertRaisesRegex(checker.ShaderError, '^COMPILER_TEMP_DIRECTORY_UNVERIFIED$'):
+                checker.verify_owned_temp_directory(parent / 'nested/child', parent, token)
+
+    def test_fresh_owned_workspace_deletes_only_its_verified_child_after_controlled_failure(self):
+        with temporary_directory() as name:
+            parent, report = Path(name), {}
+            sibling = parent / 'foreign-existing-file'
+            sibling.write_bytes(b'unchanged')
+            with mock.patch.dict(checker.os.environ, {'GITHUB_ACTIONS': 'true', 'CI': 'true'}), \
+                 mock.patch.object(checker, 'verified_system_temp_parent',
+                     return_value=(parent, checker.directory_identity(parent.stat()))), \
+                 mock.patch.object(checker, 'verify_owned_temp_directory',
+                     side_effect=lambda path, *args: checker.directory_identity(path.stat())) as checked:
+                with self.assertRaisesRegex(checker.ShaderError, '^STEP_TIMEOUT$'):
+                    with checker.compiler_workspace(parent, 'ci-host', 'a' * 40, report) as owned:
+                        self.assertEqual(owned.parent, parent)
+                        self.assertTrue(owned.name.startswith('lunarbridge-metal-'))
+                        (owned / 'own-original').write_bytes(b'owned')
+                        raise checker.ShaderError('STEP_TIMEOUT')
+                self.assertEqual(checked.call_count, 2)
+                self.assertFalse(owned.exists())
+                self.assertEqual(sibling.read_bytes(), b'unchanged')
+                self.assertEqual(list(parent.iterdir()), [sibling])
+            self.assertEqual(report['compiler_workspace'], {
+                'selection': 'ephemeral-system-temp', 'system_temp_verified': True,
+                'own_directory_verified': True, 'cleanup': 'removed'})
+            self.assertNotIn(name, json.dumps(report))
+
+    def test_replaced_owned_directory_refuses_recursive_cleanup(self):
+        with temporary_directory() as name:
+            parent, report = Path(name), {}
+            first, replaced = (5, 8, 501, 0o40700), (5, 9, 501, 0o40700)
+            with mock.patch.dict(checker.os.environ, {'GITHUB_ACTIONS': 'true', 'CI': 'true'}), \
+                 mock.patch.object(checker, 'verified_system_temp_parent', return_value=(parent, (5, 2, 0, 0o41777))), \
+                 mock.patch.object(checker, 'verify_owned_temp_directory', side_effect=(first, replaced)), \
+                 mock.patch.object(checker.shutil, 'rmtree', side_effect=AssertionError('never remove a replacement')):
+                with self.assertRaisesRegex(checker.ShaderError, '^COMPILER_WORKSPACE_CLEANUP_UNCONFIRMED$'):
+                    with checker.compiler_workspace(parent, 'ci-host', 'a' * 40, report) as owned:
+                        (owned / 'unchanged').write_bytes(b'keep')
+                self.assertEqual((owned / 'unchanged').read_bytes(), b'keep')
+            self.assertEqual(report['compiler_workspace']['cleanup'], 'unconfirmed')
+            self.assertNotIn(name, json.dumps(report))
+
+    def test_uncreated_or_unverified_workspace_never_yields_or_deletes_a_foreign_path(self):
+        with temporary_directory() as name:
+            parent = Path(name)
+            foreign = parent / 'foreign-existing-directory'
+            foreign.mkdir()
+            (foreign / 'keep').write_bytes(b'unchanged')
+            with mock.patch.dict(checker.os.environ, {'GITHUB_ACTIONS': 'true', 'CI': 'true'}), \
+                 mock.patch.object(checker, 'verified_system_temp_parent',
+                     return_value=(parent, checker.directory_identity(parent.stat()))), \
+                 mock.patch.object(checker.shutil, 'rmtree', side_effect=AssertionError('foreign path must survive')):
+                report = {}
+                with mock.patch.object(checker.tempfile, 'mkdtemp', side_effect=OSError('/Users/PRIVATE-ID')):
+                    with self.assertRaisesRegex(checker.ShaderError, '^COMPILER_TEMP_DIRECTORY_CREATE_FAILED$'):
+                        with checker.compiler_workspace(parent, 'ci-host', 'a' * 40, report):
+                            self.fail('No uncreated directory may be used')
+                self.assertEqual(report['compiler_workspace']['cleanup'], 'not-created')
+                self.assertFalse(report['compiler_workspace']['own_directory_verified'])
+                report = {}
+                with mock.patch.object(checker.tempfile, 'mkdtemp', return_value=str(foreign)), \
+                     mock.patch.object(checker, 'verify_owned_temp_directory',
+                         side_effect=checker.ShaderError('COMPILER_TEMP_DIRECTORY_UNVERIFIED')):
+                    with self.assertRaisesRegex(checker.ShaderError, '^COMPILER_TEMP_DIRECTORY_UNVERIFIED$'):
+                        with checker.compiler_workspace(parent, 'ci-host', 'a' * 40, report):
+                            self.fail('No unverified directory may be used')
+                self.assertEqual(report['compiler_workspace']['cleanup'], 'retained-unverified-directory')
+                self.assertFalse(report['compiler_workspace']['own_directory_verified'])
+                self.assertEqual((foreign / 'keep').read_bytes(), b'unchanged')
+                self.assertNotIn(name, json.dumps(report))
+
+    def test_unconfirmed_process_cleanup_retains_own_workspace_and_fixed_failure(self):
+        for code in ('PROCESS_GROUP_CLEANUP_FAILED', 'STEP_TERMINATION_UNCONFIRMED', 'STEP_OUTPUT_DRAIN_UNCONFIRMED'):
+            with temporary_directory() as name:
+                parent, report = Path(name), {}
+                with mock.patch.dict(checker.os.environ, {'GITHUB_ACTIONS': 'true', 'CI': 'true'}), \
+                     mock.patch.object(checker, 'verified_system_temp_parent',
+                         return_value=(parent, checker.directory_identity(parent.stat()))), \
+                     mock.patch.object(checker, 'verify_owned_temp_directory',
+                         side_effect=lambda path, *args: checker.directory_identity(path.stat())) as checked, \
+                     mock.patch.object(checker.shutil, 'rmtree', side_effect=AssertionError('process may still use files')):
+                    with self.assertRaisesRegex(checker.ShaderError, '^' + code + '$'):
+                        with checker.compiler_workspace(parent, 'ci-host', 'a' * 40, report) as owned:
+                            raise checker.ShaderError(code)
+                    self.assertTrue(owned.exists())
+                    self.assertEqual(checked.call_count, 1)
+                self.assertEqual(report['compiler_workspace']['cleanup'], 'retained-unconfirmed-process')
+
+    def test_ci_workspace_uses_relative_shader_inputs_own_tmpdir_original_bytes_and_same_privacy(self):
+        report, files, calls = self.partial_air_cli()
+        compile_call = next(call for call in calls if call['stage'] == 'msl-to-air')
+        self.assertTrue(compile_call['workspace_name'].startswith('lunarbridge-metal-'))
+        self.assertTrue(compile_call['tmpdir_matches_workspace'])
+        self.assertEqual(compile_call['original_msl'], (ROOT / 'gpu-toolchain/xe2_compute_probe.metal').read_bytes())
+        self.assertEqual(files['xe2_compute_probe.metal'], compile_call['original_msl'])
+        self.assertEqual(files['xe2_compute_probe.air'], air_fixture()[0])
+        self.assertEqual(files['own-air.ll'], air_fixture()[1].replace(b'/Users/private/input.air', b'xe2_compute_probe.air'))
+        self.assertEqual(compile_call['command'][-4:], ['-c', 'xe2_compute_probe.metal', '-o', 'xe2_compute_probe.air'])
+        self.assertEqual(report['compiler_workspace']['cleanup'], 'removed')
+        self.assertEqual(report['metal_compile_help']['known_options_applied'], [])
+        original = air_fixture()[1] + b'!air.source_file_name = !{!40}\n!40 = !{!"/Users/private/original.metal"}\n'
+        report, files, calls = self.partial_air_cli(llvm=original)
+        self.assertEqual(report['code'], 'AIR_PRIVATE_PATH_METADATA')
+        self.assertEqual(report['air_private_metadata']['original_llvm_text_sha256'], hashlib.sha256(original).hexdigest())
+        self.assertEqual(report['air_private_metadata']['categories']['air.source_file_name'], 1)
+        self.assertEqual(report['outputs_sha256'], {})
+        self.assertNotIn('cargo-resolve', [call['stage'] for call in calls])
+
+    def test_target_probe_keeps_repository_workspace_and_no_system_temp_or_new_flags(self):
+        report, files, calls = self.partial_air_cli(context='target-probe')
+        compile_call = next(call for call in calls if call['stage'] == 'msl-to-air')
+        self.assertTrue(compile_call['workspace_name'].startswith('run-'))
+        self.assertTrue(compile_call['tmpdir_matches_workspace'])
+        self.assertEqual(report['compiler_workspace'], {'selection': 'repository-build',
+            'system_temp_verified': False, 'own_directory_verified': False, 'cleanup': 'removed'})
+        self.assertEqual(report['metal_compile_help']['known_options_applied'], [])
+
+    def test_ci_workspace_verification_failure_stops_before_compiler_and_cleanup_failure_stays_unverified(self):
+        report, files, calls = self.partial_air_cli(temp_parent_error=checker.ShaderError('COMPILER_SYSTEM_TEMP_UNVERIFIED'))
+        self.assertEqual((report['phase'], report['code']), ('compiler-system-temp', 'COMPILER_SYSTEM_TEMP_UNVERIFIED'))
+        self.assertEqual(report['compiler_workspace']['selection'], 'ephemeral-system-temp')
+        self.assertFalse(report['compiler_workspace']['system_temp_verified'])
+        self.assertEqual(report['compiler_workspace']['cleanup'], 'not-created')
+        self.assertEqual(calls, [])
+        self.assertEqual(report['outputs_sha256'], {})
+        self.assertFalse(report['air_compilation_verified'])
+        report, files, calls = self.partial_air_cli(cleanup_error=True)
+        self.assertEqual(report['code'], 'COMPILER_WORKSPACE_CLEANUP_UNCONFIRMED')
+        self.assertEqual(report['compiler_workspace']['cleanup'], 'unconfirmed')
+        self.assertTrue(report['air_compilation_verified'])
+        self.assertEqual(set(report['outputs_sha256']), {'xe2_compute_probe.metal', 'xe2_compute_probe.air', 'own-air.ll'})
 
     def test_cold_metal_probe_timeout_has_exact_stage_and_sixty_second_budget(self):
         with temporary_directory() as name:
