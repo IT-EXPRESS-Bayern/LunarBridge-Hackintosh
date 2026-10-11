@@ -66,14 +66,14 @@ flowchart TD
 | Eigene CPU-Shader-Payload | **Fertig — CPU-Format** | 37 Payloadtests plus 37 historische Inspectorprüfungen; GPU-Pointer bleiben offen. [Payloadvertrag](gpu-toolchain/KERNEL_PAYLOAD.md) |
 | GGTT-Schreibplan | **Fertig — CPU-Planer** | 31 Tests / 132 echte C++-Aufrufe; Host-DLL und macOS-Objektbuild integriert, keine Hardwarebindung. [GGTT](docs/GGTT_BINDING.md) |
 | GuC-Schedulercodec | **Fertig — CPU-Protokoll** | 25 Prüfungen des tatsächlichen C++-Codecs; Register-/Mode-/Submit-/Deregister-Nachrichten, keine laufende Firmware oder Queue. [Schedulervertrag](docs/GUC_SCHEDULER.md) |
-| MSL → AIR → Shader-SPIR-V | **In Arbeit — Compilerqualifikation** | 52 Offlineprüfungen bestanden; Metal-Werkzeuge in echter CI geprüft, Converterbau mit Timeout. Der überarbeitete Workflow erhält Teilnachweise für AIR und fordert geprüfte Übersetzung. [Compilerbrücke](docs/METAL_SHADER_BRIDGE.md) |
-| Mesa-CPU-Parser | **In Arbeit — nativer Baunachweis** | 23 Offlineprüfungen bestanden; die erste echte CI zeigte einen fehlenden SDK-Sysroot. Der korrigierte Intel-macOS-Bau prüft das gepinnte `spirv2nir`. Native GPU-Ausführung bleibt offen. [Backend-Anschlüsse](docs/METAL_BACKEND_SEAMS.md) |
+| MSL → AIR → Shader-SPIR-V | **In Arbeit — Compilerqualifikation** | 58 Offlineprüfungen bestanden; echte MSL- und LLVM-Befehle erfolgreich, danach private AIR-Metadaten verweigert. Eine begrenzte Klassifikation diagnostiziert das Feld; Übersetzung bleibt ungeprüft. [Compilerbrücke](docs/METAL_SHADER_BRIDGE.md) |
+| Mesa-CPU-Parser | **In Arbeit — nativer Baunachweis** | 25 Offlineprüfungen bestanden; echte CI mit korrektem SDK, danach NIR-Stubs ausgewählt. Die überarbeiteten Upstreamoptionen bauen nur das gepinnte `spirv2nir` und fordern echte NIR-Quellen. [Backend-Anschlüsse](docs/METAL_BACKEND_SEAMS.md) |
 | Nativer Speicher + Ausführung | **Blockiert — Implementierung fehlt** | GPU-VA-Bindung, programmierter PAT2, globale GGTT-Ownership, GuC-Start und Queue-Submission fehlen. [Architektur](docs/GPU_DESIGN.md) |
 | Metal-Anbieter + Display | **Blockiert — Implementierung fehlt** | Kein LunarBridge-System-Metal-Anbieter, keine beschleunigte Ausgabe oder WindowServer-Anbindung. [Hardwareumfang](docs/HARDWARE_SUPPORT.md) |
 
-Das geprüfte Diagnosepaket stammt aus [Build 38128683057](https://github.com/IT-EXPRESS-Bayern/LunarBridge-Hackintosh/actions/runs/38128683057)
-zum Quellstand [755ba09](https://github.com/IT-EXPRESS-Bayern/LunarBridge-Hackintosh/commit/755ba0932882bdf8d0519f1c4822867cc140a7cf):
-**79.080 Byte Kernelbinary**, 28 entsprechende Quelldateien gegen diesen Commit
+Das geprüfte Diagnosepaket stammt aus [Build 38132276514](https://github.com/IT-EXPRESS-Bayern/LunarBridge-Hackintosh/actions/runs/38132276514)
+zum Quellstand [3b7550d](https://github.com/IT-EXPRESS-Bayern/LunarBridge-Hackintosh/commit/3b7550d154ee017487c1858591af2d02f4cbed05):
+**78.960 Byte Kernelbinary**, 28 entsprechende Quelldateien gegen diesen Commit
 geprüft und erfolgreiche `plan`-/`install`-/`rollback`-Aufrufe der tatsächlich
 verpackten Installer-CLI für beide Profile in künstlichen EFIs. GGTT-Planer
 und GuC-Schedulercodec sind im Binary enthalten. Spätere Compilerarbeit hat

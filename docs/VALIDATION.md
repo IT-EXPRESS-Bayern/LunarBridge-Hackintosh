@@ -69,11 +69,11 @@ and has no code signature. Its exact source commit differs from later documentat
 commits; the commit and hashes are retained in VALIDATION.json and the packaged
 SOURCE-REFERENCE.json. The successful link is separate from target-device loading.
 
-The [native build 38128683057](https://github.com/IT-EXPRESS-Bayern/LunarBridge-Hackintosh/actions/runs/38128683057)
-from `755ba0932882bdf8d0519f1c4822867cc140a7cf` includes the Xe2 memory and
+The [native build 38132276514](https://github.com/IT-EXPRESS-Bayern/LunarBridge-Hackintosh/actions/runs/38132276514)
+from `3b7550d154ee017487c1858591af2d02f4cbed05` includes the Xe2 memory and
 GuC CPU helpers, native DMA adapter, eight-slot cleanup quarantine and new
 Forcewake protocol/adapter, GGTT planner and GuC scheduler codec. Both diagnostic and optional Forcewake profiles
-passed. Their defined symbols were inspected in the actual 79,080-byte kernel
+passed. Their defined symbols were inspected in the actual 78,960-byte kernel
 binary. All 28
 corresponding-source hashes were verified from the downloaded installer package
 and compared byte-for-byte with that exact Git commit. The actual packaged CLI
@@ -91,4 +91,4 @@ machine paths and generated binaries are excluded from the public repository.
 
 The GGTT planner and GuC scheduler codec are now included in the host DLL, macOS object compilation and native build recipe. Their production code passed its tests in that integrated DLL. The reviewed native binary above includes these two helpers; its exact source commit remains explicit. Native global GGTT ownership, PAT programming, GuC firmware startup, ADS/LRC/queues and hardware submission remain unimplemented.
 
-Fourteen fresh kernel objects were cross-compiled after adding the upstream kernel build flag `-fno-stack-check`. Every header was verified against the pinned SDK tree, and those objects contain no Darwin userspace stack-probe symbol. The historical CI binary above still has that import. A new Apple-clang CI build must prove the linked fix; native kernel admission and stack budget remain unqualified.
+Fourteen fresh kernel objects were cross-compiled after adding the upstream kernel build flag `-fno-stack-check`. Every header was verified against the pinned SDK tree, and those objects contain no Darwin userspace stack-probe symbol. The historical 755ba093 CI binary had that import. The actual 3b7550d Apple-clang build now proves its removal from both imports and definitions; native kernel admission and stack budget remain unqualified.

@@ -1,9 +1,9 @@
 # Metal shader compiler bridge
 
-The separate Intel-macOS CI job compiles our own
+The separate Intel-macOS CI job attempts the compiler chain from our own
 `gpu-toolchain/xe2_compute_probe.metal` to Apple AIR, builds the exact external
-metal2vulkan commit `43c46ac8a24adf1a6e872b8a52c706ec9614fad0`, and translates
-AIR to Vulkan 1.2 Shader SPIR-V plus reflection. This is a compiler integration.
+metal2vulkan commit `43c46ac8a24adf1a6e872b8a52c706ec9614fad0`, to Vulkan 1.2
+Shader SPIR-V plus reflection. Its actual translation remains unverified.
 Native Arc 130V execution, a system Metal provider, display acceleration and
 WindowServer integration remain unverified. The first actual compiler run,
 [38127106743](https://github.com/IT-EXPRESS-Bayern/LunarBridge-Hackintosh/actions/runs/38127106743),
@@ -19,7 +19,16 @@ qualified discovery and version checks for Xcode's Metal compiler, then returned
 That report does not identify whether dependency resolution or compilation was
 still active. No AIR or Shader SPIR-V output was produced by that attempt.
 
-The 52 Windows offline boundary tests passed locally with zero failures,
+The next actual run,
+[38132276478](https://github.com/IT-EXPRESS-Bayern/LunarBridge-Hackintosh/actions/runs/38132276478),
+completed both MSL-to-AIR and `llvm-dis` commands with exit code zero. The AIR
+contract then refused private path metadata before retaining the outputs or
+starting Cargo. The concrete field value was not recorded in that attempt.
+The revised harness reports only fixed metadata categories, bounded counts and
+original line hashes to identify the cause without exporting private values.
+Original AIR/LLVM bytes and the rejection policy remain unchanged.
+
+The 58 Windows offline boundary tests passed locally with zero failures,
 errors or skips. They include the actual no-write Windows host guard;
 process-group cleanup uses controlled process doubles and an actual held-pipe
 CPU regression supervised by a separate 13-second deadline. These checks do

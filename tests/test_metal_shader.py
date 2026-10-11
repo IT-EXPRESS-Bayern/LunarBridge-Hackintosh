@@ -405,6 +405,104 @@ class ShaderBoundaries(unittest.TestCase):
         self.assertNotIn('cargo-resolve', [call['stage'] for call in calls])
         self.assertIn(b'/Users/private/input.air', original)
 
+    def test_private_air_classification_exports_only_categories_counts_and_original_hashes(self):
+        lines = [b'source_filename = "/Users/PRIVATE-ID/shader.metal"',
+                 b'!1 = !DIFile(filename: "shader", directory: "/home/PRIVATE-ID")',
+                 b'!2 = !DICompileUnit(producer: "/Users/PRIVATE-ID/tool")',
+                 b'!3 = !{!"/Users/PRIVATE-ID/metadata"}',
+                 b'; unknown /Users/PRIVATE-ID/comment']
+        original = b'\n'.join(lines) + b'\n'
+        summary = checker.classify_private_air_metadata(original)
+        self.assertEqual(summary['original_llvm_text_sha256'], hashlib.sha256(original).hexdigest())
+        self.assertEqual(summary['scope'], 'kernel-metadata')
+        self.assertEqual(summary['observations'], 5)
+        expected = dict.fromkeys(checker.PRIVATE_IR_CATEGORIES, 0)
+        expected.update(source_filename=1, di_file=1, di_compile_unit=1, other_metadata=1, other_ir=1)
+        self.assertEqual(summary['categories'], expected)
+        self.assertEqual([row['line_sha256'] for row in summary['line_hashes']],
+                         [hashlib.sha256(line).hexdigest() for line in lines])
+        self.assertFalse(summary['observation_limit_reached'])
+        self.assertFalse(summary['classification_incomplete'])
+        self.assertNotIn('PRIVATE-ID', json.dumps(summary))
+        self.assertNotIn('/Users/', json.dumps(summary))
+        self.assertEqual(original, b'\n'.join(lines) + b'\n')
+
+    def test_private_air_classification_follows_bounded_option_and_identity_metadata(self):
+        original = (b'!air.compile_options = !{!10}\n!10 = !{!11}\n'
+                    b'!11 = !{!10, !"/Users/PRIVATE-ID/option"}\n'
+                    b'!llvm.commandline = !{!12}\n!12 = !{!"/home/PRIVATE-ID/option"}\n'
+                    b'!llvm.ident = !{!13, !14}\n!13 = !{!"/Users/PRIVATE-ID/compiler"}\n'
+                    b'!air.compile_options_extra = !{!"/Users/PRIVATE-ID/unrelated"}\n'
+                    b'!14 = !{!"!20"}\n!20 = !{!"/Users/PRIVATE-ID/unreferenced"}\n')
+        summary = checker.classify_private_air_metadata(original)
+        self.assertEqual(summary['categories']['compiler_option'], 2)
+        self.assertEqual(summary['categories']['compiler_identity'], 1)
+        self.assertEqual(summary['categories']['other_metadata'], 2)
+        self.assertEqual(summary['observations'], 5)
+        self.assertFalse(summary['classification_incomplete'])
+        self.assertNotIn('PRIVATE-ID', json.dumps(summary))
+
+    def test_private_air_classification_observation_line_and_reference_limits_are_explicit(self):
+        original = b'!1 = !{!"/Users/PRIVATE-ID/value"}\n' * (checker.MAX_PRIVATE_IR_OBSERVATIONS + 3)
+        summary = checker.classify_private_air_metadata(original)
+        self.assertEqual(summary['observations'], checker.MAX_PRIVATE_IR_OBSERVATIONS)
+        self.assertTrue(summary['observation_limit_reached'])
+        self.assertEqual(len(summary['line_hashes']), checker.MAX_PRIVATE_IR_OBSERVATIONS)
+        original = b'\n' * checker.MAX_PRIVATE_IR_LINES + b'!1 = !{!"/Users/PRIVATE-ID/value"}\n'
+        summary = checker.classify_private_air_metadata(original)
+        self.assertTrue(summary['classification_incomplete'])
+        self.assertEqual(summary['observations'], 0)
+        with self.assertRaisesRegex(checker.ShaderError, '^AIR_PRIVATE_PATH_METADATA$'):
+            checker.inspect_air(air_fixture()[0], air_fixture()[1] + original)
+        graph = b'!air.compile_options = !{' + b', '.join(
+            ('!' + str(index)).encode() for index in range(checker.MAX_PRIVATE_IR_REFERENCES + 2)) + b'}\n'
+        self.assertTrue(checker.classify_private_air_metadata(graph)['classification_incomplete'])
+
+    def test_private_air_classification_input_types_utf8_and_moduleid_scope_are_bounded(self):
+        for raw, options in ((b'\xff', {}), (b'', {}), ('private', {}),
+                             (bytes(checker.MAX_FILE + 1), {}), (b'valid', {'include_module_id': 1})):
+            with self.assertRaises(checker.ShaderError):
+                checker.classify_private_air_metadata(raw, **options)
+        original = air_fixture()[1]
+        summary = checker.classify_private_air_metadata(original)
+        self.assertEqual(summary['observations'], 0)
+        self.assertFalse(summary['classification_incomplete'])
+        exported = checker.classify_private_air_metadata(original, include_module_id=True)
+        self.assertEqual(exported['categories']['module_id'], 1)
+        self.assertEqual(exported['scope'], 'exported-llvm-text')
+        self.assertNotIn('/Users/', json.dumps(exported))
+
+    def test_private_air_cli_retains_bounded_diagnostic_and_refuses_shader_outputs_and_cargo(self):
+        original = air_fixture()[1].replace(b'/Users/private/input.air', b'input.air')
+        original += b'source_filename = "/Users/PRIVATE-ID/shader.metal"\n'
+        report, files, calls = self.partial_air_cli(llvm=original)
+        self.assertEqual((report['phase'], report['code']), ('air-llvm-contract', 'AIR_PRIVATE_PATH_METADATA'))
+        self.assertEqual(report['air_private_metadata']['categories']['source_filename'], 1)
+        self.assertEqual(report['air_private_metadata']['original_llvm_text_sha256'],
+                         hashlib.sha256(original).hexdigest())
+        self.assertEqual(report['outputs_sha256'], {})
+        self.assertNotIn('cargo-resolve', [call['stage'] for call in calls])
+        self.assertNotIn('own-air.ll', files)
+        self.assertNotIn('PRIVATE-ID', json.dumps(report))
+        for flag in ('air_compilation_verified', 'shader_translation_verified', 'gpu_execution_verified',
+                     'metal_provider_registered', 'arc130v_backend_verified'):
+            self.assertFalse(report[flag])
+
+    def test_private_air_cli_moduleid_diagnostic_preserves_original_air_and_export_refusal(self):
+        original = air_fixture()[1]
+        report, files, calls = self.partial_air_cli(llvm=original)
+        self.assertEqual(report['code'], 'AIR_LLVM_EXPORT_PRIVATE_PATH')
+        self.assertEqual(report['air_private_metadata']['categories']['module_id'], 1)
+        self.assertEqual(report['air_private_metadata']['original_llvm_text_sha256'],
+                         hashlib.sha256(original).hexdigest())
+        self.assertEqual(files['xe2_compute_probe.air'], air_fixture()[0])
+        self.assertTrue(report['air_compilation_verified'])
+        self.assertFalse(report['air_llvm_text_exported'])
+        self.assertFalse(report['shader_translation_verified'])
+        self.assertNotIn('own-air.ll', files)
+        self.assertNotIn('cargo-resolve', [call['stage'] for call in calls])
+        self.assertNotIn('/Users/', json.dumps(report))
+
     def test_lock_snapshot_schema_checksum_duplicate_comment_and_paths_are_bounded(self):
         valid = lock_fixture()
         summary = checker.lock_summary(valid)

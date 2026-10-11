@@ -238,6 +238,25 @@ class CpuBoundaries(unittest.TestCase):
             with self.assertRaisesRegex(module.BuildError, "macos-sdk-version-mismatch"):
                 module.macos_sdk_environment({}, VersionSteps())
 
+    def test_real_cpu_parser_inventory_contains_nir_without_driver_inputs(self):
+        report = module.qualify_parser_inputs(["upstream/src/compiler/nir/nir.c",
+                                               "upstream/src/compiler/spirv/spirv2nir.c",
+                                               "generated/src/compiler/nir/nir_opcodes.c"])
+        self.assertTrue(report["real_nir_core_verified"])
+        self.assertFalse(report["nir_stub_present"])
+        self.assertFalse(report["gallium_driver_inputs_present"])
+        self.assertFalse(report["graphics_api_executed"])
+
+    def test_stub_missing_nir_or_driver_inventory_cannot_qualify_cpu_parser(self):
+        nir = "upstream/src/compiler/nir/nir.c"
+        for names, error in (([], "compiled-real-nir-core-missing"),
+                             ([nir, "upstream/src/compiler/nir/nir_stub.c"], "compiled-nir-stub-rejected"),
+                             ([nir, "upstream/src/gallium/drivers/softpipe/sp_screen.c"], "compiled-gallium-driver-rejected"),
+                             ([nir, "generated/src/gallium/drivers/softpipe/generated.c"], "compiled-gallium-driver-rejected")):
+            with self.subTest(names=names):
+                with self.assertRaisesRegex(module.BuildError, error):
+                    module.qualify_parser_inputs(names)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

@@ -47,6 +47,11 @@ CARGO_BUILD_TIMEOUT = 900
 PROGRESS_CATEGORIES = ('index', 'download', 'compile', 'check', 'finish', 'unknown')
 MAX_PROGRESS_OBSERVATIONS = 4096
 MAX_PROGRESS_LINE = 1024
+PRIVATE_IR_CATEGORIES = ('source_filename', 'di_file', 'di_compile_unit', 'compiler_option',
+                         'compiler_identity', 'module_id', 'other_metadata', 'other_ir')
+MAX_PRIVATE_IR_OBSERVATIONS = 64
+MAX_PRIVATE_IR_LINES = 65536
+MAX_PRIVATE_IR_REFERENCES = 4096
 COMMAND_STAGES = frozenset(('cargo-version', 'rustc-version', 'llvm-dis-version', 'spirv-val-version',
                            'metal-discovery', 'metal-version', 'ci-metal-toolchain-download',
                            'metal-discovery-after-download', 'metal-version-after-download', 'macos-sdk-version',
@@ -106,6 +111,85 @@ def safe_json(raw, limit=MAX_FILE):
         raise ShaderError('JSON_INVALID') from error
     need(isinstance(value, dict), 'JSON_OBJECT_REQUIRED')
     return value
+
+
+def classify_private_air_metadata(raw, *, include_module_id=False):
+    """Classify rejected original LLVM text without exporting any field values."""
+    need(isinstance(raw, bytes) and 0 < len(raw) <= MAX_FILE and type(include_module_id) is bool,
+         'AIR_LLVM_SIZE_INVALID')
+    try:
+        raw.decode('utf-8')
+    except UnicodeError as error:
+        raise ShaderError('AIR_LLVM_INVALID') from error
+    lines = raw.split(b'\n', MAX_PRIVATE_IR_LINES)
+    incomplete = len(lines) > MAX_PRIVATE_IR_LINES
+    lines = lines[:MAX_PRIVATE_IR_LINES]
+    nodes, roots, references = {}, {'compiler_option': set(), 'compiler_identity': set()}, 0
+    for raw_line in lines:
+        line = raw_line.decode('utf-8').strip()
+        node = re.match(r'^!(\d{1,10})\s*=', line)
+        root = re.match(r'^!(air\.compile_options|llvm\.commandline|llvm\.ident)\s*=', line)
+        if not node and not root:
+            continue
+        selected = set()
+        # Numeric text inside a quoted value is not a metadata reference.
+        references_text = re.sub(r'"(?:[^"\\]|\\.)*"', '""', line.split('=', 1)[1])
+        for match in re.finditer(r'!(\d{1,10})(?!\d)', references_text):
+            if references >= MAX_PRIVATE_IR_REFERENCES:
+                incomplete = True
+                break
+            references += 1
+            selected.add(match.group(1))
+        if node:
+            if len(nodes) >= MAX_PRIVATE_IR_REFERENCES or node.group(1) in nodes:
+                incomplete = True
+            else:
+                nodes[node.group(1)] = selected
+        if root:
+            category = 'compiler_identity' if root.group(1) == 'llvm.ident' else 'compiler_option'
+            roots[category].update(selected)
+    for category, seeds in roots.items():
+        todo, reached = list(seeds), set()
+        while todo and len(reached) < MAX_PRIVATE_IR_REFERENCES:
+            identity = todo.pop()
+            if identity not in reached:
+                reached.add(identity)
+                todo.extend(nodes.get(identity, set()) - reached)
+        incomplete |= bool(todo)
+        roots[category] = reached
+    counts = {name: 0 for name in PRIVATE_IR_CATEGORIES}
+    observations, limit_reached = [], False
+    markers = (b'/Users/', b'C:\\Users\\', b'C:\\\\Users\\\\', b'/home/', b'\\Users\\')
+    for raw_line in lines:
+        line = raw_line.decode('utf-8').strip()
+        module_id = line.startswith('; ModuleID =')
+        if (module_id and not include_module_id) or not any(marker in raw_line for marker in markers):
+            continue
+        if len(observations) == MAX_PRIVATE_IR_OBSERVATIONS:
+            limit_reached = True
+            break
+        node = re.match(r'^!(\d{1,10})\s*=', line)
+        if module_id:
+            category = 'module_id'
+        elif re.match(r'^source_filename\s*=', line):
+            category = 'source_filename'
+        elif re.search(r'!DIFile\s*\(', line):
+            category = 'di_file'
+        elif re.search(r'!DICompileUnit\s*\(', line):
+            category = 'di_compile_unit'
+        elif re.match(r'^!(air\.compile_options|llvm\.commandline)\s*=', line) or (
+                node and node.group(1) in roots['compiler_option']):
+            category = 'compiler_option'
+        elif re.match(r'^!llvm\.ident\s*=', line) or (node and node.group(1) in roots['compiler_identity']):
+            category = 'compiler_identity'
+        else:
+            category = 'other_metadata' if line.startswith('!') else 'other_ir'
+        counts[category] += 1
+        observations.append({'category': category, 'line_sha256': sha(raw_line)})
+    return {'schema': 1, 'scope': 'exported-llvm-text' if include_module_id else 'kernel-metadata',
+            'original_llvm_text_sha256': sha(raw), 'categories': counts,
+            'observations': len(observations), 'line_hashes': observations,
+            'observation_limit_reached': limit_reached, 'classification_incomplete': bool(incomplete)}
 
 
 def inspect_air(data, llvm_text):
@@ -650,7 +734,7 @@ def main(argv=None):
               'code': 'NOT_STARTED', 'source_commit': None, 'source_files_sha256': {}, 'tools': [],
               'converter': None, 'dependencies': None, 'outputs_sha256': {}, 'air': None, 'spirv': None,
               'reflection': None, 'converter_build_verified': False, 'air_compilation_verified': False,
-              'air_llvm_text_exported': False, 'cargo_lock': None,
+              'air_llvm_text_exported': False, 'air_private_metadata': None, 'cargo_lock': None,
               'shader_translation_verified': False, 'gpu_execution_verified': False,
               'metal_provider_registered': False, 'arc130v_backend_verified': False,
               'target_hardware_identity_verified': False, 'display_acceleration_verified': False,
@@ -739,11 +823,21 @@ def main(argv=None):
             report['phase'] = 'air-llvm-contract'
             air = read_regular(directory / 'xe2_compute_probe.air')
             llvm_text = read_regular(directory / 'own-air.ll')
-            report['air'] = inspect_air(air, llvm_text)
+            try:
+                report['air'] = inspect_air(air, llvm_text)
+            except ShaderError as error:
+                if str(error) == 'AIR_PRIVATE_PATH_METADATA':
+                    report['air_private_metadata'] = classify_private_air_metadata(llvm_text)
+                raise
             retain_output(artifacts, report, 'xe2_compute_probe.metal', msl)
             retain_output(artifacts, report, 'xe2_compute_probe.air', air)
             report['air_compilation_verified'] = True
-            inspect_llvm_export(llvm_text)
+            try:
+                inspect_llvm_export(llvm_text)
+            except ShaderError as error:
+                if str(error) == 'AIR_LLVM_EXPORT_PRIVATE_PATH':
+                    report['air_private_metadata'] = classify_private_air_metadata(llvm_text, include_module_id=True)
+                raise
             retain_output(artifacts, report, 'own-air.ll', llvm_text)
             report['air_llvm_text_exported'] = True
             report['code'] = 'AIR_PARTIAL_EVIDENCE_READY'

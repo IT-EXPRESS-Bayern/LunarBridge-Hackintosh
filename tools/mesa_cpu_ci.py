@@ -37,8 +37,9 @@ MAC_WHEEL_HASHES = {
     "PyYAML": "7f047e29dcae44602496db43be01ad42fc6f1cc0d8cd6c83d342306c32270196",
 }
 MESON_OPTIONS = [
-    "-Dplatforms=[]", "-Dgallium-drivers=[]", "-Dvulkan-drivers=[]", "-Dvulkan-layers=[]",
-    "-Dopengl=false", "-Dgles1=disabled", "-Dgles2=disabled", "-Degl=disabled",
+    # This upstream configuration selects real NIR; the only Ninja target is spirv2nir.
+    "-Dplatforms=[]", "-Dgallium-drivers=softpipe", "-Dvulkan-drivers=[]", "-Dvulkan-layers=[]",
+    "-Dopengl=true", "-Dgles1=disabled", "-Dgles2=disabled", "-Degl=disabled",
     "-Dgbm=disabled", "-Dglx=disabled", "-Dllvm=disabled", "-Dtools=nir",
     "-Dbuild-tests=false", "-Dshader-cache=disabled", "-Dzlib=disabled", "-Dzstd=disabled",
     "-Dspirv-tools=disabled", "-Dvalgrind=disabled", "-Dxmlconfig=disabled", "-Dexpat=disabled",
@@ -267,6 +268,17 @@ def install_packages(root: Path, steps: Steps) -> tuple[dict, list[dict]]:
     return environment, records
 
 
+def qualify_parser_inputs(names: list[str]) -> dict:
+    if "upstream/src/compiler/nir/nir.c" not in names:
+        raise BuildError("compiled-real-nir-core-missing")
+    if any(name.endswith("/nir_stub.c") for name in names):
+        raise BuildError("compiled-nir-stub-rejected")
+    if any("/gallium/drivers/" in name for name in names):
+        raise BuildError("compiled-gallium-driver-rejected")
+    return {"real_nir_core_verified": True, "nir_stub_present": False,
+            "gallium_driver_inputs_present": False, "graphics_api_executed": False}
+
+
 def source_reference(source: Path, build: Path, environment: dict, steps: Steps, reference: dict) -> dict:
     database = json.loads(steps.run("compiled-database", [environment["NINJA"], "-C", str(build),
                                    "-t", "compdb-targets", "src/compiler/spirv/spirv2nir"], 30, env=environment))
@@ -305,6 +317,7 @@ def source_reference(source: Path, build: Path, environment: dict, steps: Steps,
         files[label] = {"path": label, "bytes": len(data), "sha256": sha256(data)}
     if not files or "upstream/src/compiler/spirv/spirv2nir.c" not in files:
         raise BuildError("compiled-source-database-incomplete")
+    compiler_scope = qualify_parser_inputs(list(files))
     (steps.root.parent / "LICENSES/MESA_COMPILED_HEADERS.json").write_text(json.dumps(license_headers, indent=2) + "\n")
     for name in ("LICENSE", "COPYING", "docs/license.rst"):
         path = source / name
@@ -322,6 +335,7 @@ def source_reference(source: Path, build: Path, environment: dict, steps: Steps,
                 destination.write_bytes(bounded_file(resolved, 1024 * 1024))
     return {**reference, "schema_version": 1, "kind": "actual-cpu-parser-compiled-source-reference",
             "compiled_inputs": sorted(files.values(), key=lambda item: item["path"]),
+            "compiled_scope": compiler_scope,
             "compiled_input_count": len(files), "compiler": "Apple Clang on native Intel macOS CPU host",
             "harness_source_sha256": sha256(bounded_file(Path(__file__))),
             "license_assets": [{"path": path.relative_to(steps.root.parent).as_posix(),
@@ -425,6 +439,9 @@ def main(argv: list[str] | None = None) -> int:
     report = {"schema_version": 1, "kind": "mesa-spirv2nir-cpu-parser-qualification",
               "context": "intel-macos-ci-host" if os.environ.get("GITHUB_ACTIONS") == "true" else "local-intel-macos-cpu-host",
               "status": "unverified", "phase": "prepare",
+              "build_configuration": {"target": "src/compiler/spirv/spirv2nir", "meson_options": MESON_OPTIONS,
+                                      "upstream_sources_modified": False,
+                                      "softpipe_selected_to_enable_real_nir_only": True},
               "source_pin": MESA_PIN, "parser_built": False, "parser_help_verified": False,
               "shader_parser_executed": False, "isa_codegen_executed": False,
               "metal_device_registered": False, "target_gpu_executed": False}
@@ -475,6 +492,7 @@ def main(argv: list[str] | None = None) -> int:
         compiled = source_reference(source, build, environment, steps, reference)
         (output / "SOURCE_REFERENCE.json").write_text(json.dumps(compiled, indent=2) + "\n")
         report["compiled_input_count"] = compiled["compiled_input_count"]
+        report["compiled_scope"] = compiled["compiled_scope"]
         report["phase"] = "help"
         help_data = steps.run("parser-help", [str(binary), "--help"], 30, env=environment)
         if b"Usage:" not in help_data or b"--stage" not in help_data or b"--entry" not in help_data:
