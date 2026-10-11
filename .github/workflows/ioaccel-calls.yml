@@ -41,7 +41,7 @@ jobs:
         with:
           python-version: '3.13'
       - name: Install the pinned disassembler for synthetic code
-        run: python -m pip install --only-binary=:all: --require-hashes -r tools/ioaccel-requirements.txt
+        run: 'python -m pip install --only-binary=:all: --require-hashes -r tools/ioaccel-requirements.txt'
       - name: Check slide chains and literal call arguments
         run: python -B -X utf8 tests/test_ioaccel_calls.py --report build/ioaccel-calls-test-report.json
       - name: Retain source hashes and test counts
