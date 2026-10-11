@@ -1,0 +1,343 @@
+{
+  "schema": "LunarBridge.GGTTBindingSources.v1",
+  "own_code_license": "GPL-3.0-only",
+  "scope": "CPU-only DMA/PPGTT-to-GGTT write plan; system DMA pages; WB PAT2.",
+  "primary_sources": [
+    {
+      "repository": "torvalds/linux",
+      "commit": "e5f0a698b34ed76002dc5cff3804a61c80233a7a",
+      "path": "drivers/gpu/drm/xe/xe_ggtt.c",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/drivers/gpu/drm/xe/xe_ggtt.c",
+      "bytes": 28388,
+      "sha256": "5aeb6c6b8eab62665de1762938010ba31c7346df198864372e4b9e3f3c4cd71e",
+      "license": "MIT",
+      "copyright": "Copyright 2021 Intel Corporation",
+      "reference_role": "8 MiB GSM at BAR +8 MiB; 64-bit flat 4-KiB entries; system-DMA encoding and GGTT barrier/TLB production prerequisites.",
+      "line_markers": {
+        "xelp_ggtt_pte_flags": [
+          69,
+          84,
+          211
+        ],
+        "xelpg_ggtt_pte_flags": [
+          79,
+          216,
+          221
+        ],
+        "xe_ggtt_set_pte": [
+          126,
+          134,
+          136,
+          212,
+          217,
+          222
+        ],
+        "xe_ggtt_init_early": [
+          225,
+          236,
+          249,
+          259,
+          294,
+          312
+        ],
+        "xe_ggtt_invalidate": [
+          314,
+          326,
+          350,
+          446,
+          778,
+          890
+        ]
+      },
+      "upstream_implementation_distributed": false
+    },
+    {
+      "repository": "torvalds/linux",
+      "commit": "e5f0a698b34ed76002dc5cff3804a61c80233a7a",
+      "path": "drivers/gpu/drm/xe/regs/xe_gtt_defs.h",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/drivers/gpu/drm/xe/regs/xe_gtt_defs.h",
+      "bytes": 928,
+      "sha256": "55afcbf691c4063cb28ee48dad071f313a0bdb44054ea20ac84c7400788cec88",
+      "license": "MIT",
+      "copyright": "Copyright 2024 Intel Corporation",
+      "reference_role": "GGTT PAT bits 52/53, local-device-memory bit 1, present bit 0 and GuC limit 0xFEE00000.",
+      "line_markers": {
+        "XELPG_GGTT_PTE_PAT0": [
+          9
+        ],
+        "XELPG_GGTT_PTE_PAT1": [
+          10
+        ],
+        "GUC_GGTT_TOP": [
+          14
+        ],
+        "XE_GGTT_PTE_DM": [
+          27
+        ],
+        "XE_PAGE_PRESENT": [
+          34
+        ]
+      },
+      "upstream_implementation_distributed": false
+    },
+    {
+      "repository": "torvalds/linux",
+      "commit": "e5f0a698b34ed76002dc5cff3804a61c80233a7a",
+      "path": "drivers/gpu/drm/xe/xe_pat.c",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/drivers/gpu/drm/xe/xe_pat.c",
+      "bytes": 14566,
+      "sha256": "3016c9b974f579926b8d23191ebb65f8e6ebca3fd8907d19a40b4216de5709bd",
+      "license": "MIT",
+      "copyright": "Copyright 2023 Intel Corporation",
+      "reference_role": "Xe2 WB index 2; table index 2 value 0x0f; CPU contract does not prove native PAT programming.",
+      "line_markers": {
+        "XE2_PAT": [
+          109,
+          122,
+          123,
+          124,
+          125,
+          126,
+          127,
+          128,
+          129,
+          130,
+          131,
+          132,
+          133,
+          134,
+          135,
+          136,
+          137,
+          139,
+          140,
+          141,
+          142,
+          143,
+          144,
+          145,
+          146,
+          147,
+          148,
+          149,
+          150,
+          154,
+          155
+        ],
+        "xe2_pat_table": [
+          121,
+          382,
+          391
+        ],
+        "xe_pat_init_early": [
+          378
+        ]
+      },
+      "upstream_implementation_distributed": false
+    },
+    {
+      "repository": "torvalds/linux",
+      "commit": "e5f0a698b34ed76002dc5cff3804a61c80233a7a",
+      "path": "drivers/gpu/drm/xe/xe_wopcm.c",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/drivers/gpu/drm/xe/xe_wopcm.c",
+      "bytes": 8543,
+      "sha256": "0de99eabecaa967c244b13746f425d0ad82dfed9756529f3485cd7b02b695e46",
+      "license": "MIT",
+      "copyright": "Copyright 2022 Intel Corporation",
+      "reference_role": "LNL integrated default 2 MiB versus maximum 8 MiB. Own lower GGTT guard uses conservative 8 MiB; actual BIOS state remains unqualified.",
+      "line_markers": {
+        "WOPCM_SIZE": [
+          53,
+          55,
+          56,
+          58,
+          129,
+          131,
+          136,
+          151,
+          152,
+          154,
+          155,
+          156,
+          175,
+          176,
+          177,
+          184,
+          185,
+          186,
+          231,
+          251
+        ],
+        "MAX_WOPCM_SIZE": [
+          58,
+          231
+        ],
+        "xe_wopcm_size": [
+          182,
+          214
+        ],
+        "xe_wopcm_init": [
+          190,
+          199,
+          273
+        ]
+      },
+      "upstream_implementation_distributed": false
+    },
+    {
+      "repository": "torvalds/linux",
+      "commit": "e5f0a698b34ed76002dc5cff3804a61c80233a7a",
+      "path": "drivers/gpu/drm/xe/xe_wopcm_types.h",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/drivers/gpu/drm/xe/xe_wopcm_types.h",
+      "bytes": 501,
+      "sha256": "673418f4b00879b4e3e6fadf63f0e241aefe9296df796262cb07e3188f20b11d",
+      "license": "MIT",
+      "copyright": "Copyright 2022 Intel Corporation",
+      "reference_role": "WOPCM state description; reference only, no driver implementation copied.",
+      "line_markers": {
+        "struct xe_wopcm": [
+          12,
+          14
+        ]
+      },
+      "upstream_implementation_distributed": false
+    },
+    {
+      "repository": "torvalds/linux",
+      "commit": "e5f0a698b34ed76002dc5cff3804a61c80233a7a",
+      "path": "drivers/gpu/drm/xe/xe_pci.c",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/drivers/gpu/drm/xe/xe_pci.c",
+      "bytes": 27633,
+      "sha256": "1563c7f2b3d11aa5917bfc2660e6d5e05ad8b3c2086e6ffa4b6752a898040740",
+      "license": "MIT",
+      "copyright": "Copyright 2021 Intel Corporation",
+      "reference_role": "Lunar Lake platform DMA mask is 46 bits; reference is not target device qualification.",
+      "line_markers": {
+        "lnl_desc": [
+          312,
+          367
+        ]
+      },
+      "upstream_implementation_distributed": false
+    },
+    {
+      "repository": "torvalds/linux",
+      "commit": "e5f0a698b34ed76002dc5cff3804a61c80233a7a",
+      "path": "drivers/gpu/drm/xe/xe_bo.c",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/drivers/gpu/drm/xe/xe_bo.c",
+      "bytes": 81361,
+      "sha256": "8a09ccc4f30455c776a6e1df0a224800dd9d0c7440e7f767da30d0f493823e7d",
+      "license": "MIT",
+      "copyright": "Copyright 2021 Intel Corporation",
+      "reference_role": "DMA-addressed backing store versus CPU physical address; lifetime and ownership remain native caller responsibilities.",
+      "line_markers": {
+        "xe_bo_addr": [
+          2481,
+          2506,
+          2510
+        ]
+      },
+      "upstream_implementation_distributed": false
+    },
+    {
+      "repository": "apple-oss-distributions/xnu",
+      "commit": "f6217f891ac0bb64f3d375211650a4c1ff8ca1ea",
+      "path": "iokit/IOKit/IOMapper.h",
+      "url": "https://raw.githubusercontent.com/apple-oss-distributions/xnu/f6217f891ac0bb64f3d375211650a4c1ff8ca1ea/iokit/IOKit/IOMapper.h",
+      "bytes": 4927,
+      "sha256": "87e82d46c961fb3caadc076939f1eb8313e2de636682f6826f57e8db34ee95ad",
+      "license": "APSL-2.0",
+      "copyright": "Apple Inc.; exact notice retained in upstream referenced header",
+      "reference_role": "Exact-device IOMMU mapper and prepared Host64 DMA segment/lifetime contract; reference only.",
+      "line_markers": {
+        "copyMapperForDevice": [
+          103,
+          104
+        ]
+      },
+      "upstream_implementation_distributed": false
+    },
+    {
+      "repository": "apple-oss-distributions/xnu",
+      "commit": "f6217f891ac0bb64f3d375211650a4c1ff8ca1ea",
+      "path": "iokit/IOKit/IODMACommand.h",
+      "url": "https://raw.githubusercontent.com/apple-oss-distributions/xnu/f6217f891ac0bb64f3d375211650a4c1ff8ca1ea/iokit/IOKit/IODMACommand.h",
+      "bytes": 37801,
+      "sha256": "14cf81900488a4a11e676fc846e5ecf5fc915bbbfe67fcd9cd0ec3a551999e71",
+      "license": "APSL-2.0",
+      "copyright": "Apple Inc.; exact notice retained in upstream referenced header",
+      "reference_role": "Exact-device IOMMU mapper and prepared Host64 DMA segment/lifetime contract; reference only.",
+      "line_markers": {
+        "kMapped": [
+          91,
+          96,
+          215,
+          223,
+          239,
+          253,
+          291,
+          298,
+          472,
+          483
+        ],
+        "OutputHost64": [
+          173,
+          176,
+          179,
+          182,
+          411
+        ],
+        "gen64IOVMSegments": [
+          410,
+          414
+        ],
+        "virtual IOReturn prepare(": [
+          340
+        ],
+        "virtual IOReturn complete(": [
+          349
+        ]
+      },
+      "upstream_implementation_distributed": false
+    }
+  ],
+  "abi_contract": {
+    "abi": 1,
+    "window_bytes": 72,
+    "write_bytes": 16,
+    "plan_bytes": 4208,
+    "max_pages": 256,
+    "max_buffer_bytes": 1048576,
+    "page_bytes": 4096,
+    "dma_address_bits": 46,
+    "gsm_bar_offset": 8388608,
+    "gsm_bytes": 8388608,
+    "ggtt_limit": "0xFEE00000",
+    "own_reserved_lower_bytes": 8388608,
+    "lower_guard_is_measured_bios_state": false,
+    "xe2_wb_pat_index": 2,
+    "expected_pat_value": "0x0f"
+  },
+  "license_notices": {
+    "intel_mit_text": "GGTT_BINDING.md; ../LICENSES/MIT-Intel.txt",
+    "intel_copyright_years": [
+      2021,
+      2022,
+      2023,
+      2024
+    ],
+    "apple_headers_are_reference_only": true,
+    "upstream_driver_or_header_bytes_distributed": false
+  },
+  "hardware_qualification": {
+    "native_bar_mapping_verified": false,
+    "native_ggtt_ownership_verified": false,
+    "device_iommu_mapping_verified": false,
+    "pat_programming_verified": false,
+    "wopcm_or_firmware_state_verified": false,
+    "hardware_bound": false,
+    "flush_completed": false,
+    "native_gpu_submission_verified": false,
+    "metal_acceleration_verified": false
+  }
+}

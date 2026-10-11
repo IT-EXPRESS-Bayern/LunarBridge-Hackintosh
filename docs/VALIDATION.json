@@ -6,12 +6,12 @@
     "version": "0.15.2"
   },
   "external_build_dependency": "MacKernelSDK headers, separately licensed",
-  "successful_compiles": 13,
+  "successful_compiles": 15,
   "artifacts": [
     {
       "name": "lnl_host.dll",
-      "bytes": 183808,
-      "sha256": "b4b7880c9f5cfcbc6fe3455d7055fe05512800b3660a30ed188885b3fa076379",
+      "bytes": 188928,
+      "sha256": "64d95bfaf46c10899057543543181413518eda529f04d99e0990692b918720af",
       "magic_hex": "4d5a7800"
     },
     {
@@ -39,9 +39,21 @@
       "magic_hex": "cffaedfe"
     },
     {
+      "name": "lb_ggtt_plan.o",
+      "bytes": 13032,
+      "sha256": "e4fed9246e506651e411f571346156a9fd8930e963e001ca30ad1150e70268f3",
+      "magic_hex": "cffaedfe"
+    },
+    {
       "name": "lb_guc_transport.o",
       "bytes": 13744,
       "sha256": "8f185f069a989620ff8e8a73a93d2b7cd87932ade759c0f78a4099e11c56a1ac",
+      "magic_hex": "cffaedfe"
+    },
+    {
+      "name": "lb_guc_scheduler.o",
+      "bytes": 23992,
+      "sha256": "a1587ae2cd490689116c8f67bd81fe13716ac43d433eeb337990d88beaca91df",
       "magic_hex": "cffaedfe"
     },
     {
@@ -161,8 +173,8 @@
     "parallel_kernel_lifetime_tested": false
   },
   "pinned_reference_files_sha256_verified": 16,
-  "total_host_tests_passed": 322,
-  "macos_object_count": 12,
+  "total_host_tests_passed": 378,
+  "macos_object_count": 14,
   "native_diagnostic_source_compiled": true,
   "native_diagnostic_kext_linked": true,
   "native_build_workflow": {
@@ -340,5 +352,163 @@
     "test_type": "MSL/AIR/Shader SPIR-V/reflection parser and bounded process runner with explicit offline doubles",
     "native_compilation_tested": false,
     "native_target_hardware_tests": 0
-  }
+  },
+  "ggtt_planner_tests": {
+    "tests_run": 31,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "successful": true,
+    "synthetic": true,
+    "actual_production_cpp_planner_executed": true,
+    "planner_calls": 132,
+    "native_bar_mapping_or_write_tested": false,
+    "native_ggtt_binding_tested": false,
+    "pat_programming_verified": false,
+    "device_iommu_mapping_verified": false,
+    "cpu_or_gpu_dispatch_tested": false,
+    "metal_acceleration_tested": false,
+    "host_library_sha256": "64d95bfaf46c10899057543543181413518eda529f04d99e0990692b918720af",
+    "source_sha256": {
+      "gpu-prototype/lb_gpu_memory.cpp": "a78b26f6ed24de1bc3c60b761a691fcfd1edc0cbd65e2bb64673b524a24bdbdd",
+      "gpu-prototype/lb_gpu_memory.h": "e70973205eb80c914b40345990069652fdc2c31fa0c4054f2315788300532880",
+      "gpu-prototype/lb_ggtt_plan.cpp": "162e321ab25a6b6478de3be7aff460ae02e9029e27223c45125dd80b10f9934b",
+      "gpu-prototype/lb_ggtt_plan.h": "c6a1e560c8afed66fa6543e99ca626b6efecec9579dc8d9298a3bbbee309b40d",
+      "tests/test_ggtt_plan.py": "95b14a61efa1808d0bbc37a676c05a7ba3314d3ce20d8a85945c5d829e35ebad"
+    }
+  },
+  "guc_scheduler_codec_tests": {
+    "schema": 1,
+    "kind": "cpu-guC-wire-contract-tests",
+    "host_platform": "win32",
+    "library_sha256": "64d95bfaf46c10899057543543181413518eda529f04d99e0990692b918720af",
+    "source_files_sha256": {
+      "gpu-prototype/lb_guc_scheduler.h": "06af82b413ac4436c1bd7864411542c2a042f43c831ac8727f0f82c2c71312a5",
+      "gpu-prototype/lb_guc_scheduler.cpp": "a4df664d7508a8fb6264a4919e477aa3cdee740576dce0b46f50a2cea84c7c93",
+      "tests/test_guc_scheduler.py": "a24094e031ea8611cd9b38ba342a74df6ad30294deb716a996a77fb75f546c32",
+      "docs/GUC_SCHEDULER.md": "6446d65e4ecde3ec67755ee015f51b75431912225bf60aeca54340f152538f63",
+      "gpu-prototype/GUC_SCHEDULER_SOURCES.json": "5f8d3bc30579b38358221184cb1abc5c1b7d550d0445ea75057ab97257da9743",
+      "gpu-prototype/lb_guc_transport.h": "bc40fab5e6790366778dcaeb5dd6339a5bc459a760ae13516075709df2d632e2",
+      "gpu-prototype/lb_guc_transport.cpp": "9a7e5e6c992fdb788194d3e781fb242595986f2f150f5f2280547294fe67d1e9"
+    },
+    "tests_run": 25,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "passed": true,
+    "test_cases": [
+      {
+        "name": "test_bounded_ledger_preserves_two_cleanup_slots_and_never_evicts_fences",
+        "state": "passed"
+      },
+      {
+        "name": "test_busy_retry_success_and_unknown_hxg_types_cannot_promote_fast_requests",
+        "state": "passed"
+      },
+      {
+        "name": "test_commits_are_single_use_and_prepared_packets_do_not_change_state",
+        "state": "passed"
+      },
+      {
+        "name": "test_context_mode_done_checks_dword_count_owner_and_runnable_direction",
+        "state": "passed"
+      },
+      {
+        "name": "test_corrupt_context_members_tail_fences_and_phase_are_refused",
+        "state": "passed"
+      },
+      {
+        "name": "test_deregister_done_requires_pending_deregister_and_retains_ledger",
+        "state": "passed"
+      },
+      {
+        "name": "test_duplicate_fast_fences_are_not_reused_after_mode_done",
+        "state": "passed"
+      },
+      {
+        "name": "test_enable_submit_disable_and_deregister_literal_actions",
+        "state": "passed"
+      },
+      {
+        "name": "test_failure_reply_requires_exact_fast_request_fence_and_one_dword",
+        "state": "passed"
+      },
+      {
+        "name": "test_initialization_rejects_invalid_identity_without_changing_outputs",
+        "state": "passed"
+      },
+      {
+        "name": "test_live_context_cannot_be_reinitialized_to_forget_fences",
+        "state": "passed"
+      },
+      {
+        "name": "test_lnl_descriptor_flags_and_engine_inputs_leave_packet_unchanged_on_error",
+        "state": "passed"
+      },
+      {
+        "name": "test_malformed_commit_flags_headers_counts_and_unused_payload_are_atomic",
+        "state": "passed"
+      },
+      {
+        "name": "test_non_guc_origin_unknown_action_data0_and_bad_sizes_preserve_observation",
+        "state": "passed"
+      },
+      {
+        "name": "test_null_and_overlapping_objects_fail_before_any_write",
+        "state": "passed"
+      },
+      {
+        "name": "test_only_legal_operations_and_required_register_input_are_encoded",
+        "state": "passed"
+      },
+      {
+        "name": "test_past_register_failure_is_correlated_after_later_mode_command",
+        "state": "passed"
+      },
+      {
+        "name": "test_proposal_metadata_owner_epoch_context_reserved_and_revision_are_checked",
+        "state": "passed"
+      },
+      {
+        "name": "test_receive_owner_and_local_epoch_mismatch_never_change_state",
+        "state": "passed"
+      },
+      {
+        "name": "test_register_does_not_wait_for_or_accept_a_fabricated_success_reply",
+        "state": "passed"
+      },
+      {
+        "name": "test_register_literal_xe_packet_has_twelve_hxg_dwords_and_zero_serial_wq",
+        "state": "passed"
+      },
+      {
+        "name": "test_render_and_compute_classes_do_not_invent_engine_mask",
+        "state": "passed"
+      },
+      {
+        "name": "test_revision_exhaustion_and_corrupt_init_reserved_keep_all_bytes",
+        "state": "passed"
+      },
+      {
+        "name": "test_stale_submit_proposal_cannot_be_committed_after_disable_transition",
+        "state": "passed"
+      },
+      {
+        "name": "test_wrong_owner_epoch_and_fence_never_mutate_proposals",
+        "state": "passed"
+      }
+    ],
+    "target_hardware_tested": false,
+    "firmware_authenticated": false,
+    "guC_running": false,
+    "queue_registered_on_hardware": false,
+    "hardware_submission_verified": false,
+    "gpu_execution_verified": false,
+    "metal_provider_registered": false,
+    "successful": true,
+    "skipped": 0
+  },
+  "new_queue_helpers_native_build_status": "integrated in native build recipe; current published binary proof remains the recorded earlier source",
+  "native_ggtt_binding_implemented": false,
+  "native_guc_scheduler_implemented": false
 }

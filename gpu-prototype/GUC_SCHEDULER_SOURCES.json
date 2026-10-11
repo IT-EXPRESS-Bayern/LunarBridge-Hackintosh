@@ -1,0 +1,79 @@
+{
+  "schema": 1,
+  "kind": "pinned-guC-single-lrc-wire-profile",
+  "repository": "torvalds/linux",
+  "commit": "e5f0a698b34ed76002dc5cff3804a61c80233a7a",
+  "source_label": "Linux v6.17 Xe",
+  "files": [
+    {
+      "path": "drivers/gpu/drm/xe/xe_guc_submit.c",
+      "bytes": 69465,
+      "git_blob_sha": "0104afbc941c84e11c17e6f44b5d131ba792216f",
+      "sha256": "d8fd4db56f6e5174cfbe1aceb3bc5a021e01827861d06840ffb241bde9df594a",
+      "spdx": "MIT",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/drivers/gpu/drm/xe/xe_guc_submit.c"
+    },
+    {
+      "path": "drivers/gpu/drm/xe/abi/guc_messages_abi.h",
+      "bytes": 13510,
+      "git_blob_sha": "f6ed4dfd215c7ed27fc41aba41e47d94abca502c",
+      "sha256": "c7101af4fc6458f1917cfb1bb1cc94a365fb14a68d7efdf5fd0ea7dbbe116995",
+      "spdx": "MIT",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/drivers/gpu/drm/xe/abi/guc_messages_abi.h"
+    },
+    {
+      "path": "drivers/gpu/drm/xe/xe_lrc.c",
+      "bytes": 58521,
+      "git_blob_sha": "6d38411bdebaadee9db7e2d387c028a2710320ae",
+      "sha256": "a5fdf737ee4e6517b7a3448c48955f9b8ea15298f9bdd60dc8821c8d384238e9",
+      "spdx": "MIT",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/drivers/gpu/drm/xe/xe_lrc.c"
+    },
+    {
+      "path": "drivers/gpu/drm/xe/abi/guc_actions_abi.h",
+      "bytes": 13027,
+      "git_blob_sha": "b9f67d7a00d87938867eb710d42fc6bd92d2327c",
+      "sha256": "d7317d8014fdf8a4303e1e5620fece9a39d8ab8d300e6bbfba78d9f393ea8809",
+      "spdx": "MIT",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/drivers/gpu/drm/xe/abi/guc_actions_abi.h"
+    },
+    {
+      "path": "drivers/gpu/drm/xe/xe_uc_fw.c",
+      "bytes": 29149,
+      "git_blob_sha": "9bbdde604923d234183b76b22456c216d60ede74",
+      "sha256": "c40f8b4d09eb604ca249f7a6369b2e09fb4df917e34972d95641ec91f126e156",
+      "spdx": "MIT",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/drivers/gpu/drm/xe/xe_uc_fw.c"
+    },
+    {
+      "path": "drivers/gpu/drm/xe/xe_guc_ct.c",
+      "bytes": 62488,
+      "git_blob_sha": "3f4e6a46ff163cb8dd62d8568089fd83682443a3",
+      "sha256": "8b29b534959a414df1f8f33a1db0394a19f8b0db6dda302db71f39543106682f",
+      "spdx": "MIT",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/drivers/gpu/drm/xe/xe_guc_ct.c"
+    },
+    {
+      "path": "drivers/gpu/drm/xe/xe_guc_fwif.h",
+      "bytes": 9857,
+      "git_blob_sha": "6f57578b07cb055e7695e91ef187ce41c9ea2999",
+      "sha256": "694e7bb95b23e00bd61bf9ebc9ab4f480710c93f14d8580aece89824882fc072",
+      "spdx": "MIT",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/drivers/gpu/drm/xe/xe_guc_fwif.h"
+    }
+  ],
+  "own_code_license": "GPL-3.0-only",
+  "wire_reference_license": "MIT",
+  "wire_reference_copyright": "2014-2024 Intel Corporation",
+  "hardware_validation": false,
+  "firmware_compatibility_validation": false,
+  "scope": [
+    "single-LRC KMD registration",
+    "mode enable/disable",
+    "schedule command",
+    "deregister command",
+    "mode/deregister events",
+    "correlated FastRequest failure"
+  ],
+  "note": "Source hashes identify reference contracts. They do not authenticate firmware, qualify descriptors or prove hardware execution."
+}

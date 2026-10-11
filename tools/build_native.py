@@ -35,7 +35,8 @@ def main():
     objects.mkdir(parents=True, exist_ok=True)
     commands = []
     sources = [root/'gpu-prototype/lnl_platform.cpp', root/'gpu-prototype/lb_diagnostics.cpp',
-               root/'gpu-prototype/lb_gpu_memory.cpp', root/'gpu-prototype/lb_guc_transport.cpp',
+               root/'gpu-prototype/lb_gpu_memory.cpp', root/'gpu-prototype/lb_ggtt_plan.cpp',
+               root/'gpu-prototype/lb_guc_transport.cpp', root/'gpu-prototype/lb_guc_scheduler.cpp',
                root/'gpu-prototype/lb_guc_firmware.cpp',
                root/'gpu-prototype/lb_forcewake.cpp', root/'native/LBForceWakeAdapter.cpp',
                root/'native/LBDMAContext.cpp', root/'native/LBDMAQuarantine.cpp',
@@ -88,7 +89,9 @@ def main():
                     'gpu-prototype/lnl_platform.h', 'gpu-prototype/lb_diagnostics.cpp',
                     'gpu-prototype/lb_diagnostics.h', 'gpu-prototype/SOURCE-NOTICES.txt',
                     'gpu-prototype/lb_gpu_memory.cpp', 'gpu-prototype/lb_gpu_memory.h',
+                    'gpu-prototype/lb_ggtt_plan.cpp', 'gpu-prototype/lb_ggtt_plan.h',
                     'gpu-prototype/lb_guc_transport.cpp', 'gpu-prototype/lb_guc_transport.h',
+                    'gpu-prototype/lb_guc_scheduler.cpp', 'gpu-prototype/lb_guc_scheduler.h',
                     'gpu-prototype/lb_guc_firmware.cpp', 'gpu-prototype/lb_guc_firmware.h',
                     'tools/build_native.py')
     reference = {key: report[key] for key in ('source_commit', 'macos_version', 'compiler_version',
@@ -108,7 +111,10 @@ def main():
               'tools/collect_macos.py', 'tools/analyze_trace.py', 'tools/lb_wire.py',
               'docs/INSTALLER.md', 'docs/DIAGNOSTICS.md', 'docs/NATIVE_BACKEND.md',
               'docs/GPU_DESIGN.md', 'docs/HARDWARE_SUPPORT.md', 'docs/LICENSING.md',
-              'docs/GPU_FOUNDATION.md', 'docs/GPU_BRINGUP.md', 'docs/DMA_BACKEND.md', 'docs/DRIVER_MODULES.md',
+              'docs/GPU_FOUNDATION.md', 'docs/GPU_BRINGUP.md', 'docs/GGTT_BINDING.md',
+              'docs/GGTT_BINDING_SOURCES.json', 'docs/GUC_SCHEDULER.md',
+              'gpu-prototype/GUC_SCHEDULER_SOURCES.json', 'docs/ARCHITECTURE.md', 'docs/PORTING_GUIDE.md',
+              'docs/DMA_BACKEND.md', 'docs/DRIVER_MODULES.md',
               'docs/VALIDATION.md', 'docs/VALIDATION.json', 'README.md', 'README.de.md',
               '.github/ISSUE_TEMPLATE/native-diagnostics.yml',
               'LICENSE', 'NOTICE', 'LICENSE-STATUS.txt', 'LICENSES/MIT-Intel.txt')]

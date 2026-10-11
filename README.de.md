@@ -1,120 +1,178 @@
-# LunarBridge-Hackintosh
+[![Lizenz: GPL-3.0-only](https://img.shields.io/badge/License-GPL--3.0--only-blue)](LICENSE)
+[![Nativer Diagnose-Build](https://github.com/IT-EXPRESS-Bayern/LunarBridge-Hackintosh/actions/workflows/native-build.yml/badge.svg?branch=main)](https://github.com/IT-EXPRESS-Bayern/LunarBridge-Hackintosh/actions/workflows/native-build.yml)
+[![Metal-Shader-Compiler-CI](https://github.com/IT-EXPRESS-Bayern/LunarBridge-Hackintosh/actions/workflows/metal-shader.yml/badge.svg?branch=main)](https://github.com/IT-EXPRESS-Bayern/LunarBridge-Hackintosh/actions/workflows/metal-shader.yml)
+![Ziel: Arc 130V / Xe2](https://img.shields.io/badge/Target-Arc%20130V%20%2F%20Xe2-007ec6)
+![Plattform: Lunar Lake](https://img.shields.io/badge/Platform-Lunar%20Lake-007ec6)
+![Stand: Experimentell](https://img.shields.io/badge/Stage-Experimental-orange)
 
-Experimentelle Entwicklung nativer macOS-Treiber für Intel Lunar Lake.
-Der geprüfte Entwicklungsstand steht in [VALIDATION.md](docs/VALIDATION.md).
-Das erste Ziel ist die Intel Arc 130V (`8086:64A0`) im Samsung Galaxy Book5 Pro.
-Das Projekt enthält eigene native Diagnose-/CPU-Speicherbausteine, einen
-Installer und Tests unter Windows. Eine echte native Diagnose-Kext ist gebaut.
-**GPU-Ausführung, Arc-Metal-Beschleunigung und eine qualifizierte bootfähige EFI
-liegen noch nicht vor.**
+# LunarBridge
 
-[Geprüfter Stand](docs/VALIDATION.md): **250 bestandene Kernprüfungen unter Windows**,
-13 erfolgreiche Compiler-Aufrufe und zwölf macOS-Objektdateien.
-Der GitHub-macOS-Build hat eine echte Diagnose-Kext gelinkt.
-**Keine bestandene native macOS-Geräteprobe**.
+**Native macOS-Treiberentwicklung für Intel Lunar Lake und Arc 130V.**
 
-Der [native Main-GT-Aufweckadapter](docs/GPU_BRINGUP.md) ist jetzt implementiert,
-mit dem Lunar-Lake-Registerworkaround und gehaltenen Fehlerressourcen.
-Ein eigener [Xe2-Shader](gpu-toolchain/README.md) wurde auf der tatsächlichen
-Arc 130V unter Windows ausgeführt: 64/64 korrekte Ergebnisse. Die native
-macOS-Ausführung dieses Kernels und Metal fehlen weiterhin.
+[English](README.md) · [Repository](https://github.com/IT-EXPRESS-Bayern/LunarBridge-Hackintosh) · [Geprüfter Stand](docs/VALIDATION.md)
 
-## Vorhandene Ergebnisse
+LunarBridge liefert derzeit eine gebaute **native Diagnose-Kext**, Tracker und
+Trace-Werkzeuge, einen OpenCore-Installer mit Rücknahme und geprüfte CPU-seitige
+Xe2-Shader- und Speicherbausteine. **Native Arc-130V-GPU-Ausführung, ein
+Metal-Anbieter und beschleunigte Displayausgabe sind noch nicht implementiert.**
+Die Workflow-Badges zeigen Buildjobs und bestätigen keine Geräteunterstützung.
+Der Nachweis der echten Shader-Compiler-CI steht noch aus.
 
-| Baustein | Ergebnis | Aussage der Prüfung |
+Erstes Ziel ist das **Samsung Galaxy Book5 Pro 16 (NP960XHA-KG3DE)** mit Intel
+Core Ultra 5 226V und Arc 130V: PCI `8086:64A0`, Samsung-Subsystem `144D:C1DD`.
+Vorgesehen sind natives macOS Tahoe auf einer externen USB-C-SSD, Windows auf
+dem internen Laufwerk und eine Auswahl beim Start. Diese Installation ist auf
+dem Laptop noch nicht qualifiziert.
+
+## Was ist fertig, in Arbeit oder blockiert?
+
+Grün bedeutet im angegebenen Umfang nachgewiesen; Orange bedeutet vorbereitete
+Arbeit oder ausstehende Integration; Rot bedeutet eine fehlende Voraussetzung
+für den nativen Grafikpfad. Pfeile zeigen Abhängigkeiten, keine bereits laufende
+GPU-Pipeline.
+
+```mermaid
+flowchart TD
+    windows["FERTIG: eigener Windows-Arc-Kernel<br/>64 / 64 Ergebnisse geprüft"]
+    diagnostic["FERTIG: nativer Diagnose-Build<br/>Zwei CI-Profile und Installerprüfung"]
+    payload["FERTIG: CPU-Xe2-Payload<br/>37 Tests; GPU-Bindungen offen"]
+    ggtt["IN ARBEIT: GGTT-Schreibplan<br/>31 Tests; native Bindung offen"]
+    compiler["IN ARBEIT: MSL → AIR → SPIR-V<br/>Vorbereitet; echte Compiler-CI offen"]
+    memory["BLOCKIERT: nativer GPU-Speicher<br/>GPU-VA, PAT2 und globale GGTT-Ownership"]
+    submission["BLOCKIERT: native Ausführung<br/>GuC-Start und Queue-Submission fehlen"]
+    metal["BLOCKIERT: Metal und Display<br/>Anbieter und beschleunigte Ausgabe fehlen"]
+
+    windows --> payload
+    payload --> memory
+    ggtt --> memory
+    diagnostic --> memory
+    memory --> submission
+    submission --> metal
+    compiler --> metal
+
+    classDef done fill:#dcfce7,stroke:#15803d,color:#14532d
+    classDef progress fill:#fff7ed,stroke:#c2410c,color:#7c2d12
+    classDef blocked fill:#fee2e2,stroke:#b91c1c,color:#7f1d1d
+    class windows,diagnostic,payload done
+    class ggtt,compiler progress
+    class memory,submission,metal blocked
+```
+
+| Baustein | Stand | Aussage des Nachweises |
 | --- | --- | --- |
-| PCI-Erkennung für Lunar Lake | Eigener C++-Baustein für drei Linux-gelistete Geräte-IDs | Kompilierbar und unter Windows ausführbar |
-| GMD_ID-Auswertung | Grafik-/Media-Registeradressen, Versionsfelder und Bereichsprüfung | Synthetische Registerwerte und Grenzfälle prüfbar; kein echter Registerzugriff |
-| Nativer IOKit-Diagnosetreiber | Enge Samsung-/Arc-Zuordnung, PCI-Snapshot und expliziter GMD-Lesepfad mit Vorbedingungen | Quellcode als macOS-Objektdatei kompiliert; kein nativer Register-/Gerätetest |
-| Nativer CPU-Speicheranschluss | Administrativer User-Client, eigene genullte Puffer und Größen-/Clientgrenzen | Quellcode kompiliert, portable Speicherregeln unter Windows ausgeführt; native Mappings ungeprüft |
-| Nativer DMA-Anschluss | Exakter PCI-Mapper, begrenzte Vorbereitung, PTE-Staging und gehaltene Fehlerquarantäne | 30 Adapter- und zehn Ownership-Tests mit simuliertem IOKit; standardmäßig aus, keine Geräteprobe |
-| Tracker und Traces | Fester ABI, begrenzter Ereignisring, Sammler und Fehlerbericht | C++-Ringpuffer und simulierte IOKit-/Auswertungsfälle geprüft |
-| Xe2-Speichergrundlagen | Getrennte GPU-VA-Reservierungen, PTE-Encoding, Tabellenplanung und DMA-Listen im CPU-Speicher | Teil von 31 Grundlagenprüfungen; echte DMA-Bindung und GPU-Tabellen fehlen |
-| GuC-Grundlagen | CSS-Headerprüfung, HXG-/CT-Nachrichten und begrenzte CPU-Schattenringe | Teil von 31 Grundlagenprüfungen; kein authentifizierter Firmwarestart oder Hardwaretransport |
-| Grafik-Installer für OpenCore | Planen, sichern, installieren und zurücknehmen; Prüfsummen und Modulgrenzen | 21 Prüfungen an künstlichen EFI-Verzeichnissen; keine echte EFI geändert |
-| Grafikbeschleunigung, Display und Metal | Architekturvergleich und mögliche Portierungsstellen | Noch keine native Hardwarevalidierung |
+| Eigener Xe2-Kernel | **Fertig — Windows** | Eine echte OpenCL-Ausführung auf der Arc 130V; 64/64 korrekte Werte. [Nachweis und Fixtures](gpu-toolchain/README.md) |
+| Diagnose-Kext + Installer | **Fertig — Build/Paket** | Beide nativen CI-Profile bestanden; unsignierte Diagnose-Kext. [Prüfbericht](docs/VALIDATION.json) |
+| Nativer Main-GT-Forcewake | **In Arbeit — Gerätequalifikation** | Implementiert und mit Hosttests geprüft; standardmäßig aus, keine native Samsung-Probe. [Bring-up](docs/GPU_BRINGUP.md) |
+| Eigene CPU-Shader-Payload | **Fertig — CPU-Format** | 37 Payloadtests plus 37 historische Inspectorprüfungen; GPU-Pointer bleiben offen. [Payloadvertrag](gpu-toolchain/KERNEL_PAYLOAD.md) |
+| GGTT-Schreibplan | **Fertig — CPU-Planer** | 31 Tests / 132 echte C++-Aufrufe; Host-DLL und macOS-Objektbuild integriert, keine Hardwarebindung. [GGTT](docs/GGTT_BINDING.md) |
+| GuC-Schedulercodec | **Fertig — CPU-Protokoll** | 25 Prüfungen des tatsächlichen C++-Codecs; Register-/Mode-/Submit-/Deregister-Nachrichten, keine laufende Firmware oder Queue. [Schedulervertrag](docs/GUC_SCHEDULER.md) |
+| MSL → AIR → Shader-SPIR-V | **In Arbeit — Compilerqualifikation** | Fünf vorbereitete Dateien; geprüfte Reflection-v55-/Cleanup-Fixes, 35 Offlineprüfungen bestanden; noch kein echter Compiler-CI-Nachweis. [Compilerbrücke](docs/METAL_SHADER_BRIDGE.md) |
+| Nativer Speicher + Ausführung | **Blockiert — Implementierung fehlt** | GPU-VA-Bindung, programmierter PAT2, globale GGTT-Ownership, GuC-Start und Queue-Submission fehlen. [Architektur](docs/GPU_DESIGN.md) |
+| Metal-Anbieter + Display | **Blockiert — Implementierung fehlt** | Kein LunarBridge-System-Metal-Anbieter, keine beschleunigte Ausgabe oder WindowServer-Anbindung. [Hardwareumfang](docs/HARDWARE_SUPPORT.md) |
 
-Die Windows-Treiberkomponenten wurden lokal anhand ihrer Dateimetadaten und
-Import-/Exporttabellen verglichen. Ihr Quellcode wurde dadurch nicht gewonnen.
-Das öffentliche Repository enthält keine Windows- oder Apple-Treiberdateien.
+Das geprüfte Diagnosepaket stammt aus [Build 38125102141](https://github.com/IT-EXPRESS-Bayern/LunarBridge-Hackintosh/actions/runs/38125102141)
+zum Quellstand [36c16c9](https://github.com/IT-EXPRESS-Bayern/LunarBridge-Hackintosh/commit/36c16c9bd644d5682d2ffc4cfbb146f14d982824):
+**74.312 Byte Kernelbinary**, 24 entsprechende Quelldateien gegen diesen Commit
+geprüft und erfolgreiche `plan`-/`install`-/`rollback`-Aufrufe der tatsächlich
+verpackten Installer-CLI für beide Profile in künstlichen EFIs. Spätere Payload-,
+GGTT- und Compilerarbeit hat eigene Nachweise und gehört dadurch nicht
+automatisch zu diesem historischen Paket.
 
-## Untersuchte native Grafikroute
+Ein separater [Metal-Funktionstest](docs/METAL_VALIDATION.json) bestand auf
+einem Intel-macOS-CI-Host mit 65.536 korrekten Ausgaben. Er nutzte dessen
+vorhandenen Metal-Anbieter. Dieser CI-Rechner ist nicht das Samsung und bestätigt
+keinen LunarBridge-Arc-Treiber. **Keine native macOS-Hardwareprobe auf dem
+Samsung ist bisher bestanden.**
 
-Der untersuchte Weg verbindet eine mögliche Metal-Übersetzung, einen
-Xe2-fähigen Shader-Compiler, einen neuen nativen macOS-Anschluss und portierte
-Teile des Linux-Xe-Treibers. Der Diagnose-/CPU-Pufferanschluss liegt als eigener
-Quellcode vor. GPU-VA-, PTE- und GuC-Formate sind inzwischen als CPU-seitige
-[Grundlagen](docs/GPU_FOUNDATION.md) implementiert. Der [native DMA-Adapter](docs/DMA_BACKEND.md)
-bereitet Speicher mit Geräte-Mapper vor und muss am Zielgerät geprüft werden.
-GPU-Bindung, Firmware-Kommunikation, Ausführungswarteschlangen und Metal-Anbindung fehlen.
-[Architektur und konkrete Quellstellen](docs/GPU_DESIGN.md)
-erklären, welche Teile als Referenz dienen und welche noch fehlen.
+## Unter Windows entwickeln und prüfen
 
-Ein erster Versuch könnte sich auf eine Ausführungswarteschlange und begrenzte
-Puffer konzentrieren. Weniger Funktionen ändern jedoch nicht die
-Xe2-Befehlssprache und die Abhängigkeiten von Speicherverwaltung und Firmware.
-Eine zusätzliche Geräte-ID in einem alten Xe-LP-Treiber reicht daher nicht aus.
+Benötigt werden Python 3.12+, der portable Compiler **Zig 0.15.2** und externe
+MacKernelSDK-Header. Im Repository-Stamm ausführen und eigene Pfade einsetzen:
 
-I2C ist in das eigene [LunarBridge-I2C-Repository](https://github.com/IT-EXPRESS-Bayern/LunarBridge-I2C)
-ausgegliedert. Es baut fünf getrennte Kexts; native
-Touchpad-/Touchscreen-Proben bleiben offen. Der experimentelle Samsung-GPI1-Port
-ist implementiert, nativ gebaut und standardmäßig deaktiviert. Alle größeren Module haben eigene
-[öffentliche Repositories und Paketgrenzen](docs/DRIVER_MODULES.md), darunter
-HDR/Samsung, native Software, Windows-Programme, Kamera und OpenCore.
+```powershell
+python tools/fetch_references.py
+python gpu-prototype/build_gpu.py --compiler C:/path/to/zig.exe --sdk C:/path/to/MacKernelSDK --host-dir build/host --object-dir build/macos
+python gpu-prototype/test_gpu_foundation.py build/host/lnl_host.dll
+python -m unittest discover -s gpu-toolchain/tests -p test_xe2_shader.py
+python -m unittest discover -s gpu-toolchain/tests -p test_own_kernel_payload.py
+```
 
-## Ziel und Abnahme
+Damit entstehen die Windows-Test-DLL und macOS-Objektdateien; die Prüfungen
+laufen auf der CPU beziehungsweise offline. Unter Windows wird keine Kext
+gelinkt oder geladen. Bis zur Buildintegration braucht der GGTT-Test eine
+separate Hostbibliothek; siehe [GGTT-Anleitung](docs/GGTT_BINDING.md).
+Der [Prüfstand](docs/VALIDATION.md) nennt die weiteren Tests mit ihren jeweiligen
+Grenzen.
 
-Die Vorgaben bleiben: natives macOS Tahoe auf einer externen USB-C-SSD,
-Windows auf dem internen Laufwerk und Auswahl beim Start. Firmware-UEFI-Secure-Boot
-wird für den ersten nativen Versuch ausdrücklich zurückgestellt; das
-[OpenCore-Testprofil](https://github.com/IT-EXPRESS-Bayern/LunarBridge-OpenCore/blob/main/docs/TEST_PROFILES.md)
-erhält die strenge Variante für später. Eine VM ersetzt dieses Ziel nicht.
-Apples SecureBootModel bestätigt keinen aktivierten Firmware-Secure-Boot.
-Boot, Secure Boot, Arc-130V-Metal-Ausführung, internes Display und Standby sind
-jeweils getrennt am echten Gerät nachzuweisen; bisher ist keiner dieser
-nativen Abnahmetests bestanden.
+## Die echte native Diagnose-Kext bauen
 
-Der eigene Metal-Funktionstest wurde inzwischen auf einem Intel-macOS-CI-Host
-gebaut und ausgeführt: 65.536 Shader-Ergebnisse ohne Abweichung, bestätigter
-Command-Abschluss und kein CPU-Ersatz. Weitere 18 Windows-Grenztests bestanden.
-Der [Nachweis](docs/METAL_VALIDATION.json) gilt für diesen separaten CI-Host;
-er bestätigt keine Arc-130V-Unterstützung oder Grafikbeschleunigung auf dem Samsung.
+Auf einem Intel-Mac mit Xcode Command Line Tools, Python und dem externen SDK:
 
-## Bauen und prüfen
+```sh
+python3 tools/build_native.py --sdk /path/to/MacKernelSDK --out build/native
+```
 
-Python 3, Zig 0.15.2 und externe MacKernelSDK-Header sind erforderlich.
-Die Befehle stehen in der [englischen README](README.md#build-and-check-under-windows).
-Die Referenzdateien werden mit festgehaltenen SHA256-Werten geprüft.
-Der Build erzeugt eine Windows-Test-DLL und zwölf macOS-Objektdateien.
-Er erzeugt keine installierbare oder signierte Grafik-Kext.
+Derselbe [native Buildworkflow](.github/workflows/native-build.yml) läuft auf
+einem Intel-macOS-26-CI-Host mit gepinntem SDK-Checkout. Er erzeugt
+`build/native/LunarBridge.kext`, `LunarBridge-Installer.zip` und einen Buildbericht,
+einschließlich entsprechendem Quellcode und Lizenzhinweisen. Die Kext ist
+unsigniert; Kompilieren und Linken belegen weder das Laden auf dem Zielgerät
+noch GPU-Ausführung. Für diese Entwicklung steht lokal kein Mac bereit.
 
-Der [native Build](docs/INSTALLER.md#echte-diagnose-kext-bauen) ist als Skript und
-GitHub-macOS-Workflow verfügbar. Ein echter Diagnose-Kext-/Installer-Build ist
-bestanden; Quellstand und Prüfsummen stehen in [VALIDATION.json](docs/VALIDATION.json).
-Die Kext implementiert weiterhin keine GPU-Ausführung. Das Installer-Archiv
-enthält auch den entsprechenden Treiberquellcode und das Buildskript.
+MMIO, DMA-Vorbereitung und Forcewake-Probe sind standardmäßig deaktiviert. Die
+ausdrücklichen Optionen und noch offenen Geräteprüfungen stehen in
+[GPU-Bring-up](docs/GPU_BRINGUP.md), [DMA-Anschluss](docs/DMA_BACKEND.md) und
+[nativem Dienst](docs/NATIVE_BACKEND.md).
 
-Der [Installer](docs/INSTALLER.md) nimmt eine ausdrücklich ausgewählte OpenCore-EFI
-und bietet Planung, Installation und Rücknahme. Er ändert weder Bootreihenfolge
-noch Firmware-Schlüssel oder Secure-Boot-Einstellungen. Vault-geschützte Änderungen
-und `DisableSecurityPolicy=true` werden abgewiesen. Der Standard bleibt deaktivierte
-Injektion und gesperrter Registerzugriff; Aktivierung benötigt explizite Optionen.
+## Installer, Traces und Bootziel
 
-[Diagnoseanleitung](docs/DIAGNOSTICS.md) und [nativer Anschluss](docs/NATIVE_BACKEND.md)
-beschreiben Snapshot, Ereignisse, CPU-Speichertest und Fehlerauswertung. Ein
-gescheiterter Speichertest verwirft die zuvor erfassten Diagnosen nicht.
+Der [Installer](docs/INSTALLER.md) verwaltet ausschließlich die Grafik-Diagnose-Kext
+in einer ausdrücklich ausgewählten OpenCore-EFI: `plan`, gesichertes `install`
+und `rollback`. Er partitioniert keine SSD und stellt keinen fertigen Dualboot her.
+Die [macOS-Sammler- und Trace-Anleitung](docs/DIAGNOSTICS.md) beschreibt Snapshots,
+begrenzte Ereignisse und Fehlerauswertung; die [Diagnose-Issue-Vorlage](.github/ISSUE_TEMPLATE/native-diagnostics.yml)
+ordnet Berichte ihrem Quellstand und ihrer Phase zu.
 
-## Lizenz
+Firmware-UEFI-Secure-Boot ist für den ersten nativen Versuch zurückgestellt;
+das strenge Profil bleibt zur späteren Qualifikation in den separaten
+[OpenCore-Testprofilen](https://github.com/IT-EXPRESS-Bayern/LunarBridge-OpenCore/blob/main/docs/TEST_PROFILES.md)
+erhalten. SIP und AMFI bleiben im Testplan aktiviert. Startauswahl, Firmware-Vertrauen,
+Installation auf der externen SSD, Display und Standby brauchen weiterhin
+tatsächliche Samsung-Proben.
 
-Neue Projektarbeit steht unter **GNU GPL Version 3 ausschließlich**
-(`GPL-3.0-only`). Kommerzielle Nutzung und bezahlter Support sind erlaubt.
-Bei der Weitergabe abgeleiteter Versionen müssen die GPL-Pflichten einschließlich
-des entsprechenden Quellcodes erfüllt werden. Andere dürfen ebenfalls
-GPL-konforme Kopien weitergeben und verkaufen.
+## Sieben eigenständige Module
 
-Die MIT-Hinweise von Intel bleiben erhalten. Das separate I2C-Repository bewahrt
-seine jeweiligen GPL- und Apple-Herkunftshinweise.
-Fremde Quelltexte, SDK-Header und Firmware erhalten dadurch keine neue Lizenz.
-NootedGreen-Code wird aufgrund seiner abweichenden Lizenz nicht übernommen.
-Siehe [vollständige Lizenz](LICENSE), [Herkunftshinweise](NOTICE) und
-[Lizenzumfang und kommerzielle Nutzung](docs/LICENSING.md).
+Hardwaretreiber bleiben getrennte Bundles; Kompatibilitätswerkzeuge sind
+Userland-Module. Jedes größere Modul hat ein eigenes Repository und eigene
+Prüfungen. Die Paketgrenzen stehen in [Treibermodule](docs/DRIVER_MODULES.md).
+
+| Modul | Repository |
+| --- | --- |
+| Grafik, Diagnosen und Grafik-Installer | [LunarBridge-Hackintosh](https://github.com/IT-EXPRESS-Bayern/LunarBridge-Hackintosh) |
+| I2C, GPIO und HID | [LunarBridge-I2C](https://github.com/IT-EXPRESS-Bayern/LunarBridge-I2C) |
+| HDR und Samsung-Einstellungen | [LunarBridge-HDR-Samsung](https://github.com/IT-EXPRESS-Bayern/LunarBridge-HDR-Samsung) |
+| Native Softwarekompatibilität | [LunarBridge-Native-Compatibility](https://github.com/IT-EXPRESS-Bayern/LunarBridge-Native-Compatibility) |
+| Windows-Programme / Wine | [LunarBridge-Windows-Compatibility](https://github.com/IT-EXPRESS-Bayern/LunarBridge-Windows-Compatibility) |
+| IPU7 / OV02E10 Kamera | [LunarBridge-Camera](https://github.com/IT-EXPRESS-Bayern/LunarBridge-Camera) |
+| OpenCore, Dualboot und Vertrauenskette | [LunarBridge-OpenCore](https://github.com/IT-EXPRESS-Bayern/LunarBridge-OpenCore) |
+
+## Community-Entwicklung und spätere Grafikports
+
+LunarBridge soll eine gemeinsame Basis für den Aufbau und die Modifikation
+nativer Treiber werden. Die [Architektur und Modulverträge](docs/ARCHITECTURE.md)
+erklären die Bausteingrenzen; die [Portierungsanleitung](docs/PORTING_GUIDE.md)
+beschreibt Wiederverwendung, generationsabhängige Arbeit, Tests und Lizenzen.
+Nach Fertigstellung und Qualifikation des ersten nativen Arc-130V-Pfads sollen
+weitere Grafikeinheiten folgen. Jeder Port braucht eigene Geräte-, ABI- und
+Firmwareverträge sowie einen tatsächlichen Hardware-Nachweis.
+
+## Lizenz und Upstream-Arbeit
+
+Eigene LunarBridge-Arbeit steht unter **GPL-3.0-only**. Kommerzielle Nutzung und
+bezahlter Support sind erlaubt; bei Weitergabe erfasster Arbeit gelten die
+GPL-Pflichten einschließlich des entsprechenden Quellcodes. Siehe [LICENSE](LICENSE)
+und [Lizenzumfang](docs/LICENSING.md). Intel-MIT-Referenzen, die LGPL-Lizenz des
+externen Konverters, Apple-Referenzheader, SDKs, Firmware und Abhängigkeiten
+der separaten Module behalten ihre jeweiligen Lizenzen. Siehe [NOTICE](NOTICE)
+und [Lizenzstatus](LICENSE-STATUS.txt). Proprietäre Apple- oder Windows-Treiber
+werden in diesem Repository nicht weitergegeben.

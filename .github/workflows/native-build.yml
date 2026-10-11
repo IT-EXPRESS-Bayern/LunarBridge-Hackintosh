@@ -53,6 +53,13 @@ jobs:
           LB_FORCEWAKE_LIBRARY="$PWD/build/forcewake/libforcewake.dylib" python3 tests/test_forcewake.py -v
           python3 tests/test_forcewake_adapter.py --library build/forcewake/libforcewake.dylib
           python3 -m unittest discover -s gpu-toolchain/tests -p test_xe2_shader.py -v
+          python3 -m unittest discover -s gpu-toolchain/tests -p test_own_kernel_payload.py -v
+      - name: Check actual GGTT planner and GuC scheduler codec on the host
+        run: |
+          mkdir -p build/queue
+          xcrun clang++ -std=c++17 -O2 -Wall -Wextra -Werror -fno-exceptions -fno-rtti -dynamiclib gpu-prototype/lb_gpu_memory.cpp gpu-prototype/lb_ggtt_plan.cpp gpu-prototype/lb_guc_transport.cpp gpu-prototype/lb_guc_scheduler.cpp -o build/queue/libgpuqueue.dylib
+          python3 tests/test_ggtt_plan.py --library build/queue/libgpuqueue.dylib --report tests/ggtt-plan-test-report.json
+          python3 tests/test_guc_scheduler.py build/queue/libgpuqueue.dylib
       - name: Build real kernel bundle and installer archive
         run: python3 tools/build_native.py --sdk build/dependencies/MacKernelSDK --out build/native ${{ matrix.options }}
       - name: Preserve unsigned diagnostic build

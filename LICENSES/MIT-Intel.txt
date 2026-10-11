@@ -1,7 +1,7 @@
 
 MIT License
 
-Copyright 2013, 2021, 2023 Intel Corporation
+Copyright 2013, 2021, 2022, 2023, 2024 Intel Corporation
 LunarBridge additions: 2026 project contributors, to the extent copyright applies.
 
 Permission is hereby granted, free of charge, to any person obtaining a
