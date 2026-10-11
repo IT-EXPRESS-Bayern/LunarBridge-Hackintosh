@@ -18,6 +18,11 @@ Formatprüfungen und Schritte zum Nachvollziehen für die Community.
 Das Abbild wurde unter Windows vor der macOS-Installation untersucht;
 native Arc-Beschleunigung ist damit noch nicht nachgewiesen.
 
+Die anschließende [Untersuchung der IOKit-Aufrufe](docs/IOACCEL_CALLS.md)
+belegt 78 Aufrufstellen aus 216 Funktionen, Verbindungstypen und konkrete
+Strukturgrößen für Device, Shared Memory und Command Queue. Ein zusätzliches
+read-only Werkzeug und 24 synthetische Tests machen diese Befunde nachvollziehbar.
+
 LunarBridge liefert derzeit eine gebaute **native Diagnose-Kext**, Tracker und
 Trace-Werkzeuge, einen OpenCore-Installer mit Rücknahme und geprüfte CPU-seitige
 Xe2-Shader- und Speicherbausteine. **Native Arc-130V-GPU-Ausführung, ein
