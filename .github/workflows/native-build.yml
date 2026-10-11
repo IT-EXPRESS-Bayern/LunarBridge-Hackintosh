@@ -51,7 +51,7 @@ jobs:
           mkdir -p build/forcewake
           xcrun clang++ -std=c++17 -O2 -Wall -Wextra -Werror -fno-exceptions -fno-rtti -DLB_FORCEWAKE_HOST_TEST -dynamiclib gpu-prototype/lnl_platform.cpp gpu-prototype/lb_diagnostics.cpp gpu-prototype/lb_forcewake.cpp native/LBForceWakeAdapter.cpp tests/forcewake_adapter_fake.cpp -o build/forcewake/libforcewake.dylib
           LB_FORCEWAKE_LIBRARY="$PWD/build/forcewake/libforcewake.dylib" python3 tests/test_forcewake.py -v
-          python3 tests/test_forcewake_adapter.py --library build/forcewake/libforcewake.dylib -v
+          python3 tests/test_forcewake_adapter.py --library build/forcewake/libforcewake.dylib
           python3 -m unittest discover -s gpu-toolchain/tests -p test_xe2_shader.py -v
       - name: Build real kernel bundle and installer archive
         run: python3 tools/build_native.py --sdk build/dependencies/MacKernelSDK --out build/native ${{ matrix.options }}
