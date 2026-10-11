@@ -15,6 +15,7 @@ if __name__ == '__main__' and sys.platform != 'darwin':
     raise SystemExit(unsupported_host())
 
 import argparse
+import contextlib
 import hashlib
 import json
 import os
@@ -385,6 +386,102 @@ def private_path(path, root):
          not any(part.upper() == 'EFI' or part.lower().endswith(('.kext', '.app', '.framework'))
                  for part in resolved.parts), 'PRIVATE_PATH_OUTSIDE_BUILD')
     return resolved
+
+
+def ephemeral_ci_context(context, source_commit):
+    return (context == 'ci-host' and os.environ.get('GITHUB_ACTIONS') == 'true' and
+            os.environ.get('CI', '').lower() == 'true' and type(source_commit) is str and
+            re.fullmatch(r'[0-9a-f]{40}', source_commit) is not None)
+
+
+def directory_identity(info):
+    return info.st_dev, info.st_ino, info.st_uid, info.st_mode
+
+
+def verified_system_temp_parent():
+    # Do not select an inherited TMPDIR or a profile-owned /var/folders entry.
+    # macOS's conventional /tmp symlink must name its real root-owned target.
+    need(sys.platform == 'darwin' and os.name == 'posix' and callable(getattr(os, 'getuid', None)),
+         'COMPILER_SYSTEM_TEMP_UNVERIFIED')
+    try:
+        need(os.path.realpath('/tmp', strict=True) == '/private/tmp' and
+             os.path.realpath('/private/tmp', strict=True) == '/private/tmp',
+             'COMPILER_SYSTEM_TEMP_UNVERIFIED')
+        for ancestor in ('/', '/private'):
+            info = os.lstat(ancestor)
+            need(stat.S_ISDIR(info.st_mode) and info.st_uid == 0 and not info.st_mode & 0o022,
+                 'COMPILER_SYSTEM_TEMP_UNVERIFIED')
+        info = os.lstat('/private/tmp')
+        need(stat.S_ISDIR(info.st_mode) and info.st_uid == 0 and stat.S_IMODE(info.st_mode) == 0o1777,
+             'COMPILER_SYSTEM_TEMP_UNVERIFIED')
+    except OSError:
+        raise ShaderError('COMPILER_SYSTEM_TEMP_UNVERIFIED') from None
+    return Path('/private/tmp'), directory_identity(info)
+
+
+def verify_owned_temp_directory(directory, parent, parent_identity):
+    try:
+        need(directory.is_absolute() and parent.is_absolute() and directory.parent == parent and
+             os.path.realpath(str(directory), strict=True) == str(directory),
+             'COMPILER_TEMP_DIRECTORY_UNVERIFIED')
+        need(directory_identity(os.lstat(parent)) == parent_identity,
+             'COMPILER_TEMP_DIRECTORY_UNVERIFIED')
+        info = os.lstat(directory)
+        need(stat.S_ISDIR(info.st_mode) and info.st_uid == os.getuid() and
+             stat.S_IMODE(info.st_mode) == 0o700 and info.st_dev == parent_identity[0],
+             'COMPILER_TEMP_DIRECTORY_UNVERIFIED')
+    except OSError:
+        raise ShaderError('COMPILER_TEMP_DIRECTORY_UNVERIFIED') from None
+    return directory_identity(info)
+
+
+@contextlib.contextmanager
+def compiler_workspace(build_parent, context, source_commit, report):
+    detail = {'selection': 'repository-build', 'system_temp_verified': False,
+              'own_directory_verified': False, 'cleanup': 'pending'}
+    report['compiler_workspace'] = detail
+    if not ephemeral_ci_context(context, source_commit):
+        # The target probe retains the existing private repository workspace.
+        temporary = tempfile.TemporaryDirectory(prefix='run-', dir=build_parent)
+        try:
+            yield Path(temporary.name)
+        finally:
+            detail['cleanup'] = 'unconfirmed'
+            temporary.cleanup()
+            detail['cleanup'] = 'removed'
+        return
+    report['phase'] = 'compiler-system-temp'
+    detail.update(selection='ephemeral-system-temp', cleanup='not-created')
+    parent, parent_identity = verified_system_temp_parent()
+    detail['system_temp_verified'] = True
+    try:
+        directory = Path(tempfile.mkdtemp(prefix='lunarbridge-metal-', dir=parent))
+    except OSError:
+        raise ShaderError('COMPILER_TEMP_DIRECTORY_CREATE_FAILED') from None
+    identity, process_cleanup_unconfirmed = None, False
+    try:
+        identity = verify_owned_temp_directory(directory, parent, parent_identity)
+        detail.update(own_directory_verified=True, cleanup='pending')
+        yield directory
+    except ShaderError as error:
+        process_cleanup_unconfirmed = str(error) in (
+            'PROCESS_GROUP_CLEANUP_FAILED', 'STEP_TERMINATION_UNCONFIRMED', 'STEP_OUTPUT_DRAIN_UNCONFIRMED')
+        raise
+    finally:
+        if identity is None:
+            detail['cleanup'] = 'retained-unverified-directory'
+        elif process_cleanup_unconfirmed:
+            # Do not remove files while a supervised descendant may use them.
+            detail['cleanup'] = 'retained-unconfirmed-process'
+        else:
+            detail['cleanup'] = 'unconfirmed'
+            try:
+                need(verify_owned_temp_directory(directory, parent, parent_identity) == identity,
+                     'COMPILER_WORKSPACE_CLEANUP_UNCONFIRMED')
+                shutil.rmtree(directory)
+            except (OSError, ShaderError):
+                raise ShaderError('COMPILER_WORKSPACE_CLEANUP_UNCONFIRMED') from None
+            detail['cleanup'] = 'removed'
 
 
 class CargoProgress:
@@ -765,7 +862,7 @@ def main(argv=None):
               'metal_provider_registered': False, 'arc130v_backend_verified': False,
               'target_hardware_identity_verified': False, 'display_acceleration_verified': False,
               'cpu_fallback_used': False, 'metal_toolchain_download': {'attempted': False},
-              'metal_compile_help': None,
+              'metal_compile_help': None, 'compiler_workspace': None,
               'command_steps': [], 'architecture': 'x86_64',
               'timeouts_seconds': {'probe': METAL_PROBE_TIMEOUT, 'cargo_build': CARGO_BUILD_TIMEOUT,
                                    'cargo_resolve': CARGO_RESOLVE_TIMEOUT,
@@ -783,11 +880,9 @@ def main(argv=None):
         commit = os.environ.get('GITHUB_SHA', '')
         report['source_commit'] = commit if re.fullmatch(r'[0-9a-f]{40}', commit) else None
         report['source_files_sha256'] = {name: sha(read_regular(root / name)) for name in SOURCE_NAMES}
-        need(not args.allow_ci_metal_download or (args.context == 'ci-host' and
-             os.environ.get('GITHUB_ACTIONS') == 'true' and os.environ.get('CI', '').lower() == 'true' and
-             report['source_commit'] is not None), 'METAL_DOWNLOAD_REQUIRES_EPHEMERAL_CI')
-        with tempfile.TemporaryDirectory(prefix='run-', dir=build_parent) as temporary:
-            directory = Path(temporary)
+        need(not args.allow_ci_metal_download or ephemeral_ci_context(args.context, report['source_commit']),
+             'METAL_DOWNLOAD_REQUIRES_EPHEMERAL_CI')
+        with compiler_workspace(build_parent, args.context, report['source_commit'], report) as directory:
             environment = os.environ.copy()
             for name in ('RUSTC_WRAPPER', 'RUSTC_WORKSPACE_WRAPPER', 'RUSTFLAGS',
                          'CARGO_ENCODED_RUSTFLAGS', 'RUSTDOCFLAGS', 'CARGO_TARGET_DIR'):
@@ -937,8 +1032,9 @@ def main(argv=None):
             # scratch space. No vendor sources, tool logs, user IDs or native GPU claim.
             for name, data in (('own-shader.spv', spirv), ('reflection.json', reflection)):
                 retain_output(artifacts, report, name, data)
-            report.update(state='passed', phase='completed', code='SHADER_TRANSLATION_VERIFIED',
-                          shader_translation_verified=True)
+        # A successful report is written only after the owned workspace cleanup.
+        report.update(state='passed', phase='completed', code='SHADER_TRANSLATION_VERIFIED',
+                      shader_translation_verified=True)
     except ShaderError as error:
         report['code'] = str(error)
     except (OSError, UnicodeError, ValueError, KeyError, TypeError, RecursionError):

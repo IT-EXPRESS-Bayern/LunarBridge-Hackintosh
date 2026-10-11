@@ -1,0 +1,2061 @@
+{
+  "schema": 1,
+  "generated_at_utc": "2026-10-11T14:19:21.371372+00:00",
+  "capstone": "5.0.7",
+  "input_files": {
+    "dyld_shared_cache_x86_64": {
+      "bytes": 760791040,
+      "sha256": "e5f4c3ff1cd2d985d6c3d370aa34a22034f6f815bcc4a2f0a044093e39e7dceb"
+    },
+    "dyld_shared_cache_x86_64.01": {
+      "bytes": 232357888,
+      "sha256": "9db68bbe532a4d99babc588767b67ba58942e14c2b74f1082bad857f74e9b377"
+    }
+  },
+  "frameworks": [
+    {
+      "path": "/System/Library/Frameworks/IOKit.framework/Versions/A/IOKit",
+      "address": 140703198552064
+    },
+    {
+      "path": "/System/Library/PrivateFrameworks/IOAccelerator.framework/Versions/A/IOAccelerator",
+      "address": 140703314624512
+    }
+  ],
+  "ioaccel_exported_functions_decoded": 216,
+  "io_calls_found": 78,
+  "calls": [
+    {
+      "function": "_IOAccelCommandQueueCreateWithQoS",
+      "function_address": 140703314633668,
+      "call_address": 140703314633738,
+      "call_offset": 70,
+      "api": [
+        "_IOServiceOpen"
+      ],
+      "api_address": 140703198562186,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "b0ba64151112cb261cae7ad5050d1b93a4b59e981b1b0cb54f81be4de7105642",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": null,
+        "rdx": 8,
+        "rcx": null,
+        "r8": null,
+        "r9": null,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelCommandQueueCreateWithQoS",
+      "function_address": 140703314633668,
+      "call_address": 140703314633915,
+      "call_offset": 247,
+      "api": [
+        "_IOConnectAddClient"
+      ],
+      "api_address": 140703198570442,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "b0ba64151112cb261cae7ad5050d1b93a4b59e981b1b0cb54f81be4de7105642",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": null,
+        "rdx": null,
+        "rcx": null,
+        "r8": null,
+        "r9": null,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelCommandQueueCreateWithQoS",
+      "function_address": 140703314633668,
+      "call_address": 140703314634107,
+      "call_offset": 439,
+      "api": [
+        "_IOConnectCallAsyncScalarMethod"
+      ],
+      "api_address": 140703198570717,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "b0ba64151112cb261cae7ad5050d1b93a4b59e981b1b0cb54f81be4de7105642",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 0,
+        "rdx": null,
+        "rcx": null,
+        "r8": 3,
+        "r9": 0,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelCommandQueueCreateWithQoS",
+      "function_address": 140703314633668,
+      "call_address": 140703314634281,
+      "call_offset": 613,
+      "api": [
+        "_IOConnectCallStructMethod"
+      ],
+      "api_address": 140703198567243,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "b0ba64151112cb261cae7ad5050d1b93a4b59e981b1b0cb54f81be4de7105642",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 5,
+        "rdx": null,
+        "rcx": 1028,
+        "r8": null,
+        "r9": null,
+        "r9_capacity_cell": 8
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelCommandQueueSetPriorityAndBackground",
+      "function_address": 140703314636520,
+      "call_address": 140703314636561,
+      "call_offset": 41,
+      "api": [
+        "_IOConnectCallMethod"
+      ],
+      "api_address": 140703198562596,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "3184358f287ea569b4ce53d711aa91a5959edb2d9558a8b4da97f14be84b8473",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 2,
+        "rdx": 0,
+        "rcx": 0,
+        "r8": null,
+        "r9": 12,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelCommandQueueSetQualityOfService",
+      "function_address": 140703314643440,
+      "call_address": 140703314643481,
+      "call_offset": 41,
+      "api": [
+        "_IOConnectCallMethod"
+      ],
+      "api_address": 140703198562596,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "accd03380cd6f6314784f8eb06cd4ce176f88cf62f25d31c92edbefac9e3b6bb",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 4,
+        "rdx": 0,
+        "rcx": 0,
+        "r8": null,
+        "r9": 4,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelCommandQueueSubmitCommandBuffers",
+      "function_address": 140703314636247,
+      "call_address": 140703314636383,
+      "call_offset": 136,
+      "api": [
+        "_IOConnectCallMethod"
+      ],
+      "api_address": 140703198562596,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "708a02603691a29e317f0f2fbbfff90a0babf57895454c44ad8dca9bc76f3970",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 1,
+        "rdx": 0,
+        "rcx": 0,
+        "r8": null,
+        "r9": null,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelContextCreate",
+      "function_address": 140703314629972,
+      "call_address": 140703314630012,
+      "call_offset": 40,
+      "api": [
+        "_IOServiceOpen"
+      ],
+      "api_address": 140703198562186,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "c2c905f676299ebb425ec9f83d02acc470c97bf9c49b90975313da893edbb65c",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": null,
+        "rdx": null,
+        "rcx": null,
+        "r8": null,
+        "r9": null,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelContextCreate",
+      "function_address": 140703314629972,
+      "call_address": 140703314630301,
+      "call_offset": 329,
+      "api": [
+        "_IOConnectAddClient"
+      ],
+      "api_address": 140703198570442,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "c2c905f676299ebb425ec9f83d02acc470c97bf9c49b90975313da893edbb65c",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": null,
+        "rdx": null,
+        "rcx": null,
+        "r8": null,
+        "r9": null,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelContextEnableBlockFences",
+      "function_address": 140703314642136,
+      "call_address": 140703314642353,
+      "call_offset": 217,
+      "api": [
+        "_IOConnectCallAsyncScalarMethod"
+      ],
+      "api_address": 140703198570717,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "15d44f000b00298dfa986915fd12936bfdd5d806676cce60da154ec9a8a3d907",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 6,
+        "rdx": null,
+        "rcx": null,
+        "r8": 3,
+        "r9": 0,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelContextFinish",
+      "function_address": 140703314637599,
+      "call_address": 140703314637673,
+      "call_offset": 74,
+      "api": [
+        "_IOConnectCallMethod"
+      ],
+      "api_address": 140703198562596,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "02c885a08be7cc01834663f053b37695970dc0df595efa3428de06d003407fc0",
+      "undecoded_trailing_zero_padding_bytes": 1,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 0,
+        "rdx": 0,
+        "rcx": 0,
+        "r8": 0,
+        "r9": 0,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelContextFinishFenceEvent",
+      "function_address": 140703314638031,
+      "call_address": 140703314638067,
+      "call_offset": 36,
+      "api": [
+        "_IOConnectCallScalarMethod"
+      ],
+      "api_address": 140703198595723,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "3875e50917aac706416e553ac79979dd97ac035159a373bfb3dd5e5938363418",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 5,
+        "rdx": null,
+        "rcx": 1,
+        "r8": 0,
+        "r9": 0,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelContextGetFenceBuffer",
+      "function_address": 140703314630485,
+      "call_address": 140703314630548,
+      "call_offset": 63,
+      "api": [
+        "_IOConnectMapMemory"
+      ],
+      "api_address": 140703198578402,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "5d193b6a4f694083c0d6435010bec8fd1fd295a76889df1c35ed3211e1c9d9cb",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 2,
+        "rdx": null,
+        "rcx": null,
+        "r8": null,
+        "r9": 1,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelContextGetFenceBuffer",
+      "function_address": 140703314630485,
+      "call_address": 140703314630613,
+      "call_offset": 128,
+      "api": [
+        "_IOConnectMapMemory"
+      ],
+      "api_address": 140703198578402,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "5d193b6a4f694083c0d6435010bec8fd1fd295a76889df1c35ed3211e1c9d9cb",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 1,
+        "rdx": null,
+        "rcx": null,
+        "r8": null,
+        "r9": 1,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelContextGetSidebandBuffer",
+      "function_address": 140703314630387,
+      "call_address": 140703314630437,
+      "call_offset": 50,
+      "api": [
+        "_IOConnectMapMemory"
+      ],
+      "api_address": 140703198578402,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "15d2243b50c5fab93b6c0205081c2b7a1f428f69ed0aea11de273293adedbc39",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 0,
+        "rdx": null,
+        "rcx": null,
+        "r8": null,
+        "r9": 1,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelContextReclaimResources",
+      "function_address": 140703314641853,
+      "call_address": 140703314641876,
+      "call_offset": 23,
+      "api": [
+        "_IOConnectCallScalarMethod"
+      ],
+      "api_address": 140703198595723,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "cfac53a266396da918743afda8e5e4a7139b5efe2f17bc75dafb7c01bcae760b",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 4,
+        "rdx": 0,
+        "rcx": 0,
+        "r8": 0,
+        "r9": 0,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelContextRequestDataBuffer",
+      "function_address": 140703314639670,
+      "call_address": 140703314639791,
+      "call_offset": 121,
+      "api": [
+        "_IOConnectCallStructMethod"
+      ],
+      "api_address": 140703198567243,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "35d66134005b9fcfb387423a3ef975bc6cec4b62aeb7c8b82a46e2cfc284cb29",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 3,
+        "rdx": null,
+        "rcx": 8,
+        "r8": null,
+        "r9": null,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelContextSetBackgroundRendering",
+      "function_address": 140703314641992,
+      "call_address": 140703314642028,
+      "call_offset": 36,
+      "api": [
+        "_IOConnectCallScalarMethod"
+      ],
+      "api_address": 140703198595723,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "515e9f9def6dd501b669d2fdf173e3115c8e99f3d8237af1d9d21c200d9549d5",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 7,
+        "rdx": null,
+        "rcx": 1,
+        "r8": 0,
+        "r9": 0,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelContextSetExecutableName",
+      "function_address": 140703314641881,
+      "call_address": 140703314641954,
+      "call_offset": 73,
+      "api": [
+        "_IOConnectCallStructMethod"
+      ],
+      "api_address": 140703198567243,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "086e840b0bb1e80c206ee2f670a4af66614cd2c3879c0a495cf5f7d5d2e4118c",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 1,
+        "rdx": null,
+        "rcx": 1024,
+        "r8": 0,
+        "r9": 0,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelContextSubmitDataBuffersExt2",
+      "function_address": 140703314630707,
+      "call_address": 140703314630968,
+      "call_offset": 261,
+      "api": [
+        "_IOConnectCallStructMethod"
+      ],
+      "api_address": 140703198567243,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "c12fad0573468870975bf916ae2cee896a1c57d8e20561773b607e1ccbfcbb0c",
+      "undecoded_trailing_zero_padding_bytes": 1,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 2,
+        "rdx": null,
+        "rcx": 136,
+        "r8": null,
+        "r9": null,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelDeviceCreateWithAPIProperty",
+      "function_address": 140703314628448,
+      "call_address": 140703314628507,
+      "call_offset": 59,
+      "api": [
+        "_IOServiceOpen"
+      ],
+      "api_address": 140703198562186,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "032d466a68d80f852b6c4dc8fbd7d79e00473ae324bd582372ef60709463bcef",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": null,
+        "rdx": 5,
+        "rcx": null,
+        "r8": null,
+        "r9": null,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelDeviceCreateWithAPIProperty",
+      "function_address": 140703314628448,
+      "call_address": 140703314628605,
+      "call_offset": 157,
+      "api": [
+        "_IOConnectCallStructMethod"
+      ],
+      "api_address": 140703198567243,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "032d466a68d80f852b6c4dc8fbd7d79e00473ae324bd582372ef60709463bcef",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 9,
+        "rdx": null,
+        "rcx": 16,
+        "r8": 0,
+        "r9": 0,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelDeviceCreateWithAPIProperty",
+      "function_address": 140703314628448,
+      "call_address": 140703314628719,
+      "call_offset": 271,
+      "api": [
+        "_IOConnectCallStructMethod"
+      ],
+      "api_address": 140703198567243,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "032d466a68d80f852b6c4dc8fbd7d79e00473ae324bd582372ef60709463bcef",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 2,
+        "rdx": 0,
+        "rcx": 0,
+        "r8": null,
+        "r9": null,
+        "r9_capacity_cell": 600
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelDeviceCreateWithAPIProperty",
+      "function_address": 140703314628448,
+      "call_address": 140703314628922,
+      "call_offset": 474,
+      "api": [
+        "_IOConnectCallStructMethod"
+      ],
+      "api_address": 140703198567243,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "032d466a68d80f852b6c4dc8fbd7d79e00473ae324bd582372ef60709463bcef",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 0,
+        "rdx": 0,
+        "rcx": 0,
+        "r8": null,
+        "r9": null,
+        "r9_capacity_cell": 64
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelDeviceCreateWithAPIProperty",
+      "function_address": 140703314628448,
+      "call_address": 140703314629029,
+      "call_offset": 581,
+      "api": [
+        "_IOConnectCallStructMethod"
+      ],
+      "api_address": 140703198567243,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "032d466a68d80f852b6c4dc8fbd7d79e00473ae324bd582372ef60709463bcef",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 7,
+        "rdx": 0,
+        "rcx": 0,
+        "r8": null,
+        "r9": null,
+        "r9_capacity_cell": 24
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelDeviceGetCurrentTraceFilter",
+      "function_address": 140703314640174,
+      "call_address": 140703314640264,
+      "call_offset": 90,
+      "api": [
+        "_IOConnectCallMethod"
+      ],
+      "api_address": 140703198562596,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "2acab80a14178eb7da9eb480103b0dca8846fe4872d3418004e3f41c3aaaecdf",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 6,
+        "rdx": 0,
+        "rcx": 0,
+        "r8": 0,
+        "r9": 0,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelDeviceGetName",
+      "function_address": 140703314638158,
+      "call_address": 140703314638251,
+      "call_offset": 93,
+      "api": [
+        "_IOConnectCallStructMethod"
+      ],
+      "api_address": 140703198567243,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "f78f16d0282360ee22698ca2b9abdeea2d1cbd2a42f5d30d68ee7d179f2540b4",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 1,
+        "rdx": 0,
+        "rcx": 0,
+        "r8": null,
+        "r9": null,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelDeviceGetNextGlobalTraceID",
+      "function_address": 140703314635106,
+      "call_address": 140703314635188,
+      "call_offset": 82,
+      "api": [
+        "_IOConnectCallStructMethod"
+      ],
+      "api_address": 140703198567243,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "aabfc2d888aaf0ea2276a1cdd970e2b0df308620484e7bf91257f2a57ede6fd3",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 8,
+        "rdx": 0,
+        "rcx": 0,
+        "r8": null,
+        "r9": null,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelDeviceGetSurfaceInfo",
+      "function_address": 140703314639415,
+      "call_address": 140703314639518,
+      "call_offset": 103,
+      "api": [
+        "_IOConnectCallMethod"
+      ],
+      "api_address": 140703198562596,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "cd233d0d56bcf4e65ce6c9baedd002b3938219ac1a35199e1c8d61b84f9199a0",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 3,
+        "rdx": null,
+        "rcx": 1,
+        "r8": 0,
+        "r9": 0,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelDeviceSetFramebufferStereo",
+      "function_address": 140703314639953,
+      "call_address": 140703314640014,
+      "call_offset": 61,
+      "api": [
+        "_IOConnectCallScalarMethod"
+      ],
+      "api_address": 140703198595723,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "ed2b35c08415888a62794c42c20b694a6c2df0010fdd607660550e389c9fa40e",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 4,
+        "rdx": null,
+        "rcx": 2,
+        "r8": 0,
+        "r9": 0,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelDisplayPipeCopyCapabilities",
+      "function_address": 140703314647752,
+      "call_address": 140703314647842,
+      "call_offset": 90,
+      "api": [
+        "_IOConnectCallStructMethod"
+      ],
+      "api_address": 140703198567243,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "10e3dccf110ed95fe76bdd36857b5079496b482afe806787f9a725d88e63a6c1",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 2,
+        "rdx": 0,
+        "rcx": 0,
+        "r8": null,
+        "r9": null,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelDisplayPipeCopySurface",
+      "function_address": 140703314647903,
+      "call_address": 140703314648036,
+      "call_offset": 133,
+      "api": [
+        "_IOConnectCallScalarMethod"
+      ],
+      "api_address": 140703198595723,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "69fdb8c808b8cf467463f658cdcd787aea5d5d5e2a1d0db3ce48f8d1867baf00",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 12,
+        "rdx": null,
+        "rcx": 2,
+        "r8": 0,
+        "r9": 0,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelDisplayPipeCreate",
+      "function_address": 140703314647344,
+      "call_address": 140703314647391,
+      "call_offset": 47,
+      "api": [
+        "_IOServiceOpen"
+      ],
+      "api_address": 140703198562186,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "148d30652de39cdba3a3dcb8f0d059bd3ed4231156b5ed5266d90d1e99dcab76",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": null,
+        "rdx": 4,
+        "rcx": null,
+        "r8": null,
+        "r9": null,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelDisplayPipeCreate",
+      "function_address": 140703314647344,
+      "call_address": 140703314647549,
+      "call_offset": 205,
+      "api": [
+        "_IOConnectCallMethod"
+      ],
+      "api_address": 140703198562596,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "148d30652de39cdba3a3dcb8f0d059bd3ed4231156b5ed5266d90d1e99dcab76",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 0,
+        "rdx": null,
+        "rcx": 1,
+        "r8": 0,
+        "r9": 0,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelDisplayPipeGetDisplayModePipeScalerSetup",
+      "function_address": 140703314647626,
+      "call_address": 140703314647708,
+      "call_offset": 82,
+      "api": [
+        "_IOConnectCallStructMethod"
+      ],
+      "api_address": 140703198567243,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "381b2bab2103d32fabbf2449ab81368f312d9a83c11a4ae4a1382a78bf4da2b9",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 1,
+        "rdx": 0,
+        "rcx": 0,
+        "r8": null,
+        "r9": null,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelDisplayPipeRequestVBLNotifyCallback",
+      "function_address": 140703314648389,
+      "call_address": 140703314648622,
+      "call_offset": 233,
+      "api": [
+        "_IOConnectCallAsyncMethod"
+      ],
+      "api_address": 140703198595828,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "a57cc0ca41a3eb0e1147bfb74a637c5b6b12407dd6a1ea3074b664c273feb122",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 3,
+        "rdx": null,
+        "rcx": null,
+        "r8": 3,
+        "r9": 0,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelDisplayPipeSetTransactionNotifyPort",
+      "function_address": 140703314648712,
+      "call_address": 140703314648954,
+      "call_offset": 242,
+      "api": [
+        "_IOConnectCallAsyncMethod"
+      ],
+      "api_address": 140703198595828,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "bda5b24671e93487d7f528582117b3083cd0b5ef01e63c03d8341e425a65630d",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 3,
+        "rdx": null,
+        "rcx": null,
+        "r8": 3,
+        "r9": 0,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelDisplayPipeTransactionBegin",
+      "function_address": 140703314649494,
+      "call_address": 140703314649580,
+      "call_offset": 86,
+      "api": [
+        "_IOConnectCallScalarMethod"
+      ],
+      "api_address": 140703198595723,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "79b4bcd81a7f645a3c0ab0cf12e99282973f9c7c99cfc9a6f735519b0fb60020",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 4,
+        "rdx": 0,
+        "rcx": 0,
+        "r8": null,
+        "r9": null,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelDisplayPipeTransactionEnd",
+      "function_address": 140703314651715,
+      "call_address": 140703314651794,
+      "call_offset": 79,
+      "api": [
+        "_IOConnectCallStructMethod"
+      ],
+      "api_address": 140703198567243,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "6245fa7e6a6ee52c4e56e39d4477d19f15eb652fdf40f0f902c78fdff50f500f",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 8,
+        "rdx": null,
+        "rcx": 280,
+        "r8": 0,
+        "r9": 0,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelDisplayPipeTransactionSetPipePostCSCGamma",
+      "function_address": 140703314652583,
+      "call_address": 140703314652805,
+      "call_offset": 222,
+      "api": [
+        "_IOConnectCallStructMethod"
+      ],
+      "api_address": 140703198567243,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "43edbba861ca9d7236d3107900d2c669e62b5f821c9a64763bef70f542b7324b",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 11,
+        "rdx": null,
+        "rcx": null,
+        "r8": 0,
+        "r9": 0,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelDisplayPipeTransactionSetPipePostGammaTable",
+      "function_address": 140703314651341,
+      "call_address": 140703314651569,
+      "call_offset": 228,
+      "api": [
+        "_IOConnectCallStructMethod"
+      ],
+      "api_address": 140703198567243,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "23786eaf29e99253ff696d26138c3d3ee184c401dc8f2e12616a698267ebf466",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 7,
+        "rdx": null,
+        "rcx": null,
+        "r8": 0,
+        "r9": 0,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelDisplayPipeTransactionSetPipePreCSCLinearization",
+      "function_address": 140703314652324,
+      "call_address": 140703314652546,
+      "call_offset": 222,
+      "api": [
+        "_IOConnectCallStructMethod"
+      ],
+      "api_address": 140703198567243,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "b6f0d74993f05e6144f8dcf38c7c21119325a6acd28d607ec58e2e3324e2e9fb",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 10,
+        "rdx": null,
+        "rcx": null,
+        "r8": 0,
+        "r9": 0,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelDisplayPipeTransactionSetPipePreGammaTable",
+      "function_address": 140703314651074,
+      "call_address": 140703314651302,
+      "call_offset": 228,
+      "api": [
+        "_IOConnectCallStructMethod"
+      ],
+      "api_address": 140703198567243,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "31a0f268c50c835eae0ec9ddc4577f9ce52b203cc4fa5cf310d1109a3e4574a2",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 6,
+        "rdx": null,
+        "rcx": null,
+        "r8": 0,
+        "r9": 0,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelDisplayPipeTransactionWait",
+      "function_address": 140703314651941,
+      "call_address": 140703314652057,
+      "call_offset": 116,
+      "api": [
+        "_IOConnectCallStructMethod"
+      ],
+      "api_address": 140703198567243,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "9641bdc1509de6cd7f385c0dee30c4cdb5b210d66b97cad63a107e50310d3128",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 9,
+        "rdx": null,
+        "rcx": 12,
+        "r8": 0,
+        "r9": 0,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelDisplayPipeTriage",
+      "function_address": 140703314648081,
+      "call_address": 140703314648175,
+      "call_offset": 94,
+      "api": [
+        "_IOConnectCallStructMethod"
+      ],
+      "api_address": 140703198567243,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "cbf73591099d0277b9e7c57fe19fe1268abe1c57ca6bd7da6149cc9d69bd7a52",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 13,
+        "rdx": 0,
+        "rcx": 0,
+        "r8": null,
+        "r9": null,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelDisplayPlaneGammaTable",
+      "function_address": 140703314650647,
+      "call_address": 140703314650874,
+      "call_offset": 227,
+      "api": [
+        "_IOConnectCallStructMethod"
+      ],
+      "api_address": 140703198567243,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "b5d4998bb09459376e46c1d91364410280ccf538ebac8e84409eb5ff9e8ed28c",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 5,
+        "rdx": null,
+        "rcx": null,
+        "r8": 0,
+        "r9": 0,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelGLContextClearDrawable",
+      "function_address": 140703314639037,
+      "call_address": 140703314639082,
+      "call_offset": 45,
+      "api": [
+        "_IOConnectCallStructMethod"
+      ],
+      "api_address": 140703198567243,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "197b5f0a690c8af4b082f5252fbb899f8b4531f3deecffd80f90528ec31ac254",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 256,
+        "rdx": null,
+        "rcx": 48,
+        "r8": 0,
+        "r9": 0,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelGLContextReadBuffer",
+      "function_address": 140703314639540,
+      "call_address": 140703314639607,
+      "call_offset": 67,
+      "api": [
+        "_IOConnectCallStructMethod"
+      ],
+      "api_address": 140703198567243,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "e6fee62a019842f72ea1dfe4979832dd25143915a97481cf12a1dfeede395985",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 261,
+        "rdx": null,
+        "rcx": 32,
+        "r8": 0,
+        "r9": 0,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelGLContextSetDrawable",
+      "function_address": 140703314638337,
+      "call_address": 140703314638435,
+      "call_offset": 98,
+      "api": [
+        "_IOConnectCallStructMethod"
+      ],
+      "api_address": 140703198567243,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "440d7159981cd1fb845ae97ce598483c7934e6e9e4c625e9ecb32b5ba902ffbd",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 257,
+        "rdx": null,
+        "rcx": 48,
+        "r8": null,
+        "r9": null,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelGLContextSetSurfaceVolatileState",
+      "function_address": 140703314643645,
+      "call_address": 140703314643682,
+      "call_offset": 37,
+      "api": [
+        "_IOConnectCallScalarMethod"
+      ],
+      "api_address": 140703198595723,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "51028a68ec50a1ccfc01b46260be53091e9dcdfd4840f75346b7be1d317ec340",
+      "undecoded_trailing_zero_padding_bytes": 1,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 260,
+        "rdx": null,
+        "rcx": 1,
+        "r8": 0,
+        "r9": 0,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelGLContextSetSwapInterval",
+      "function_address": 140703314632350,
+      "call_address": 140703314632411,
+      "call_offset": 61,
+      "api": [
+        "_IOConnectCallScalarMethod"
+      ],
+      "api_address": 140703198595723,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "2f0e69ebdb1ad8b2330fb83f6598cba3c98efbd647bc867b07d90012bb0f9e2e",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 259,
+        "rdx": null,
+        "rcx": 2,
+        "r8": 0,
+        "r9": 0,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelGLContextSetSwapRect",
+      "function_address": 140703314638504,
+      "call_address": 140703314638576,
+      "call_offset": 72,
+      "api": [
+        "_IOConnectCallScalarMethod"
+      ],
+      "api_address": 140703198595723,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "eae50a04861492ddd4572bbc0d541914690b2eb82517b79f456b574d72fe5604",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 258,
+        "rdx": null,
+        "rcx": 4,
+        "r8": 0,
+        "r9": 0,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelGLDrawableClearDrawable",
+      "function_address": 140703314644753,
+      "call_address": 140703314644795,
+      "call_offset": 42,
+      "api": [
+        "_IOConnectCallStructMethod"
+      ],
+      "api_address": 140703198567243,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "4b260c00fdc8747287e00be56478206f8bcfd242367de7cafe47ceef8ae83fee",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 0,
+        "rdx": null,
+        "rcx": 48,
+        "r8": 0,
+        "r9": 0,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelGLDrawableCreate",
+      "function_address": 140703314644560,
+      "call_address": 140703314644599,
+      "call_offset": 39,
+      "api": [
+        "_IOServiceOpen"
+      ],
+      "api_address": 140703198562186,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "767a0e1948c2a2b940d1364c84e5dfdbd1b813eceb100b8cebf51406e305f48f",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": null,
+        "rdx": 9,
+        "rcx": null,
+        "r8": null,
+        "r9": null,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelGLDrawableLookupIOSurfaceFromIndex",
+      "function_address": 140703314645308,
+      "call_address": 140703314645369,
+      "call_offset": 61,
+      "api": [
+        "_IOConnectCallScalarMethod"
+      ],
+      "api_address": 140703198595723,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "e1dd0a68c012d45a5f946a21ef30b50e00083797ed5c5ea3c25734ade50f217e",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 5,
+        "rdx": null,
+        "rcx": 1,
+        "r8": null,
+        "r9": null,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelGLDrawableSetDrawable",
+      "function_address": 140703314644806,
+      "call_address": 140703314644904,
+      "call_offset": 98,
+      "api": [
+        "_IOConnectCallStructMethod"
+      ],
+      "api_address": 140703198567243,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "6baa05c193d9ca24ba4f30d6dac5fa3ca7ffb63174697b046516e4b838174439",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 1,
+        "rdx": null,
+        "rcx": 48,
+        "r8": null,
+        "r9": null,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelGLDrawableSetSwapInterval",
+      "function_address": 140703314645077,
+      "call_address": 140703314645138,
+      "call_offset": 61,
+      "api": [
+        "_IOConnectCallScalarMethod"
+      ],
+      "api_address": 140703198595723,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "4fdbf1f6b78d1089edba14e8b3d8c0c34357484a6fdce54e6ad43bac8e094a5d",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 3,
+        "rdx": null,
+        "rcx": 2,
+        "r8": 0,
+        "r9": 0,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelGLDrawableSetSwapRect",
+      "function_address": 140703314644973,
+      "call_address": 140703314645045,
+      "call_offset": 72,
+      "api": [
+        "_IOConnectCallScalarMethod"
+      ],
+      "api_address": 140703198595723,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "d7ee7c74e8657e797b30884440f7c00ac11e2b162f2ee7cec3c273b335a324ba",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 2,
+        "rdx": null,
+        "rcx": 4,
+        "r8": 0,
+        "r9": 0,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelGLDrawableSignalSurfaceEvent",
+      "function_address": 140703314645170,
+      "call_address": 140703314645271,
+      "call_offset": 101,
+      "api": [
+        "_IOConnectCallMethod"
+      ],
+      "api_address": 140703198562596,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "b0f36090c43defa97b725c56dd7ab1e64ef87a4324de274060d41b0043510988",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 4,
+        "rdx": null,
+        "rcx": 3,
+        "r8": 0,
+        "r9": 0,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelResourceCreate",
+      "function_address": 140703314632679,
+      "call_address": 140703314632813,
+      "call_offset": 134,
+      "api": [
+        "_IOConnectCallMethod"
+      ],
+      "api_address": 140703198562596,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "f71c841e4bea2b2240737d09c739ed9733868b3d5f2eb5b2d88f4769eef13a24",
+      "undecoded_trailing_zero_padding_bytes": 1,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 0,
+        "rdx": 0,
+        "rcx": 0,
+        "r8": null,
+        "r9": null,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelResourceFinishEvent",
+      "function_address": 140703314637747,
+      "call_address": 140703314637890,
+      "call_offset": 143,
+      "api": [
+        "_IOConnectCallMethod"
+      ],
+      "api_address": 140703198562596,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "c1858f21e5fac8a0dcaad6f6707ebb6b6e76943430228bc963f01ce451158a30",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 3,
+        "rdx": null,
+        "rcx": 2,
+        "r8": 0,
+        "r9": 0,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelResourceGetInfo",
+      "function_address": 140703314644039,
+      "call_address": 140703314644186,
+      "call_offset": 147,
+      "api": [
+        "_IOConnectCallMethod"
+      ],
+      "api_address": 140703198562596,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "d8edcb95a0f1c4ebeee7f0630e6de14caa512269d98ca4bdcb9274ea0e8b2d55",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 6,
+        "rdx": null,
+        "rcx": 1,
+        "r8": 0,
+        "r9": 0,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelResourceGetPhysicalOffset",
+      "function_address": 140703314643805,
+      "call_address": 140703314643940,
+      "call_offset": 135,
+      "api": [
+        "_IOConnectCallMethod"
+      ],
+      "api_address": 140703198562596,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "b13a5a97a5b6540a136d2353e42a611c5095495bc6e59d64648d72504a795bbc",
+      "undecoded_trailing_zero_padding_bytes": 1,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 18,
+        "rdx": 0,
+        "rcx": 0,
+        "r8": null,
+        "r9": 16,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelResourcePageoff",
+      "function_address": 140703314637942,
+      "call_address": 140703314638010,
+      "call_offset": 68,
+      "api": [
+        "_IOConnectCallMethod"
+      ],
+      "api_address": 140703198562596,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "525f71aa86a3317a28bddf60090490657492f35843849a7e1d0e42833a7a6022",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 2,
+        "rdx": 0,
+        "rcx": 0,
+        "r8": null,
+        "r9": 8,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelResourceSetOwnerIdentity",
+      "function_address": 140703314644244,
+      "call_address": 140703314644298,
+      "call_offset": 54,
+      "api": [
+        "_IOConnectCallStructMethod"
+      ],
+      "api_address": 140703198567243,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "51b60e486f8d7192fd627bf50301b5891d623e07569d497cf557eb4dcd403b9c",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 20,
+        "rdx": null,
+        "rcx": 16,
+        "r8": 0,
+        "r9": 0,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelResourceSetPurgeable",
+      "function_address": 140703314636597,
+      "call_address": 140703314636700,
+      "call_offset": 103,
+      "api": [
+        "_IOConnectCallMethod"
+      ],
+      "api_address": 140703198562596,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "237ce367747001f8bcd278b5b3c16c59c1f384d9a0229d5a14108bd694a41735",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 4,
+        "rdx": null,
+        "rcx": 2,
+        "r8": 0,
+        "r9": 0,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelSharedAllocateFenceMemory",
+      "function_address": 140703314633596,
+      "call_address": 140703314633645,
+      "call_offset": 49,
+      "api": [
+        "_IOConnectCallStructMethod"
+      ],
+      "api_address": 140703198567243,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "c55fe64cd0f633e60847d7d5594a07cfc256ae8880ab82cc32babd76c6cc574d",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 12,
+        "rdx": null,
+        "rcx": 8,
+        "r8": null,
+        "r9": null,
+        "r9_capacity_cell": 8
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelSharedConnectPeer",
+      "function_address": 140703314640878,
+      "call_address": 140703314640889,
+      "call_offset": 11,
+      "api": [
+        "_IOConnectAddClient"
+      ],
+      "api_address": 140703198570442,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "79642426ca12d8ce1678ae2aa4bfe7bee50c82bc853beda91f4b696b2759b92c",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": null,
+        "rdx": null,
+        "rcx": null,
+        "r8": null,
+        "r9": null,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelSharedCreate",
+      "function_address": 140703314629681,
+      "call_address": 140703314629720,
+      "call_offset": 39,
+      "api": [
+        "_IOServiceOpen"
+      ],
+      "api_address": 140703198562186,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "6e193acfe622bbe1ffa1c7a881ef1f1dae7a470a231a0a47d6885327c98a1d6e",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": null,
+        "rdx": 6,
+        "rcx": null,
+        "r8": null,
+        "r9": null,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelSharedCreate",
+      "function_address": 140703314629681,
+      "call_address": 140703314629848,
+      "call_offset": 167,
+      "api": [
+        "_IOConnectCallStructMethod"
+      ],
+      "api_address": 140703198567243,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "6e193acfe622bbe1ffa1c7a881ef1f1dae7a470a231a0a47d6885327c98a1d6e",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 9,
+        "rdx": 0,
+        "rcx": 0,
+        "r8": null,
+        "r9": null,
+        "r9_capacity_cell": 16
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelSharedCreateDeviceShmem",
+      "function_address": 140703314634663,
+      "call_address": 140703314634752,
+      "call_offset": 89,
+      "api": [
+        "_IOConnectCallMethod"
+      ],
+      "api_address": 140703198562596,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "b4ec3f69453a46f1a58e611fc03ce3e79a37a40e91fd6f85713578637eebcd45",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 7,
+        "rdx": null,
+        "rcx": 1,
+        "r8": 0,
+        "r9": 0,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelSharedDestroyDeviceShmem",
+      "function_address": 140703314637064,
+      "call_address": 140703314637255,
+      "call_offset": 191,
+      "api": [
+        "_IOConnectCallScalarMethod"
+      ],
+      "api_address": 140703198595723,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "403b90ff23a2cfed8ad7519d4fef08f1d54b9304f42ac30b6c31fb9a3f9f8145",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 8,
+        "rdx": null,
+        "rcx": 1,
+        "r8": 0,
+        "r9": 0,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelSharedDisconnectPeer",
+      "function_address": 140703314640894,
+      "call_address": 140703314640938,
+      "call_offset": 44,
+      "api": [
+        "_IOConnectCallScalarMethod"
+      ],
+      "api_address": 140703198595723,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "5ba3d4833ad3412798ccc3c5376331c34b20f7e7999e4aa519c6972a4e5c6b89",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 16,
+        "rdx": null,
+        "rcx": 1,
+        "r8": 0,
+        "r9": 0,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelSharedFlushDirtyRing",
+      "function_address": 140703314640573,
+      "call_address": 140703314640616,
+      "call_offset": 43,
+      "api": [
+        "_IOConnectCallScalarMethod"
+      ],
+      "api_address": 140703198595723,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "30a91141e05743e3d51c394c801b28a461e9498b35137fc7c105301996a660d3",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 11,
+        "rdx": 0,
+        "rcx": 0,
+        "r8": 0,
+        "r9": 0,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelSharedGetAllocatedSize",
+      "function_address": 140703314640784,
+      "call_address": 140703314640844,
+      "call_offset": 60,
+      "api": [
+        "_IOConnectCallStructMethod"
+      ],
+      "api_address": 140703198567243,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "9612d46dc88ee1ce848429b1d5fd88bc8c823b649d2f9022e28bd39ef69d3f58",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 19,
+        "rdx": 0,
+        "rcx": 0,
+        "r8": null,
+        "r9": null,
+        "r9_capacity_cell": 8
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelSharedGetMemoryData",
+      "function_address": 140703314640623,
+      "call_address": 140703314640682,
+      "call_offset": 59,
+      "api": [
+        "_IOConnectCallStructMethod"
+      ],
+      "api_address": 140703198567243,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "5d97da6355a1345d96d65af666f049dd9656c9e6445b08ede8e331ab95beb7b4",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 15,
+        "rdx": 0,
+        "rcx": 0,
+        "r8": null,
+        "r9": null,
+        "r9_capacity_cell": 48
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelSharedSetupDirtyRing",
+      "function_address": 140703314632465,
+      "call_address": 140703314632509,
+      "call_offset": 44,
+      "api": [
+        "_IOConnectCallStructMethod"
+      ],
+      "api_address": 140703198567243,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "27bdf16a393b47e4f538f2ca5b14d3e8db03870cbff4e46e0fd8daa44601f071",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 10,
+        "rdx": 0,
+        "rcx": 0,
+        "r8": null,
+        "r9": null,
+        "r9_capacity_cell": 24
+      },
+      "complete_arguments_qualified": false
+    },
+    {
+      "function": "_IOAccelSurfaceSignalEvent",
+      "function_address": 140703314643216,
+      "call_address": 140703314643316,
+      "call_offset": 100,
+      "api": [
+        "_IOConnectCallMethod"
+      ],
+      "api_address": 140703198562596,
+      "indirect_chain_membership_checked": true,
+      "function_sha256": "94932edb087d659d14fe7e46a758c56b53e8d8f399dcb8e51b3d6ace6f74e59f",
+      "undecoded_trailing_zero_padding_bytes": 0,
+      "local_literal_registers": {
+        "rdi": null,
+        "rsi": 18,
+        "rdx": null,
+        "rcx": 3,
+        "r8": 0,
+        "r9": 0,
+        "r9_capacity_cell": null
+      },
+      "complete_arguments_qualified": false
+    }
+  ],
+  "native_execution_tested": false,
+  "metal_provider_qualified": false,
+  "apple_instructions_redistributed": false,
+  "source_files_sha256": {
+    "ioaccel_calls.py": "62636e36f163e2db27c15081812cfd6c2eb0c44a035ff3595ff74f4dc7de9537",
+    "recovery_graphics.py": "cdab8cefb47c922037d67fa990a261e1a8755d6190d2a14939b88221762bdbf5"
+  },
+  "selected_static_contracts": [
+    {
+      "function": "_IOAccelDeviceCreateWithAPIProperty",
+      "api": "_IOServiceOpen",
+      "connection_type": 5,
+      "selector": null,
+      "observed_literals": {
+        "rdx": 5
+      },
+      "call_address": 140703314628507,
+      "function_sha256": "032d466a68d80f852b6c4dc8fbd7d79e00473ae324bd582372ef60709463bcef",
+      "qualification": "Static call-site observation; runtime behavior untested."
+    },
+    {
+      "function": "_IOAccelSharedCreate",
+      "api": "_IOServiceOpen",
+      "connection_type": 6,
+      "selector": null,
+      "observed_literals": {
+        "rdx": 6
+      },
+      "call_address": 140703314629720,
+      "function_sha256": "6e193acfe622bbe1ffa1c7a881ef1f1dae7a470a231a0a47d6885327c98a1d6e",
+      "qualification": "Static call-site observation; runtime behavior untested."
+    },
+    {
+      "function": "_IOAccelCommandQueueCreateWithQoS",
+      "api": "_IOServiceOpen",
+      "connection_type": 8,
+      "selector": null,
+      "observed_literals": {
+        "rdx": 8
+      },
+      "call_address": 140703314633738,
+      "function_sha256": "b0ba64151112cb261cae7ad5050d1b93a4b59e981b1b0cb54f81be4de7105642",
+      "qualification": "Static call-site observation; runtime behavior untested."
+    },
+    {
+      "function": "_IOAccelDeviceCreateWithAPIProperty",
+      "api": "_IOConnectCallStructMethod",
+      "connection_type": 5,
+      "selector": 2,
+      "observed_literals": {
+        "rdx": 0,
+        "rcx": 0,
+        "r9_capacity_cell": 600
+      },
+      "call_address": 140703314628719,
+      "function_sha256": "032d466a68d80f852b6c4dc8fbd7d79e00473ae324bd582372ef60709463bcef",
+      "qualification": "Static call-site observation; runtime behavior untested."
+    },
+    {
+      "function": "_IOAccelDeviceCreateWithAPIProperty",
+      "api": "_IOConnectCallStructMethod",
+      "connection_type": 5,
+      "selector": 0,
+      "observed_literals": {
+        "rdx": 0,
+        "rcx": 0,
+        "r9_capacity_cell": 64
+      },
+      "call_address": 140703314628922,
+      "function_sha256": "032d466a68d80f852b6c4dc8fbd7d79e00473ae324bd582372ef60709463bcef",
+      "qualification": "Static call-site observation; runtime behavior untested."
+    },
+    {
+      "function": "_IOAccelSharedCreate",
+      "api": "_IOConnectCallStructMethod",
+      "connection_type": 6,
+      "selector": 9,
+      "observed_literals": {
+        "rdx": 0,
+        "rcx": 0,
+        "r9_capacity_cell": 16
+      },
+      "call_address": 140703314629848,
+      "function_sha256": "6e193acfe622bbe1ffa1c7a881ef1f1dae7a470a231a0a47d6885327c98a1d6e",
+      "qualification": "Static call-site observation; runtime behavior untested."
+    },
+    {
+      "function": "_IOAccelSharedAllocateFenceMemory",
+      "api": "_IOConnectCallStructMethod",
+      "connection_type": 6,
+      "selector": 12,
+      "observed_literals": {
+        "rcx": 8,
+        "r9_capacity_cell": 8
+      },
+      "call_address": 140703314633645,
+      "function_sha256": "c55fe64cd0f633e60847d7d5594a07cfc256ae8880ab82cc32babd76c6cc574d",
+      "qualification": "Static call-site observation; runtime behavior untested."
+    },
+    {
+      "function": "_IOAccelCommandQueueCreateWithQoS",
+      "api": "_IOConnectCallStructMethod",
+      "connection_type": 8,
+      "selector": 5,
+      "observed_literals": {
+        "rcx": 1028,
+        "r9_capacity_cell": 8
+      },
+      "call_address": 140703314634281,
+      "function_sha256": "b0ba64151112cb261cae7ad5050d1b93a4b59e981b1b0cb54f81be4de7105642",
+      "qualification": "Static call-site observation; runtime behavior untested."
+    },
+    {
+      "function": "_IOAccelCommandQueueSetPriorityAndBackground",
+      "api": "_IOConnectCallMethod",
+      "connection_type": 8,
+      "selector": 2,
+      "observed_literals": {
+        "rdx": 0,
+        "rcx": 0,
+        "r9": 12
+      },
+      "call_address": 140703314636561,
+      "function_sha256": "3184358f287ea569b4ce53d711aa91a5959edb2d9558a8b4da97f14be84b8473",
+      "qualification": "Static call-site observation; runtime behavior untested."
+    },
+    {
+      "function": "_IOAccelCommandQueueSetQualityOfService",
+      "api": "_IOConnectCallMethod",
+      "connection_type": 8,
+      "selector": 4,
+      "observed_literals": {
+        "rdx": 0,
+        "rcx": 0,
+        "r9": 4
+      },
+      "call_address": 140703314643481,
+      "function_sha256": "accd03380cd6f6314784f8eb06cd4ce176f88cf62f25d31c92edbefac9e3b6bb",
+      "qualification": "Static call-site observation; runtime behavior untested."
+    },
+    {
+      "function": "_IOAccelCommandQueueSubmitCommandBuffers",
+      "api": "_IOConnectCallMethod",
+      "connection_type": 8,
+      "selector": 1,
+      "observed_literals": {
+        "rdx": 0,
+        "rcx": 0
+      },
+      "call_address": 140703314636383,
+      "function_sha256": "708a02603691a29e317f0f2fbbfff90a0babf57895454c44ad8dca9bc76f3970",
+      "qualification": "Static call-site observation; runtime behavior untested."
+    }
+  ],
+  "submission_size_observation": {
+    "function": "_IOAccelCommandQueueSubmitCommandBuffers",
+    "call_address": 140703314636383,
+    "input_struct_size_formula": "8 + 24 * N",
+    "count_byte_offset": 4,
+    "count_width_bits": 32,
+    "count_signed_in_wrapper": true,
+    "header_bytes": 8,
+    "entry_stride_bytes": 24,
+    "entry_field_meanings_qualified": false,
+    "negative_or_overflowing_counts_safe": false,
+    "qualification": "Derived from actual count-load and address-arithmetic instructions; not a usable native submission ABI."
+  },
+  "recovery_os": {
+    "version": "26.6.2",
+    "build": "25G83",
+    "framework_version": "487.4.3"
+  },
+  "dependency_pins": [
+    {
+      "filename": "capstone-5.0.9-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
+      "sha256": "273fd8d747d2e35c88f91450be51a603ecfaafb00d96d9f315dcb8689c86193e",
+      "bytes": 1485316,
+      "url": "https://files.pythonhosted.org/packages/d1/39/17747862222bb062e86b501f1f148d5ff589b77908b080d30f7f085cbfb7/capstone-5.0.9-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl"
+    },
+    {
+      "filename": "capstone-5.0.9-py3-none-win_amd64.whl",
+      "sha256": "732cedbbb56d42e723f14d7af6387f1454194a820b4b96b56d1e53f865ef85d0",
+      "bytes": 1273459,
+      "url": "https://files.pythonhosted.org/packages/50/e6/6f06fdb6a9ed32b2f7cd9c036b92d5324112c3ef7080f2c71efc367d40dd/capstone-5.0.9-py3-none-win_amd64.whl"
+    }
+  ],
+  "reference_sources": {
+    "repository": "apple-oss-distributions/IOKitUser",
+    "commit": "323ead896d04424f87184d8f6ff0cce811aab106",
+    "files": [
+      {
+        "path": "IOKitLib.c",
+        "bytes": 87251,
+        "sha256": "6086e7b07aac1d7b489232b6997acac276e2da8917e077ba7365c2b5a58fdcd4",
+        "url": "https://github.com/apple-oss-distributions/IOKitUser/blob/323ead896d04424f87184d8f6ff0cce811aab106/IOKitLib.c"
+      },
+      {
+        "path": "IOKitLib.h",
+        "bytes": 80026,
+        "sha256": "d97b87a7d557a4281436c1a92e26abf6651242786887f03d6baa6eaff4b20e86",
+        "url": "https://github.com/apple-oss-distributions/IOKitUser/blob/323ead896d04424f87184d8f6ff0cce811aab106/IOKitLib.h"
+      },
+      {
+        "path": "graphics.subproj/IOAccelSurfaceControl.c",
+        "bytes": 13632,
+        "sha256": "3c342984c507a05dceb7c3ad9d73be4c4f3556f388524219d29fe887edabf180",
+        "url": "https://github.com/apple-oss-distributions/IOKitUser/blob/323ead896d04424f87184d8f6ff0cce811aab106/graphics.subproj/IOAccelSurfaceControl.c"
+      },
+      {
+        "path": "graphics.subproj/IOAccelSurfaceControl.h",
+        "bytes": 4502,
+        "sha256": "72662f15c83c78bf8dbdae3ade5f86056691a442417802b0132ede25d293e81e",
+        "url": "https://github.com/apple-oss-distributions/IOKitUser/blob/323ead896d04424f87184d8f6ff0cce811aab106/graphics.subproj/IOAccelSurfaceControl.h"
+      }
+    ],
+    "redistributed": false
+  },
+  "complete_native_driver_abi_qualified": false,
+  "local_synthetic_tests": {
+    "schema": 1,
+    "host_platform": "win32",
+    "source_commit": null,
+    "capstone": "5.0.7",
+    "tests_run": 24,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "successful": true,
+    "source_files_sha256": {
+      "tools/ioaccel_calls.py": "62636e36f163e2db27c15081812cfd6c2eb0c44a035ff3595ff74f4dc7de9537",
+      "tools/recovery_graphics.py": "cdab8cefb47c922037d67fa990a261e1a8755d6190d2a14939b88221762bdbf5",
+      "tests/test_ioaccel_calls.py": "decfe6acf4985eb6795d0d701c9c631e2277eacc1dea613a61e3da47626063c5",
+      "tools/ioaccel-requirements.txt": "deabfe12e2eacdf601d3ccf1bf860e6c94abb67c5d49b3fcff4525849f703b40",
+      ".github/workflows/ioaccel-calls.yml": "a185470f3be8842ceefcbe886fabe401f5e1efd809a978751679ba192b8ed8bb"
+    },
+    "apple_binaries_used": false,
+    "gpu_execution_tested": false
+  }
+}
