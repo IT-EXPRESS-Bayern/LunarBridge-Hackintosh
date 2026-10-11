@@ -8,6 +8,8 @@
 **/tasks.md
 **/PLAN.md
 **/plan.md
+/**/[Tt][Aa][Ss][Kk][Ss].[Mm][Dd]
+/**/[Pp][Ll][Aa][Nn].[Mm][Dd]
 /i2c-patch/
 /.github/workflows/i2c-build.yml
 /tools/native_compatibility.py

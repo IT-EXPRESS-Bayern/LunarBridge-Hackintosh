@@ -1,0 +1,132 @@
+name: Metal compute smoke
+
+on:
+  push:
+    paths:
+      - gpu-prototype/Metal-Minimaltest.mm
+      - tools/metal_smoke_ci.py
+      - tests/test_metal_smoke.py
+      - .github/workflows/metal-smoke.yml
+      - docs/METAL_TEST.md
+  pull_request:
+    paths:
+      - gpu-prototype/Metal-Minimaltest.mm
+      - tools/metal_smoke_ci.py
+      - tests/test_metal_smoke.py
+      - .github/workflows/metal-smoke.yml
+      - docs/METAL_TEST.md
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows-harness:
+    name: Metal harness boundaries on Windows
+    runs-on: windows-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: '3.13'
+      - name: Run the 18 harness boundary tests
+        shell: pwsh
+        run: |
+          python -B -X utf8 tests/test_metal_smoke.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          @'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          report = json.loads(Path('tests/metal-smoke-test-report.json').read_text())
+          assert report['host_platform'] == 'win32'
+          assert report['tests_run'] == 18
+          assert report['failures'] == report['errors'] == report['skipped'] == 0
+          assert report['successful'] is True
+          assert report['actual_windows_cli_checked'] is True
+          assert report['source_commit'] == os.environ['GITHUB_SHA']
+          expected_sources = ('gpu-prototype/Metal-Minimaltest.mm', 'tools/metal_smoke_ci.py',
+                              '.github/workflows/metal-smoke.yml', 'docs/METAL_TEST.md',
+                              'tests/test_metal_smoke.py')
+          assert set(report['source_files_sha256']) == set(expected_sources)
+          for name in expected_sources:
+              assert report['source_files_sha256'][name] == hashlib.sha256(Path(name).read_bytes()).hexdigest()
+          assert len(report['test_cases']) == 18
+          assert all(case['state'] == 'passed' for case in report['test_cases'])
+          assert report['native_builds'] == report['native_gpu_execution_tests'] == 0
+          assert report['gpu_execution_verified'] is False
+          assert report['target_hardware_identity_verified'] is False
+          assert report['arc130v_backend_verified'] is False
+          print('18 Metal harness boundaries passed; no native build or GPU execution claimed.')
+          '@ | python -B -
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Upload sanitized harness report
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        with:
+          name: LunarBridge-Metal-Windows-Harness
+          path: tests/metal-smoke-test-report.json
+          if-no-files-found: warn
+          retention-days: 14
+  metal-smoke:
+    name: Public Metal compute on Intel CI host
+    runs-on: macos-26-intel
+    timeout-minutes: 5
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3
+        with:
+          persist-credentials: false
+      - name: Build and probe CI host
+        shell: bash
+        run: |
+          set +e
+          python3 -B tools/metal_smoke_ci.py --context ci-host --build-root build/metal-smoke-private --out build/metal-smoke-report.json
+          status=$?
+          set -e
+          if [ "$status" -ne 0 ] && [ "$status" -ne 2 ]; then
+            exit "$status"
+          fi
+          python3 -B - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          report = json.loads(Path('build/metal-smoke-report.json').read_text())
+          assert report['context'] == 'ci-host'
+          assert report['build_verified'] is True
+          assert report['source_commit'] == os.environ['GITHUB_SHA']
+          expected_sources = ('gpu-prototype/Metal-Minimaltest.mm', 'tools/metal_smoke_ci.py',
+                              '.github/workflows/metal-smoke.yml', 'docs/METAL_TEST.md')
+          assert set(report['source_files_sha256']) == set(expected_sources)
+          for name in expected_sources:
+              assert report['source_files_sha256'][name] == hashlib.sha256(Path(name).read_bytes()).hexdigest()
+          assert report['state'] in ('passed', 'unverified')
+          assert report['target_hardware_identity_verified'] is False
+          assert report['arc130v_backend_verified'] is False
+          assert report['cpu_fallback_used'] is False
+          probe = report['probe']
+          if report['state'] == 'passed':
+              assert probe['results_checked'] == 65536 and probe['mismatches'] == 0
+              assert probe['command_completed'] is True
+              assert probe['completion_handler_observed'] is True
+              assert report['gpu_execution_verified'] is True
+          else:
+              assert probe['code'] == 'NO_METAL_PROVIDER'
+              assert report['gpu_execution_verified'] is False
+          print('CI host build/probe report validated; Samsung/Arc backend remains unverified.')
+          PY
+      - name: Upload sanitized report
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        with:
+          name: LunarBridge-Metal-CI
+          path: build/metal-smoke-report.json
+          if-no-files-found: warn
+          retention-days: 14
