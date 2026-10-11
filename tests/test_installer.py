@@ -112,6 +112,32 @@ class InstallerTests(unittest.TestCase):
         self.assertTrue(result['dma_preparation_enabled'])
         self.assertFalse(result['enabled_after_next_boot'])
 
+    def test_forcewake_opt_in_requires_boolean_without_efi_mutations(self):
+        path = self.source/'Contents/Info.plist'
+        original = path.read_bytes()
+        for value in (1, 'true', []):
+            info = plistlib.loads(original)
+            info['IOKitPersonalities']['LunarBridgeArc130VSamsungDiagnostic']['LBEnableForceWakeProbe'] = value
+            path.write_bytes(plistlib.dumps(info))
+            with self.assertRaises(installer.InstallerError): installer.plan(self.efi, self.source)
+            self.assertEqual(self.config.read_bytes(), self.before)
+            self.assertFalse(self.target.exists())
+
+    def test_forcewake_plan_exposes_effective_mmio_writes_but_no_execution(self):
+        path = self.source/'Contents/Info.plist'
+        info = plistlib.loads(path.read_bytes())
+        personality = info['IOKitPersonalities']['LunarBridgeArc130VSamsungDiagnostic']
+        personality['LBEnableMMIORead'] = False
+        personality['LBEnableForceWakeProbe'] = True
+        path.write_bytes(plistlib.dumps(info))
+        result, _, _, _ = installer.plan(self.efi, self.source)
+        self.assertTrue(result['mmio_enabled'])
+        self.assertTrue(result['forcewake_probe_enabled'])
+        self.assertTrue(result['lnl_read_flush_writes_enabled'])
+        self.assertFalse(result['enabled_after_next_boot'])
+        self.assertFalse(result['firmware_secure_boot_changed'])
+        self.assertEqual(self.config.read_bytes(), self.before)
+
     def test_refuses_security_policy_bypass_and_vault_without_writes(self):
         for value in (True, 1, 'false'):
             self.change_config(lambda d: d['UEFI']['Quirks'].update(DisableSecurityPolicy=value))

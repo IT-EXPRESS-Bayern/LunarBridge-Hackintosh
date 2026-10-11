@@ -1,0 +1,35 @@
+{
+  "modules": [
+    {
+      "filename": "OpenCL.dll",
+      "file_version": "3.0.7.0",
+      "product_version": "3.0.7.0",
+      "read_from_existing_file": true,
+      "loaded_for_readonly_inventory": true
+    },
+    {
+      "filename": "igdrcl64.dll",
+      "file_version": "32.0.101.9033",
+      "product_version": "32.0.101.9033",
+      "read_from_existing_file": true,
+      "loaded_for_readonly_inventory": true
+    },
+    {
+      "filename": "igdfcl64.dll",
+      "file_version": "32.0.101.9033",
+      "product_version": "32.0.101.9033",
+      "read_from_existing_file": true,
+      "loaded_for_readonly_inventory": true
+    },
+    {
+      "filename": "igc64.dll",
+      "file_version": "32.0.101.9033",
+      "product_version": "32.0.101.9033",
+      "read_from_existing_file": true,
+      "loaded_for_readonly_inventory": false
+    }
+  ],
+  "compiler_upstream_commit_inferred": false,
+  "gpu_work_submitted_by_version_reader": false,
+  "script_sha256": "33580d7cc67782bc0a8a2b554e2ff1b5feedda4fa8aa2e0cc91f1138e858ba70"
+}

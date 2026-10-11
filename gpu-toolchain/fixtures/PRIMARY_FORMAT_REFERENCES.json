@@ -1,0 +1,76 @@
+{
+  "references": [
+    {
+      "repository": "https://github.com/intel/compute-runtime",
+      "commit": "7323fcafa8979708e73f1865c61cb9790b367948",
+      "source_path": "shared/source/device_binary_format/zebin/zebin_elf.h",
+      "url": "https://raw.githubusercontent.com/intel/compute-runtime/7323fcafa8979708e73f1865c61cb9790b367948/shared/source/device_binary_format/zebin/zebin_elf.h",
+      "filename": "compute-runtime-zebin_elf.h",
+      "bytes": 4682,
+      "sha256": "a2f88da148bb3807a1430d166f05f7f8faea8ba0bedaa717020080cba95829aa",
+      "upstream_license": "MIT"
+    },
+    {
+      "repository": "https://github.com/intel/compute-runtime",
+      "commit": "7323fcafa8979708e73f1865c61cb9790b367948",
+      "source_path": "shared/source/device_binary_format/zebin/zebin_decoder.cpp",
+      "url": "https://raw.githubusercontent.com/intel/compute-runtime/7323fcafa8979708e73f1865c61cb9790b367948/shared/source/device_binary_format/zebin/zebin_decoder.cpp",
+      "filename": "compute-runtime-zebin_decoder.cpp",
+      "bytes": 30766,
+      "sha256": "0d67807024ef6633eaca83cb948caae4c139047c0ac7b4613fd4064f99734fc0",
+      "upstream_license": "MIT"
+    },
+    {
+      "repository": "https://github.com/intel/compute-runtime",
+      "commit": "7323fcafa8979708e73f1865c61cb9790b367948",
+      "source_path": "shared/source/compiler_interface/linker.cpp",
+      "url": "https://raw.githubusercontent.com/intel/compute-runtime/7323fcafa8979708e73f1865c61cb9790b367948/shared/source/compiler_interface/linker.cpp",
+      "filename": "compute-runtime-linker.cpp",
+      "bytes": 40752,
+      "sha256": "8096f0cb26e9be2a7137f1d7ac851ef1eee179031f15810e6f0192656626acac",
+      "upstream_license": "MIT"
+    },
+    {
+      "repository": "https://github.com/intel/compute-runtime",
+      "commit": "7323fcafa8979708e73f1865c61cb9790b367948",
+      "source_path": "shared/source/compiler_interface/linker.h",
+      "url": "https://raw.githubusercontent.com/intel/compute-runtime/7323fcafa8979708e73f1865c61cb9790b367948/shared/source/compiler_interface/linker.h",
+      "filename": "compute-runtime-linker.h",
+      "bytes": 12036,
+      "sha256": "476891ae3223d88701c7cf162cfce3cdd1bef703211b67adddfd987ae2c1e518",
+      "upstream_license": "MIT"
+    },
+    {
+      "repository": "https://github.com/intel/compute-runtime",
+      "commit": "7323fcafa8979708e73f1865c61cb9790b367948",
+      "source_path": "LICENSE.md",
+      "url": "https://raw.githubusercontent.com/intel/compute-runtime/7323fcafa8979708e73f1865c61cb9790b367948/LICENSE.md",
+      "filename": "compute-runtime-LICENSE.md",
+      "bytes": 1074,
+      "sha256": "987a002c6c9eb75290d9937735641ef4f4b670591ee79e1ac8edebe16a81872e",
+      "upstream_license": "MIT"
+    },
+    {
+      "repository": "https://github.com/intel/intel-graphics-compiler",
+      "commit": "6f81427a0be7c7c017d5be3f049dabec393cf788",
+      "source_path": "visa/iga/IGALibrary/Models/Models.cpp",
+      "url": "https://raw.githubusercontent.com/intel/intel-graphics-compiler/6f81427a0be7c7c017d5be3f049dabec393cf788/visa/iga/IGALibrary/Models/Models.cpp",
+      "filename": "intel-graphics-compiler-Models.cpp",
+      "bytes": 19347,
+      "sha256": "ed5452a51ee2934ec5fdb5e7a4a15703fb0c80ac88d5d87c3dc8f08226dfff7e",
+      "upstream_license": "MIT"
+    },
+    {
+      "repository": "https://github.com/intel/intel-graphics-compiler",
+      "commit": "6f81427a0be7c7c017d5be3f049dabec393cf788",
+      "source_path": "LICENSE.md",
+      "url": "https://raw.githubusercontent.com/intel/intel-graphics-compiler/6f81427a0be7c7c017d5be3f049dabec393cf788/LICENSE.md",
+      "filename": "intel-graphics-compiler-LICENSE.md",
+      "bytes": 237,
+      "sha256": "8b2cd951f44d1fbe6adcf112e1f3a0cc989c89c8889a1c48dea5f7ece10ba9c9",
+      "upstream_license": "MIT"
+    }
+  ],
+  "reference_commits_are_not_installed_compiler_commits": true,
+  "downloaded_executable_binaries": false
+}

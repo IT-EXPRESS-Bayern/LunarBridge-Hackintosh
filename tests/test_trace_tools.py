@@ -11,7 +11,7 @@ from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT/'tools'))
-from lb_wire import Snapshot, TraceRecord, TraceBatch, BufferInfo, DMAInfo, decode_snapshot, decode_batch, decode_dma_info, parse_kernel_messages
+from lb_wire import Snapshot, TraceRecord, TraceBatch, BufferInfo, DMAInfo, ForceWakeInfo, decode_snapshot, decode_batch, decode_dma_info, decode_forcewake_info, parse_kernel_messages
 from analyze_trace import findings, markdown
 import collect_macos as collector
 from macho import inspect_macho
@@ -34,6 +34,10 @@ class FakeKit:
         self.map_size, self.map_status, self.unmap_status, self.trace_status = 4096, 0, 0, 0
         self.snapshot_flags = 0
         self.dma_info = bytes(DMAInfo(4096, 1, 1, 1, 1, 1, 0))
+        wake = ForceWakeInfo()
+        wake.abi, wake.structBytes, wake.enabled = 1, 80, 1
+        wake.primaryStatus = wake.cleanupStatus = 8
+        self.wake_info, self.wake_status = bytes(wake), 0
         self.IOServiceMatching = Function(lambda name: 1)
         self.IOServiceGetMatchingServices = Function(lambda port, match, out: self.put(out, 10))
         self.IOIteratorNext = Function(lambda iterator: 11)
@@ -59,6 +63,9 @@ class FakeKit:
         if selector == 0: data = snapshot_bytes(flags=self.snapshot_flags)
         elif selector == 2: data = bytes(BufferInfo(4096, 1, 4096, 1, 0))
         elif selector == 5: data = self.dma_info
+        elif selector == 6:
+            if self.wake_status: return self.wake_status
+            data = self.wake_info
         elif selector == 3:
             if self.trace_status: return self.trace_status
             batch = TraceBatch()
@@ -86,6 +93,82 @@ class FakeKit:
     def info_call(self, selector, structure): return bytes(BufferInfo(4096, 1, 4096, 1, 0))
 
 class TraceToolTests(unittest.TestCase):
+    @staticmethod
+    def completed_wake():
+        w = ForceWakeInfo()
+        w.abi, w.structBytes, w.enabled, w.attempted, w.completed = 1, 80, 1, 1, 1
+        w.reads, w.requestWrites, w.flushWrites, w.polls = 6, 2, 24, 2
+        w.graphicsIP, w.mediaIP = 2004, 2000
+        return w
+
+    def test_forcewake_wire_success_never_claims_execution_or_metal(self):
+        result = decode_forcewake_info(bytes(self.completed_wake()))
+        self.assertTrue(result['completed'])
+        self.assertFalse(result['gpu_execution_tested'])
+        self.assertFalse(result['metal_execution_verified'])
+        self.assertFalse(any('address' in key for key in result))
+
+    def test_forcewake_wire_rejects_malformed_sizes_and_claims(self):
+        for field, value in [('abi', 2), ('structBytes', 64), ('reserved', 1), ('enabled', 2),
+                ('attempted', 2), ('gpuExecuted', 1), ('metalVerified', 1), ('primaryStatus', 99),
+                ('cleanupStatus', 99), ('completed', 2), ('leaseReferences', 65536)]:
+            w = self.completed_wake()
+            setattr(w, field, value)
+            with self.subTest(field=field), self.assertRaises(ValueError): decode_forcewake_info(bytes(w))
+        for data in (b'', bytes(self.completed_wake())[:-1], bytes(self.completed_wake())+b'\0'):
+            with self.assertRaises(ValueError): decode_forcewake_info(data)
+
+    def test_forcewake_wire_rejects_inconsistent_success(self):
+        for field, value in [('enabled', 0), ('attempted', 0), ('completed', 0),
+                ('primaryStatus', 6), ('cleanupStatus', 6), ('resourcesRetained', 1),
+                ('leaseReferences', 1), ('lastAck', 0xffffffff), ('lastAck', 1),
+                ('flushWrites', 23), ('polls', 7)]:
+            w = self.completed_wake()
+            setattr(w, field, value)
+            with self.subTest(field=field), self.assertRaises(ValueError): decode_forcewake_info(bytes(w))
+
+    def test_forcewake_retained_cleanup_is_accepted_and_reported_as_error(self):
+        w = self.completed_wake()
+        w.completed, w.cleanupStatus, w.resourcesRetained, w.lastAck = 0, 6, 1, 1
+        result = decode_forcewake_info(bytes(w))
+        indexed = {row['code']: row for row in findings({'forcewake': result})}
+        self.assertEqual(indexed['FORCEWAKE_RETAINED']['level'], 'error')
+        self.assertEqual(indexed['FORCEWAKE_FAILED']['level'], 'error')
+        self.assertNotIn('FORCEWAKE_HANDSHAKE', indexed)
+
+    def test_forcewake_initial_io_failure_is_not_hidden_before_attempt(self):
+        w = ForceWakeInfo()
+        w.abi, w.structBytes, w.enabled, w.primaryStatus, w.cleanupStatus = 1, 80, 1, 4, 8
+        result = decode_forcewake_info(bytes(w))
+        self.assertFalse(result['attempted'])
+        self.assertIn('FORCEWAKE_FAILED', {row['code'] for row in findings({'forcewake': result})})
+
+    def test_collector_gets_forcewake_status_only_with_loaded_opt_in(self):
+        kit = FakeKit()
+        kit.snapshot_flags, kit.wake_info = 64, bytes(self.completed_wake())
+        with mock.patch.object(collector.c, 'CDLL', side_effect=[kit, object()]), \
+                mock.patch.object(collector.c.c_uint32, 'in_dll', return_value=c.c_uint32(1)):
+            report = collector.collect_iokit()
+        self.assertTrue(report['forcewake']['completed'])
+        self.assertEqual(kit.calls, [0, 6, 3, 3])
+        self.assertEqual(kit.closed, [12])
+
+    def test_collector_preserves_snapshot_and_trace_after_forcewake_call_failure(self):
+        kit = FakeKit()
+        kit.snapshot_flags, kit.wake_status = 64, 0xe00002c7
+        with mock.patch.object(collector.c, 'CDLL', side_effect=[kit, object()]), \
+                mock.patch.object(collector.c.c_uint32, 'in_dll', return_value=c.c_uint32(1)):
+            report = collector.collect_iokit()
+        self.assertIn('0xe00002c7', report['forcewake_error'])
+        self.assertIn('snapshot', report)
+        self.assertEqual([row['event'] for row in report['trace']], [1, 7])
+        self.assertEqual(kit.closed, [12])
+
+    def test_registry_exports_forcewake_status_without_unlisted_private_values(self):
+        values = collector.filtered_registry({'LBForceWakeResourcesRetained': True,
+            'LBLunarLakeReadFlushWrites': 24, 'LBForceWakePrivateAddress': 'private'})
+        self.assertEqual(values, [{'LBForceWakeResourcesRetained': True, 'LBLunarLakeReadFlushWrites': 24}])
+
     def test_wire_sizes_and_snapshot_never_promote_claim_to_proof(self):
         self.assertEqual([c.sizeof(t) for t in (Snapshot, TraceRecord, TraceBatch, BufferInfo, DMAInfo)], [104, 48, 800, 24, 32])
         result = decode_snapshot(snapshot_bytes(0x20007))
@@ -271,7 +354,8 @@ class TraceToolTests(unittest.TestCase):
         self.assertEqual({p.name for p in objects}, {
             'lnl_platform.o', 'LunarLakePCIProbe.o', 'lb_diagnostics.o',
             'lb_gpu_memory.o', 'lb_guc_transport.o', 'lb_guc_firmware.o',
-            'LBDMAContext.o', 'LBDMAQuarantine.o', 'LunarBridgeDriver.o', 'KmodInfo.o'})
+            'LBDMAContext.o', 'LBDMAQuarantine.o', 'LunarBridgeDriver.o', 'KmodInfo.o',
+            'lb_forcewake.o', 'LBForceWakeAdapter.o'})
         for path in objects:
             result = inspect_macho(path.read_bytes())
             self.assertEqual((result['filetype'], result['architecture']), (1, 'x86_64'))

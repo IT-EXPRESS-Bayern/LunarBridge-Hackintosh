@@ -1,0 +1,303 @@
+# SPDX-License-Identifier: GPL-3.0-only
+"""Use the installed Windows OpenCL loader for one own, bounded Arc-130V probe."""
+from __future__ import annotations
+
+import argparse
+import ctypes as C
+import datetime
+import hashlib
+import json
+import os
+from pathlib import Path
+import re
+import struct
+import time
+
+WORK = Path(__file__).resolve().parent
+UINT = C.c_uint32
+INT = C.c_int32
+ULONG = C.c_uint64
+SIZE = C.c_size_t
+HANDLE = C.c_void_p
+CL_GPU = 4
+ELEMENTS = 64
+OPTIONS = b'-cl-std=CL1.2'
+
+
+class ProbeError(Exception):
+    def __init__(self, code, details=None):
+        self.code, self.details = code, details
+        super().__init__(code)
+
+
+def require(condition, code, details=None):
+    if not condition:
+        raise ProbeError(code, details)
+
+
+def checked(status, operation):
+    require(status == 0, 'opencl_' + operation, {'status': int(status)})
+
+
+def qualifies(info):
+    return (info['device_type'] & CL_GPU != 0 and info['vendor_id'] == 0x8086
+            and re.search(r'\bArc\b.*\b130V\b', info['name'], flags=re.I) is not None
+            and info['available'] and info['compiler_available'])
+
+
+def inputs():
+    return [((index * 0x01020304) ^ 0x12345678) & 0xffffffff for index in range(ELEMENTS)]
+
+
+def expected_output(values):
+    return [(((value * 1664525 + 1013904223) & 0xffffffff)
+             ^ ((0xA5A55A5A + index) & 0xffffffff)) for index, value in enumerate(values)]
+
+
+def verify_output(actual, values):
+    expected = expected_output(values)
+    require(len(actual) == len(expected) == ELEMENTS, 'result_element_count')
+    mismatches = [index for index, pair in enumerate(zip(actual, expected)) if pair[0] != pair[1]]
+    require(not mismatches, 'gpu_result_mismatch', {'mismatch_indices': mismatches[:8]})
+    return {'elements_verified': len(expected), 'all_results_equal': True,
+            'sha256': hashlib.sha256(struct.pack('<' + 'I' * len(actual), *actual)).hexdigest()}
+
+
+class OpenCL:
+    def __init__(self):
+        require(os.name == 'nt' and C.sizeof(HANDLE) == 8, 'requires_64bit_windows')
+        kernel32 = C.WinDLL('kernel32', use_last_error=True)
+        kernel32.GetSystemDirectoryW.argtypes = [C.c_wchar_p, UINT]
+        kernel32.GetSystemDirectoryW.restype = UINT
+        buffer = C.create_unicode_buffer(32768)
+        length = kernel32.GetSystemDirectoryW(buffer, len(buffer))
+        require(0 < length < len(buffer), 'system_directory_unavailable')
+        self.loader_path = Path(buffer.value) / 'OpenCL.dll'
+        require(self.loader_path.is_file(), 'installed_opencl_loader_missing')
+        self.dll = C.WinDLL(str(self.loader_path), winmode=0x100 | 0x800)
+        definitions = {
+            'clGetPlatformIDs': (INT, [UINT, C.POINTER(HANDLE), C.POINTER(UINT)]),
+            'clGetPlatformInfo': (INT, [HANDLE, UINT, SIZE, HANDLE, C.POINTER(SIZE)]),
+            'clGetDeviceIDs': (INT, [HANDLE, ULONG, UINT, C.POINTER(HANDLE), C.POINTER(UINT)]),
+            'clGetDeviceInfo': (INT, [HANDLE, UINT, SIZE, HANDLE, C.POINTER(SIZE)]),
+            'clCreateContext': (HANDLE, [C.POINTER(C.c_ssize_t), UINT, C.POINTER(HANDLE), HANDLE, HANDLE, C.POINTER(INT)]),
+            'clCreateCommandQueue': (HANDLE, [HANDLE, HANDLE, ULONG, C.POINTER(INT)]),
+            'clCreateProgramWithSource': (HANDLE, [HANDLE, UINT, C.POINTER(C.c_char_p), C.POINTER(SIZE), C.POINTER(INT)]),
+            'clBuildProgram': (INT, [HANDLE, UINT, C.POINTER(HANDLE), C.c_char_p, HANDLE, HANDLE]),
+            'clGetProgramInfo': (INT, [HANDLE, UINT, SIZE, HANDLE, C.POINTER(SIZE)]),
+            'clGetProgramBuildInfo': (INT, [HANDLE, HANDLE, UINT, SIZE, HANDLE, C.POINTER(SIZE)]),
+            'clCreateKernel': (HANDLE, [HANDLE, C.c_char_p, C.POINTER(INT)]),
+            'clCreateBuffer': (HANDLE, [HANDLE, ULONG, SIZE, HANDLE, C.POINTER(INT)]),
+            'clSetKernelArg': (INT, [HANDLE, UINT, SIZE, HANDLE]),
+            'clEnqueueNDRangeKernel': (INT, [HANDLE, HANDLE, UINT, C.POINTER(SIZE), C.POINTER(SIZE), C.POINTER(SIZE),
+                                          UINT, C.POINTER(HANDLE), C.POINTER(HANDLE)]),
+            'clFinish': (INT, [HANDLE]),
+            'clEnqueueReadBuffer': (INT, [HANDLE, HANDLE, UINT, SIZE, SIZE, HANDLE, UINT, C.POINTER(HANDLE), C.POINTER(HANDLE)]),
+            'clGetEventProfilingInfo': (INT, [HANDLE, UINT, SIZE, HANDLE, C.POINTER(SIZE)]),
+            'clReleaseEvent': (INT, [HANDLE]), 'clReleaseMemObject': (INT, [HANDLE]),
+            'clReleaseKernel': (INT, [HANDLE]), 'clReleaseProgram': (INT, [HANDLE]),
+            'clReleaseCommandQueue': (INT, [HANDLE]), 'clReleaseContext': (INT, [HANDLE]),
+        }
+        for name, (restype, arguments) in definitions.items():
+            function = getattr(self.dll, name)
+            function.restype, function.argtypes = restype, arguments
+            setattr(self, name, function)
+
+    def value(self, function, handle, parameter, kind):
+        result, written = kind(), SIZE()
+        checked(function(handle, parameter, C.sizeof(result), C.byref(result), C.byref(written)), 'get_info')
+        require(written.value == C.sizeof(result), 'opencl_scalar_info_size')
+        return result.value
+
+    def string(self, function, handle, parameter):
+        size = SIZE()
+        checked(function(handle, parameter, 0, None, C.byref(size)), 'get_info_size')
+        require(0 < size.value <= 16384, 'opencl_string_info_limit')
+        data = C.create_string_buffer(size.value)
+        checked(function(handle, parameter, size.value, data, None), 'get_info_string')
+        require(data.raw[-1:] == b'\0', 'opencl_string_not_terminated')
+        return data.value.decode('utf-8', errors='replace')
+
+    def enumerate_gpu(self):
+        count = UINT()
+        status = self.clGetPlatformIDs(0, None, C.byref(count))
+        if status == -1001:
+            return [], []
+        checked(status, 'platform_count')
+        require(0 < count.value <= 16, 'platform_count_limit')
+        platform_array = (HANDLE * count.value)()
+        checked(self.clGetPlatformIDs(count.value, platform_array, None), 'platforms')
+        platforms, devices = [], []
+        for platform in platform_array:
+            public_platform = {
+                'name': self.string(self.clGetPlatformInfo, platform, 0x0902),
+                'vendor': self.string(self.clGetPlatformInfo, platform, 0x0903),
+                'version': self.string(self.clGetPlatformInfo, platform, 0x0901),
+            }
+            platforms.append(public_platform)
+            gpu_count = UINT()
+            status = self.clGetDeviceIDs(platform, CL_GPU, 0, None, C.byref(gpu_count))
+            if status == -1:
+                continue
+            checked(status, 'gpu_count')
+            require(0 < gpu_count.value <= 32, 'gpu_count_limit')
+            gpu_array = (HANDLE * gpu_count.value)()
+            checked(self.clGetDeviceIDs(platform, CL_GPU, gpu_count.value, gpu_array, None), 'gpu_devices')
+            for device in gpu_array:
+                info = {
+                    'name': self.string(self.clGetDeviceInfo, device, 0x102B),
+                    'vendor': self.string(self.clGetDeviceInfo, device, 0x102C),
+                    'vendor_id': self.value(self.clGetDeviceInfo, device, 0x1001, UINT),
+                    'device_type': self.value(self.clGetDeviceInfo, device, 0x1000, ULONG),
+                    'available': bool(self.value(self.clGetDeviceInfo, device, 0x1027, UINT)),
+                    'compiler_available': bool(self.value(self.clGetDeviceInfo, device, 0x1028, UINT)),
+                    'driver_version': self.string(self.clGetDeviceInfo, device, 0x102D),
+                    'opencl_version': self.string(self.clGetDeviceInfo, device, 0x102F),
+                    'opencl_c_version': self.string(self.clGetDeviceInfo, device, 0x103D),
+                    'address_bits': self.value(self.clGetDeviceInfo, device, 0x100D, UINT),
+                    'compute_units': self.value(self.clGetDeviceInfo, device, 0x1002, UINT),
+                    'platform': public_platform,
+                }
+                extensions = self.string(self.clGetDeviceInfo, device, 0x1030).split()
+                if 'cl_intel_device_attribute_query' in extensions:
+                    info['intel_device_ip_version'] = self.value(self.clGetDeviceInfo, device, 0x4250, UINT)
+                    info['intel_device_id'] = self.value(self.clGetDeviceInfo, device, 0x4251, UINT)
+                devices.append((platform, device, info))
+        return platforms, devices
+
+    def build_log(self, program, device):
+        size = SIZE()
+        checked(self.clGetProgramBuildInfo(program, device, 0x1183, 0, None, C.byref(size)), 'build_log_size')
+        require(0 < size.value <= 65536, 'build_log_limit')
+        data = C.create_string_buffer(size.value)
+        checked(self.clGetProgramBuildInfo(program, device, 0x1183, size.value, data, None), 'build_log')
+        return data.value.decode('utf-8', errors='replace')
+
+    def program_binary(self, program, selected):
+        count = self.value(self.clGetProgramInfo, program, 0x1162, UINT)
+        require(count == 1, 'program_not_single_device')
+        devices = (HANDLE * 1)()
+        checked(self.clGetProgramInfo(program, 0x1163, C.sizeof(devices), devices, None), 'program_devices')
+        require(devices[0] == selected, 'program_device_mismatch')
+        sizes = (SIZE * 1)()
+        checked(self.clGetProgramInfo(program, 0x1165, C.sizeof(sizes), sizes, None), 'binary_sizes')
+        require(0 < sizes[0] <= 16 * 1024 * 1024, 'own_program_binary_limit')
+        data = (C.c_ubyte * sizes[0])()
+        pointers = (HANDLE * 1)(C.cast(data, HANDLE))
+        checked(self.clGetProgramInfo(program, 0x1166, C.sizeof(pointers), pointers, None), 'program_binary')
+        return bytes(data)
+
+    def run(self, platform, device, info):
+        require(qualifies(info), 'unqualified_device_execution_blocked')
+        source = (WORK / 'xe2_integer_probe.cl').read_bytes()
+        require(0 < len(source) <= 8192, 'own_kernel_source_limit')
+        resources, status = [], INT()
+        result = {'device': info, 'source_sha256': hashlib.sha256(source).hexdigest(),
+                  'build_options': OPTIONS.decode('ascii'), 'elements': ELEMENTS, 'dispatches': 1,
+                  'macos_execution': False, 'metal_execution': False, 'display_tested': False,
+                  'native_mac_shader_submission_implemented': False, 'cpu_opencl_execution': False}
+        devices = (HANDLE * 1)(device)
+        properties = (C.c_ssize_t * 3)(0x1084, platform, 0)
+        started = time.monotonic()
+        try:
+            context = self.clCreateContext(properties, 1, devices, None, None, C.byref(status))
+            checked(status.value, 'create_context')
+            require(context, 'null_context')
+            resources.append((self.clReleaseContext, context))
+            queue = self.clCreateCommandQueue(context, device, 2, C.byref(status))
+            checked(status.value, 'create_queue')
+            require(queue, 'null_queue')
+            resources.append((self.clReleaseCommandQueue, queue))
+            strings, lengths = (C.c_char_p * 1)(source), (SIZE * 1)(len(source))
+            program = self.clCreateProgramWithSource(context, 1, strings, lengths, C.byref(status))
+            checked(status.value, 'create_own_program')
+            require(program, 'null_program')
+            resources.append((self.clReleaseProgram, program))
+            build_started = time.monotonic()
+            build_status = self.clBuildProgram(program, 1, devices, OPTIONS, None, None)
+            log = self.build_log(program, device)
+            (WORK / 'own-kernel-build-log-private.txt').write_text(log, encoding='utf-8', newline='\n')
+            checked(build_status, 'build_own_program')
+            binary_type = UINT()
+            checked(self.clGetProgramBuildInfo(program, device, 0x1184, C.sizeof(binary_type), C.byref(binary_type), None), 'binary_type')
+            require(binary_type.value == 4, 'own_program_not_executable_binary')
+            result['build_duration_seconds'] = round(time.monotonic() - build_started, 6)
+            binary = self.program_binary(program, device)
+            result['program_binary'] = {'bytes': len(binary), 'sha256': hashlib.sha256(binary).hexdigest(),
+                                        'cl_program_binary_type': 'EXECUTABLE', 'only_own_kernel_source': True}
+            (WORK / 'own-xe2-program.bin').write_bytes(binary)
+            kernel = self.clCreateKernel(program, b'lunarbridge_xe2_probe', C.byref(status))
+            checked(status.value, 'create_own_kernel')
+            require(kernel, 'null_kernel')
+            resources.append((self.clReleaseKernel, kernel))
+            values = inputs()
+            input_data = (UINT * ELEMENTS)(*values)
+            output_data = (UINT * ELEMENTS)(*[0xffffffff] * ELEMENTS)
+            input_buffer = self.clCreateBuffer(context, 4 | 32, C.sizeof(input_data), input_data, C.byref(status))
+            checked(status.value, 'create_input_buffer')
+            require(input_buffer, 'null_input_buffer')
+            resources.append((self.clReleaseMemObject, input_buffer))
+            output_buffer = self.clCreateBuffer(context, 2, C.sizeof(output_data), None, C.byref(status))
+            checked(status.value, 'create_output_buffer')
+            require(output_buffer, 'null_output_buffer')
+            resources.append((self.clReleaseMemObject, output_buffer))
+            for index, value in enumerate((HANDLE(input_buffer), HANDLE(output_buffer), UINT(ELEMENTS))):
+                checked(self.clSetKernelArg(kernel, index, C.sizeof(value), C.byref(value)), 'set_kernel_arg')
+            global_size, event = (SIZE * 1)(ELEMENTS), HANDLE()
+            checked(self.clEnqueueNDRangeKernel(queue, kernel, 1, None, global_size, None, 0, None, C.byref(event)), 'dispatch_own_kernel')
+            require(event.value, 'null_dispatch_event')
+            resources.append((self.clReleaseEvent, event.value))
+            checked(self.clFinish(queue), 'finish_one_dispatch')
+            checked(self.clEnqueueReadBuffer(queue, output_buffer, 1, 0, C.sizeof(output_data), output_data, 0, None, None), 'read_results')
+            verification = verify_output(list(output_data), values)
+            times = []
+            for parameter in (0x1282, 0x1283):
+                value = ULONG()
+                checked(self.clGetEventProfilingInfo(event, parameter, C.sizeof(value), C.byref(value), None), 'kernel_profiling')
+                times.append(value.value)
+            require(times[1] >= times[0], 'profiling_timestamps_invalid')
+            result.update({'result': 'verified_windows_gpu_execution', 'verified_results': verification,
+                           'gpu_duration_nanoseconds': times[1] - times[0], 'gpu_execution': True,
+                           'total_duration_seconds': round(time.monotonic() - started, 6)})
+            (WORK / 'own-kernel-results.bin').write_bytes(bytes(output_data))
+            return result
+        finally:
+            cleanup = []
+            for release, handle in reversed(resources):
+                cleanup.append({'api': release.__name__, 'status': int(release(handle))})
+            (WORK / 'api-resource-cleanup-private.json').write_text(json.dumps(cleanup, indent=2) + '\n', encoding='utf-8')
+
+
+def main():
+    parser = argparse.ArgumentParser(description='Installed OpenCL Arc130V inventory or one own kernel execution.')
+    parser.add_argument('--run-own-kernel', action='store_true')
+    args = parser.parse_args()
+    api = OpenCL()
+    platforms, devices = api.enumerate_gpu()
+    inventory = {'system_loader_present': True, 'platforms': platforms,
+                 'gpu_devices': [info for _, _, info in devices], 'cpu_devices_requested': False,
+                 'qualified_arc130v_devices': sum(qualifies(info) for _, _, info in devices)}
+    (WORK / 'opencl-inventory.json').write_text(json.dumps(inventory, indent=2) + '\n', encoding='utf-8')
+    (WORK / 'opencl-loader-private.json').write_text(json.dumps({'loader_path': str(api.loader_path)}) + '\n', encoding='utf-8')
+    if not args.run_own_kernel:
+        print(json.dumps(inventory, indent=2))
+        return 0
+    selected = [(platform, device, info) for platform, device, info in devices if qualifies(info)]
+    require(len(selected) == 1, 'requires_exactly_one_qualified_arc130v', {'qualified_devices': len(selected)})
+    report = api.run(*selected[0])
+    report['verified_at_utc'] = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    report['probe_script_sha256'] = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+    (WORK / 'WINDOWS_GPU_SHADER_PROOF.json').write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
+    print(json.dumps(report, indent=2))
+    return 0
+
+
+if __name__ == '__main__':
+    try:
+        raise SystemExit(main())
+    except ProbeError as error:
+        print(json.dumps({'result': 'not_verified', 'error': error.code, 'details': error.details}))
+        raise SystemExit(1)
+    except (OSError, ValueError, TypeError, AttributeError) as error:
+        print(json.dumps({'result': 'not_verified', 'error': type(error).__name__}))
+        raise SystemExit(1)

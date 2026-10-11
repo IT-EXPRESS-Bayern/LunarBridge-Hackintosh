@@ -11,7 +11,7 @@ import subprocess
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from lb_wire import Snapshot, TraceBatch, BufferInfo, DMAInfo, decode_snapshot, decode_batch, decode_dma_info, parse_kernel_messages
+from lb_wire import Snapshot, TraceBatch, BufferInfo, DMAInfo, ForceWakeInfo, decode_snapshot, decode_batch, decode_dma_info, decode_forcewake_info, parse_kernel_messages
 from analyze_trace import markdown
 
 def command(args):
@@ -29,7 +29,9 @@ def filtered_registry(nodes):
                    'LBGraphicsIP', 'LBMediaIP', 'LBTraceCapacity', 'LBCpuBufferMaxBytes',
                    'LBGPUExecutionSupported', 'LBMetalSupported', 'LBStage', 'LBEnableMMIORead', 'LBDebugLogging',
                    'LBEnableDMAPreparation', 'LBDMAMappingVerifiedOnTarget', 'LBDMATeardownQuarantined',
-                   'LBDMAQuarantineSlots', 'LBDMAResourcesDrained'}
+                   'LBDMAQuarantineSlots', 'LBDMAResourcesDrained', 'LBEnableForceWakeProbe',
+                   'LBForceWakeCompleted', 'LBForceWakeStatus', 'LBForceWakeCleanupStatus',
+                   'LBForceWakeResourcesRetained', 'LBLunarLakeReadFlushWrites'}
         properties = {key: value for key, value in nodes.items() if key in allowed and
                       isinstance(value, (bool, int, str))}
         if properties: result.append(properties)
@@ -111,6 +113,9 @@ def collect_iokit(memory_test=False, dma_test=False):
                   'trace': [], 'trace_overwritten': 0, 'cpu_memory_test': 'not_requested',
                   'dma_preparation_test': 'not_requested'}
         dma_enabled = report['snapshot']['dma_preparation_enabled']
+        if report['snapshot']['forcewake_probe_enabled']:
+            try: report['forcewake'] = decode_forcewake_info(call(6, ForceWakeInfo()))
+            except (OSError, RuntimeError, ValueError) as exc: report['forcewake_error'] = str(exc)
         if dma_test and not dma_enabled:
             report['dma_preparation_test'] = {'state': 'blocked', 'reason': 'driver_dma_opt_in_disabled'}
         elif memory_test and dma_enabled and not dma_test:

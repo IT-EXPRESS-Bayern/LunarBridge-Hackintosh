@@ -48,6 +48,11 @@ nicht gespeichert. `--minutes 1` bis `--minutes 60` begrenzt das Log-Zeitfenster
 Fehlt der Snapshot, wird der verfügbare Bericht trotzdem gespeichert und der
 Sammler beendet sich mit Status 2. Unter Windows wird die Ausführung abgewiesen.
 
+Bei `LBEnableForceWakeProbe=true` erfasst der Sammler außerdem den 80-Byte-Status
+von Selector 6. Handshake und Cleanup werden getrennt berichtet. Bei ungeklärtem
+Abbau werden gehaltene Ressourcen als Fehler markiert; ein ACK bestätigt keine
+Shader-Ausführung oder Metal. Siehe [GPU-Anschluss](GPU_BRINGUP.md).
+
 Auswertung eines vorhandenen Berichts funktioniert auch unter Windows:
 
 ```sh
@@ -70,11 +75,13 @@ python3 tools/analyze_trace.py diagnostics/diagnostics.json --out FEHLERBERICHT.
 | 28 | Treiberreferenz auf Puffer freigegeben | Belegt keine vollständige Freigabe noch gehaltener IOKit-Mappings |
 | 40 / 41 | DMA vorbereitet / gescheitert | Geräte-Mapper, Descriptorstatus, Seitenzahl und Grenzen |
 | 42 / 43 | DMA-Referenzen freigegeben / Freigabefehler | Keine GPU-Ausführung; Fehlerressourcen nicht als frei zählen |
+| 50 / 51 | Main-GT-Handschlag / Fehler | GMD-IP, Primärstatus und Put getrennt auswerten |
+| 52 / 53 | Wake-Cleanup / Cleanupfehler | BAR-/Provider-/Servicereferenzen bleiben bei ungeklärtem Put gehalten |
 
 Der Fehlerbericht nennt die zugehörigen Quelldateien/Funktionen und unterscheidet
 erwartete Einschränkungen von Fehlern. Ein gesetztes Capability-Bit wird nicht
 als bestandener Metal-Test gewertet. Synthetische Testberichte tragen ausdrücklich
-`synthetic=true`. Die 19 Windows-Prüfungen der Werkzeuge benutzen simulierte IOKit-
+`synthetic=true`. Die 27 Windows-Prüfungen der Werkzeuge benutzen simulierte IOKit-
 Aufrufe; sie bestätigen keine tatsächliche macOS-Verbindung oder Gerätefunktion.
 
 Die [Issue-Vorlage](../.github/ISSUE_TEMPLATE/native-diagnostics.yml) ermöglicht

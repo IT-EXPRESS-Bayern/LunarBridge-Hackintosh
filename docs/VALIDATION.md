@@ -1,8 +1,8 @@
 # Validation and integration on 2026-10-11
 
 The public source layout was built and checked on Windows x86_64 with Zig
-0.15.2 and external MacKernelSDK headers. All eleven compiler invocations exited
-with code zero and no diagnostics. Outputs were one Windows test DLL and ten
+0.15.2 and external MacKernelSDK headers. All 13 compiler invocations exited
+with code zero and no diagnostics. Outputs were one Windows test DLL and twelve
 x86_64 macOS Mach-O object files; these are local build outputs excluded from Git.
 
 | Check | Result | Scope |
@@ -12,10 +12,13 @@ x86_64 macOS Mach-O object files; these are local build outputs excluded from Gi
 | GPU memory / GuC foundation | 31 tests passed | Owner isolation, token lifetime, 48-bit VA/46-bit DMA bounds, exact PTE vectors, table boundaries, atomic staging, CSS lengths/versions, HXG direction/types and shadow-ring wrap/corruption |
 | Native DMA adapter | 30 tests passed | Executed actual adapter C++ with fake IOKit: exact mapper, preparation failures, segment bounds, complete/detach/unwire order and temporary/persistent cleanup failure |
 | DMA ownership quarantine | 10 tests passed | Actual eight-slot table, owner identity, atomic transfer, exclusive retry, retained accounting and commit only after successful adapter cleanup; no native kernel concurrency |
-| Trace/collector tools | 19 tests passed | ABI/length/order checks, exact privacy allowlist, DMA double opt-in, bounded log decoding, error triage, simulated IOKit failures, CPU mapping/unmapping failures and real object-format checks |
-| GPU OpenCore installer | 21 tests passed | Synthetic PE/kernel format fixtures in isolated temporary EFI trees, plan/update/rollback, injected failures, concurrent edits, policy/Vault refusal, DMA flag types and rejection of extra hardware personalities/nested kexts |
-| Pinned GPU test references | 12 SHA256 values verified | Exact external GPU inputs identified in the reference manifest; independent I2C inputs moved out |
-| macOS object format | Ten Mach-O objects verified | Actual x86_64 object compilation and parser inspection; these objects are rejected by the installer |
+| Forcewake protocol | 29 tests passed | Actual production C++ with register callbacks; masked paired writes, foreign request refusal, post-read deadlines, all-ones, partial writes, timeout, reference integrity and retained failed cleanup |
+| Native Forcewake adapter | 43 tests / 52 scenarios passed | Actual adapter with explicit IOKit doubles; GMD/IP/BAR/D0 guards, four root flush writes per read, held map/open/PCI until confirmed cleanup; no native hardware |
+| Trace/collector tools | 27 tests passed | ABI/length/order checks, forcewake status and retained cleanup, privacy, DMA double opt-in, error triage, simulated IOKit failures and real object-format checks |
+| GPU OpenCore installer | 23 tests passed | Isolated EFI transactions and failures, concurrent edits, policy/Vault refusal, DMA/forcewake flag types, effective MMIO/flush exposure and module boundaries |
+| Own shader toolchain | 37 offline tests passed | Actual recorded own Windows GPU result bytes; device qualification, bounded ELF/Zebin and relocation validation; no GPU initialized by tests |
+| Pinned GPU test references | 16 SHA256 values verified | Exact external inputs including forcewake, MMIO and LNL workaround association; no vendored Linux driver |
+| macOS object format | Twelve Mach-O objects verified | Actual x86_64 object compilation and parser inspection; these objects are rejected by the installer |
 | Native macOS link workflow | Real diagnostic Kext linked | Pinned external SDK and macOS linker; source commit, hashes and unsigned status in VALIDATION.json; no target-hardware loading |
 | Native bundle installer integration | Passed in a synthetic EFI under Windows | Actual CI bundle planned/installed/rolled back; config bytes restored; no real EFI modified |
 | Packaged CLI and corresponding source | Passed for the exact recorded build | Packaged plan/install/rollback CLI executed in a synthetic EFI; corresponding-source hash count, binary hash and archive CRC recorded in VALIDATION.json |
@@ -25,7 +28,7 @@ machine inventory or a native device test. I2C source and build qualification
 now belong to the independent LunarBridge-I2C repository and are not counted
 as graphics-repository tests.
 
-All **131 graphics-repository Windows tests passed** without skips. The installer fixtures contain
+All **250 graphics-repository core Windows tests passed** without skips. The installer fixtures contain
 no runnable macOS/EFI code. Simulated IOKit calls are marked as simulated and
 cannot establish native device access. No real EFI or external SSD was changed.
 
@@ -34,12 +37,21 @@ by these Windows host tests, and the Arc 130V Metal driver remains unimplemented
 Display, sleep/wake, firmware Secure Boot and the external-SSD dual-boot
 installation remain unvalidated.
 
+An own OpenCL shader actually ran once on this Samsung's Arc 130V under Windows.
+All 64 output values matched the independent reference. Its own 5,728-byte
+Zebin program includes a 896-byte Xe2 code section and 1,464-byte SPIR-V section.
+The [source-bound proof and fixtures](../gpu-toolchain/README.md) retain the
+executed probe version; the revised public CLI was not rerun on the GPU.
+This Windows result is distinct from native macOS execution and Metal.
+The [native bring-up](GPU_BRINGUP.md) is explicitly prepared without firmware
+Secure Boot for its first attempt; native Kext admission remains separate.
+
 The separate [Metal workflow 38114157507](https://github.com/IT-EXPRESS-Bayern/LunarBridge-Hackintosh/actions/runs/38114157507)
 at source `c4872003430ff804977ac76356f7f0537677a12b` built the real x86_64
 `Metal-Minimaltest.mm` executable on Intel macOS 26.6.1 and executed its shader.
 All 65,536 outputs matched, with completion handler and completed command status
 observed and no CPU fallback. Its additional Windows job passed 18 harness
-boundary tests. These are counted separately from the 131 core tests above.
+boundary tests. These are counted separately from the 250 core tests above.
 Both downloaded report archives passed hash and CRC checks; all five distinct
 source files were compared with that exact Git commit. The binary itself is not
 uploaded. [METAL_VALIDATION.json](METAL_VALIDATION.json) records the evidence and

@@ -17,6 +17,9 @@ bool LunarBridgePCI::init(OSDictionary *dictionary) {
     if (!IOService::init(dictionary)) return false;
     _lock = IOLockAlloc();
     if (!_lock) return false;
+    _hardwareLock = IOLockAlloc();
+    if (!_hardwareLock) return false;
+    _forcewake.initialize();
     lb_trace_init(&_trace);
     _snapshot.abi = LB_ABI_VERSION;
     _snapshot.structBytes = sizeof(_snapshot);
@@ -63,6 +66,13 @@ void LunarBridgePCI::publishSnapshot() {
     setProperty("LBGPUExecutionSupported", false);
     setProperty("LBMetalSupported", false);
     setProperty("LBStage", "native-diagnostic-source; hardware validation pending");
+    const auto &wake = _forcewake.info();
+    setProperty("LBEnableForceWakeProbe", wake.enabled != 0);
+    setProperty("LBForceWakeCompleted", wake.completed != 0);
+    setProperty("LBForceWakeStatus", wake.primaryStatus, 32);
+    setProperty("LBForceWakeCleanupStatus", wake.cleanupStatus, 32);
+    setProperty("LBForceWakeResourcesRetained", wake.resourcesRetained != 0);
+    setProperty("LBLunarLakeReadFlushWrites", wake.flushWrites, 32);
 }
 
 bool LunarBridgePCI::start(IOService *provider) {
@@ -95,59 +105,37 @@ bool LunarBridgePCI::start(IOService *provider) {
                            pmOffset >= 0x40 && pmOffset <= 0xf8;
     _snapshot.pmcsr = pmPresent ? pci->configRead16(static_cast<uint8_t>(pmOffset + 4)) : 0xffff;
     auto optIn = OSDynamicCast(OSBoolean, getProperty("LBEnableMMIORead"));
-    const bool enabled = optIn && optIn->isTrue();
-    _snapshot.flags = (pmPresent ? 1u : 0u) | (enabled ? 2u : 0u) | (_dmaProbe ? 32u : 0u);
+    auto wakeOptIn = OSDynamicCast(OSBoolean, getProperty("LBEnableForceWakeProbe"));
+    const bool wakeEnabled = wakeOptIn && wakeOptIn->isTrue();
+    const bool enabled = (optIn && optIn->isTrue()) || wakeEnabled;
+    _snapshot.flags = (pmPresent ? 1u : 0u) | (enabled ? 2u : 0u) |
+                      (_dmaProbe ? 32u : 0u) | (wakeEnabled ? 64u : 0u);
     LBMMIOInput input{_snapshot.vendor, _snapshot.device, _snapshot.subvendor, _snapshot.subdevice,
                       _snapshot.classCode, _snapshot.pciCommand, _snapshot.pmcsr,
                       pci->getPowerState(), enabled ? 1u : 0u, pmPresent ? 1u : 0u};
     uint32_t gfxOffset = 0, mediaOffset = 0;
     _snapshot.policy = lb_mmio_preflight(&input, _snapshot.barBytes, &gfxOffset, &mediaOffset);
-    if (_snapshot.policy == LBReadAllowed) {
-        if (!pci->open(this)) {
-            _snapshot.policy = LBProviderBusy;
-            trace(LBReadBlocked, kIOReturnExclusiveAccess, 0, _snapshot.policy);
-        } else {
-            // Recheck power/decode after opening. Never force D0 or enable PCI writes.
-            input.command = pci->configRead16(kIOPCIConfigCommand);
-            input.pmcsr = pci->configRead16(static_cast<uint8_t>(pmOffset + 4));
-            input.providerPowerState = pci->getPowerState();
-            input.vendor = pci->configRead16(kIOPCIConfigVendorID);
-            _snapshot.pciCommand = input.command;
-            _snapshot.pmcsr = input.pmcsr;
-            _snapshot.policy = lb_mmio_preflight(&input, _snapshot.barBytes, &gfxOffset, &mediaOffset);
-            if (_snapshot.policy != LBReadAllowed) {
-                trace(LBReadBlocked, kIOReturnNotReady, 0, _snapshot.policy);
-            } else {
-                auto map = pci->mapDeviceMemoryWithRegister(kIOPCIConfigBaseAddress0,
-                                                            kIOMapInhibitCache | kIOMapReadOnly);
-                if (!map) trace(LBMapFailed, kIOReturnNoMemory);
-                else {
-                    input.command = pci->configRead16(kIOPCIConfigCommand);
-                    input.pmcsr = pci->configRead16(static_cast<uint8_t>(pmOffset + 4));
-                    input.providerPowerState = pci->getPowerState();
-                    input.vendor = pci->configRead16(kIOPCIConfigVendorID);
-                    _snapshot.pciCommand = input.command;
-                    _snapshot.pmcsr = input.pmcsr;
-                    _snapshot.policy = lb_mmio_preflight(&input, map->getLength(), &gfxOffset, &mediaOffset);
-                    const uintptr_t base = map->getVirtualAddress();
-                    if (_snapshot.policy != LBReadAllowed || base == 0) {
-                        trace(LBReadBlocked, kIOReturnBadArgument, 0, _snapshot.policy);
-                    } else {
-                        _snapshot.gmdRawGraphics = *reinterpret_cast<volatile uint32_t *>(base + gfxOffset);
-                        _snapshot.gmdRawMedia = *reinterpret_cast<volatile uint32_t *>(base + mediaOffset);
-                        _snapshot.flags |= 16;
-                        trace(LBGmdRead, kIOReturnSuccess, 0, _snapshot.gmdRawGraphics, _snapshot.gmdRawMedia);
-                        const bool gfx = lnl_decode_gmd(_snapshot.gmdRawGraphics, &_snapshot.graphics);
-                        const bool media = lnl_decode_gmd(_snapshot.gmdRawMedia, &_snapshot.media);
-                        if (gfx && media) _snapshot.capabilities |= LBGmdSample;
-                        else trace(LBGmdInvalid, kIOReturnNotReady, 0, gfx, media);
-                    }
-                    map->release();
-                }
-            }
-            pci->close(this);
-        }
-    } else trace(LBReadBlocked, enabled ? kIOReturnNotReady : kIOReturnSuccess, 0, _snapshot.policy);
+    IOLockLock(_hardwareLock);
+    _forcewake.sample(pci, this, wakeEnabled, &_snapshot);
+    if (!_forcewake.drained()) {
+        // Exactly one service reference owns a possibly active request, BAR
+        // mapping and provider-open token. A failed put must not unload them.
+        retain();
+        _forcewakeRetained = true;
+    }
+    const auto wake = _forcewake.info();
+    IOLockUnlock(_hardwareLock);
+    if (_snapshot.flags & 16) {
+        trace(LBGmdRead, kIOReturnSuccess, 0, _snapshot.gmdRawGraphics, _snapshot.gmdRawMedia);
+        if (!(_snapshot.capabilities & LBGmdSample)) trace(LBGmdInvalid, kIOReturnNotReady);
+    } else {
+        trace(LBReadBlocked, enabled ? kIOReturnNotReady : kIOReturnSuccess, 0, _snapshot.policy);
+        if (enabled && _snapshot.policy == LBBarTooSmall) trace(LBMapFailed, kIOReturnNotReady);
+        if (wake.primaryStatus == LBWakeInvalidMMIO) trace(LBGmdInvalid, kIOReturnNotReady);
+    }
+    if (wake.enabled && (wake.attempted || wake.primaryStatus != LBWakeIdle))
+        trace(wake.completed ? LBForceWakeFinished : LBForceWakeFailed,
+              wake.completed ? kIOReturnSuccess : kIOReturnNotReady, 0, wake.primaryStatus, wake.cleanupStatus);
     publishSnapshot();
     IOLockLock(_lock);
     _stopping = false;
@@ -162,12 +150,16 @@ void LunarBridgePCI::stop(IOService *provider) {
     _stopping = true;
     const bool drained = _clients == 0 && _dmaSlots.retained() == 0;
     IOLockUnlock(_lock);
+    retryForcewake();
     setProperty("LBDMAResourcesDrained", drained);
     trace(LBStop);
     IOService::stop(provider);
 }
 
 void LunarBridgePCI::free() {
+    // An unresolved adapter holds its own service reference; free is reached
+    // only after the hardware-lock protected release path has drained it.
+    if (_hardwareLock) { IOLockFree(_hardwareLock); _hardwareLock = nullptr; }
     if (_lock) { IOLockFree(_lock); _lock = nullptr; }
     IOService::free();
 }
@@ -187,6 +179,36 @@ bool LunarBridgePCI::traceBatch(uint64_t since, LBTraceBatchResult *out) {
     const bool result = lb_trace_read(&_trace, since, out);
     IOLockUnlock(_lock);
     return result;
+}
+
+bool LunarBridgePCI::forcewakeInfo(LBForceWakeInfo *out) {
+    if (!out || !_hardwareLock) return false;
+    IOLockLock(_hardwareLock);
+    *out = _forcewake.info();
+    IOLockUnlock(_hardwareLock);
+    return true;
+}
+
+void LunarBridgePCI::retryForcewake() {
+    if (!_hardwareLock) return;
+    retain(); // Keep this alive while dropping a transferred adapter reference.
+    IOLockLock(_hardwareLock);
+    const bool pending = !_forcewake.drained();
+    const uint32_t status = pending ? _forcewake.reset() : LBWakeIdle;
+    const bool dropHold = _forcewakeRetained && _forcewake.drained();
+    if (dropHold) _forcewakeRetained = false;
+    const auto wake = _forcewake.info();
+    IOLockUnlock(_hardwareLock);
+    if (pending) {
+        setProperty("LBForceWakeCompleted", wake.completed != 0);
+        setProperty("LBForceWakeCleanupStatus", wake.cleanupStatus, 32);
+        setProperty("LBForceWakeResourcesRetained", wake.resourcesRetained != 0);
+        setProperty("LBLunarLakeReadFlushWrites", wake.flushWrites, 32);
+        trace(wake.resourcesRetained ? LBForceWakeCleanupFailed : LBForceWakeCleanup,
+              wake.resourcesRetained ? kIOReturnNotReady : kIOReturnSuccess, 0, status);
+    }
+    if (dropHold) release(); // Never release the last reference under a lock.
+    release();
 }
 
 bool LunarBridgePCI::admitClient(uint32_t *id, uint32_t *slot) {
@@ -311,6 +333,7 @@ bool LunarBridgeUserClient::start(IOService *provider) {
     _lock = IOLockAlloc();
     _dma = new LBDMAContext();
     _owner->retryQuarantine();
+    _owner->retryForcewake();
     if (!_lock || !_dma || !_owner->admitClient(&_context, &_slot)) {
         _owner->trace(LBClientRejected, kIOReturnNoResources);
         return false;
@@ -329,7 +352,8 @@ IOReturn LunarBridgeUserClient::externalMethod(uint32_t selector, IOExternalMeth
         {invoke, 0, 0, 0, sizeof(LBBufferInfo)},
         {invoke, 1, 0, 0, sizeof(LBTraceBatchResult)},
         {invoke, 0, 0, 0, 0},
-        {invoke, 0, 0, 0, sizeof(LBDMAInfo)}
+        {invoke, 0, 0, 0, sizeof(LBDMAInfo)},
+        {invoke, 0, 0, 0, sizeof(LBForceWakeInfo)}
     };
     if (!args || selector >= LBSelectorCount) {
         traceRequest(LBMethodRejected, kIOReturnBadArgument, selector);
@@ -421,6 +445,10 @@ IOReturn LunarBridgeUserClient::perform(uint32_t selector, IOExternalMethodArgum
                 _dma->bytes(), LB_ABI_VERSION, _dma->segments(), _dma->ptes(),
                 _dma->ready() ? 1u : 0u, _dma->ready() ? 1u : 0u, 0};
             return kIOReturnSuccess;
+        case LBGetForceWakeInfo:
+            return args->structureOutput &&
+                _owner->forcewakeInfo(static_cast<LBForceWakeInfo *>(args->structureOutput))
+                ? kIOReturnSuccess : kIOReturnNotReady;
         case LBSubmit:
             _owner->trace(LBSubmitUnsupported, kIOReturnUnsupported, _context);
             return kIOReturnUnsupported;

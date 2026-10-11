@@ -59,6 +59,26 @@
       "path": "linux-v6.17/drivers/gpu/drm/xe/xe_uc_fw_abi.h",
       "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/drivers/gpu/drm/xe/xe_uc_fw_abi.h",
       "sha256": "d36c7405c31d95e1a11ac9302e3136d2dca030ee1f283a90f4d775f9e625df2e"
+    },
+    {
+      "path": "linux-v6.17/drivers/gpu/drm/xe/xe_force_wake.c",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/drivers/gpu/drm/xe/xe_force_wake.c",
+      "sha256": "6e842a441c4d3cc2bb655bcb1833e1537b7d9dea53a4e0ad9ad526b3405f0e9e"
+    },
+    {
+      "path": "linux-v6.17/drivers/gpu/drm/xe/xe_force_wake.h",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/drivers/gpu/drm/xe/xe_force_wake.h",
+      "sha256": "eaf35795c5a8f4db990b097ec9722e5747db66b7147322955018c18f5b714964"
+    },
+    {
+      "path": "linux-v6.17/drivers/gpu/drm/xe/xe_mmio.c",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/drivers/gpu/drm/xe/xe_mmio.c",
+      "sha256": "7aa5345fcbadcddb5a0f3c91c48900820eb61fc7c066a7d247b5e05f3aea1f9c"
+    },
+    {
+      "path": "linux-v6.17/drivers/gpu/drm/xe/xe_device_wa_oob.rules",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/drivers/gpu/drm/xe/xe_device_wa_oob.rules",
+      "sha256": "79edcc65c1179b3f4e1ceeed60756b07dda6c32a25898a4311bb94e17eb4e360"
     }
   ]
 }

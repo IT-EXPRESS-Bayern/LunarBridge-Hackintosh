@@ -1,0 +1,16 @@
+{
+  "test_type": "offline_qualification_results_and_bounded_elf_negative_cases",
+  "tests": 37,
+  "failures": 0,
+  "gpu_api_initialized_by_tests": false,
+  "additional_gpu_dispatches_by_tests": 0,
+  "command": "python -m unittest discover -s gpu-toolchain/tests -p test_xe2_shader.py -v",
+  "test_source_sha256": "47a2f8af7bfe9b431122105a083599681a03204e4495f0d08edee74e12c2cf85",
+  "historical_hardware_execution_source_sha256": "72cbc7f9777c58f2fb86e260b409577db4da23eb4c94db1d5ddced453145ad95",
+  "public_probe_source_sha256": "af606a1e284594667d723c5afddccf686385e0076a8cad01c22970093daf50f4",
+  "public_inspector_source_sha256": "422af81b905303fec1183195e12c6c2d33e3bcef6cd5c38421d37b0b0e037fcd",
+  "public_cli_gpu_execution_tested": false,
+  "read_only_public_inspector_checked_against_actual_fixture": true,
+  "macos_execution_tested": false,
+  "metal_execution_tested": false
+}

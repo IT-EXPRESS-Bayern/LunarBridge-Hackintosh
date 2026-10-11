@@ -1,0 +1,69 @@
+{
+  "own_code_license": "GPL-3.0-only",
+  "own_kernel_source": "../xe2_integer_probe.cl",
+  "own_kernel_source_sha256": "0c1593c962ac806dc64a8e05804965dee375e6669fa846987c8263bfa03745a5",
+  "vendor_driver_binaries_included": false,
+  "historical_execution_probe_sha256": "72cbc7f9777c58f2fb86e260b409577db4da23eb4c94db1d5ddced453145ad95",
+  "fixtures": [
+    {
+      "filename": "executed-probe-source.py.txt",
+      "bytes": 17192,
+      "sha256": "72cbc7f9777c58f2fb86e260b409577db4da23eb4c94db1d5ddced453145ad95"
+    },
+    {
+      "filename": "INSTALLED_COMPILER_VERSIONS.json",
+      "bytes": 1067,
+      "sha256": "5a914096b79c082ab26ca7e475db3b6ebbafb75941b28eac170a6ca261acccec"
+    },
+    {
+      "filename": "own-kernel-results.bin",
+      "bytes": 256,
+      "sha256": "85ce5b4c5db393a83a67ff5679ed0e95ebf4648896f852b7a3f9bba2e29ebe8d"
+    },
+    {
+      "filename": "own-xe2-intelgt-note.bin",
+      "bytes": 172,
+      "sha256": "35398a44a1202951d84f04074f79514ec34d94d795002edd1df213611350686b"
+    },
+    {
+      "filename": "own-xe2-kernel-isa.bin",
+      "bytes": 896,
+      "sha256": "52168f1f1ee471ccc41d02256f225a55ca866bf08d599b2b2344fca7d43f1930"
+    },
+    {
+      "filename": "own-xe2-kernel-relocations.bin",
+      "bytes": 32,
+      "sha256": "1e0901df04f721feb450423d70836de8b24b445c58268c542d69a1607dc91a03"
+    },
+    {
+      "filename": "own-xe2-kernel.spv",
+      "bytes": 1464,
+      "sha256": "43d8cf32d53a48254bbc42389e6fc49e8d6f85363c4c14ec2aa5c53dad4781da"
+    },
+    {
+      "filename": "own-xe2-program.bin",
+      "bytes": 5728,
+      "sha256": "1e0127eb0886d686e0c002c75b233fb44b936d193b82d09e34097146523e18c1"
+    },
+    {
+      "filename": "own-xe2-ze-info.yaml",
+      "bytes": 2047,
+      "sha256": "0e1523f4ef161272599f09ae13e9c9f41e57ce9b6a0c99a49005665a58a002b7"
+    },
+    {
+      "filename": "OWN_SHADER_BINARY_METADATA.json",
+      "bytes": 10531,
+      "sha256": "58bfb2571270f6c883f43a4db6c4eb16595a2fb45ce82a96635c4d65181ccae3"
+    },
+    {
+      "filename": "PRIMARY_FORMAT_REFERENCES.json",
+      "bytes": 3994,
+      "sha256": "fdbca07413dee2f74c7b6a51439609ba568f97d83e525a7a888bdc86b3aa26cf"
+    },
+    {
+      "filename": "WINDOWS_GPU_SHADER_PROOF.json",
+      "bytes": 1975,
+      "sha256": "e97170591942b0778760f0b7fbbd08835b5c18de3c034b2bc4c497bac5c7d814"
+    }
+  ]
+}

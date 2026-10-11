@@ -31,9 +31,13 @@ Explizites `LBEnableMMIORead=true` erlaubt einen einmaligen Lesepfad nur nach:
 5. Erfolgreichem Provider-Open und erneut geprüfter Konfiguration/Energiezustand.
 6. Lesbarem BAR-Mapping, erneut geprüfter Länge und erneut geprüftem Zustand.
 
-Gelesen werden nur Grafik-GMD bei `0xD8C` und Media-GMD bei `0x380D8C`.
-Der Code schreibt keine PCI/MMIO-Register, aktiviert weder D0 noch Speicher-
-freigabe selbst und führt kein Forcewake, Firmware-Upload oder GPU-Submit aus.
+Gelesen werden Grafik-GMD bei `0xD8C` und Media-GMD bei `0x380D8C`.
+Der Lunar-Lake-Read-Flush erfordert vier Dummywrites an Root `0x130030` vor
+jedem MMIO-Read; der Lesepfad ist deshalb kein schreibfreier MMIO-Pfad.
+`LBEnableForceWakeProbe=true` ergänzt einen begrenzten Main-GT-Get/Put mit
+ACK-Prüfung und gehaltenen Fehlerressourcen. Der [native Anschluss](GPU_BRINGUP.md)
+beschreibt beide Opt-ins. D0 und Speicherfreigabe werden nicht selbst aktiviert;
+Firmware-Upload, GPU-Speicherbindung und Submit fehlen weiterhin.
 `LBActualMMIOPerformed` bezeichnet einen tatsächlich erreichten Quellcode-Lesepfad;
 gültige GMD-Werte haben ein eigenes Capability-Bit. Keiner dieser Werte wurde
 bisher am Zielgerät unter macOS erfasst.
@@ -57,6 +61,7 @@ Die Linux-Aufrufreihenfolge allein bestätigt keinen sicheren XNU-Energiepfad.
 | 3 | ein uint64, exklusiver Sequenzcursor | TraceBatch, 800 Byte | Maximal 16 Ereignisse; Cursor 0 beginnt beim ältesten |
 | 4 | keine | keine | GPU-Submit gibt ausdrücklich Unsupported zurück |
 | 5 | keine | DMAInfo, 32 Byte | Vorbereitete Bytezahl/Seiten/PTEs und Mapperstatus; keine Adressen |
+| 6 | keine | ForceWakeInfo, 80 Byte | IP-/ACK-/Get-/Put-Status und gehaltene Ressourcen; GPU/Metal=false |
 
 Ein Trace-Eintrag hat 48 Byte. Längen werden durch den nativen Dispatch geprüft.
 Indirekte Strukturdeskriptoren und asynchrone Aufrufe sind nicht unterstützt.
@@ -73,6 +78,7 @@ einen [Geräte-Mapper-/IODMACommand-Anschluss](DMA_BACKEND.md), der Segmente
 prüft und PTEs ausschließlich in CPU-Speicher vorbereitet.
 
 Ein IOLock schützt Client-Zustand, ein zweiter im Service die Trace-/Budgetdaten.
+Ein gesonderter sleepable Hardware-IOLock serialisiert den Wake-/Abbauadapter.
 Stop und Freigabe behandeln Client-Buchung und gehaltene Deskriptorreferenz
 idempotent. Noch bestehende IOKit-Mappings können Referenzen halten; das aktive
 Buchungsbudget ist daher keine bewiesene Obergrenze sämtlicher physisch noch

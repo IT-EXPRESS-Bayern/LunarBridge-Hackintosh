@@ -39,6 +39,21 @@ def findings(report):
     if report.get('iokit_error'):
         add('error', 'IOKIT_FAILED', 'IOKit-Zugriff fehlgeschlagen; Selectorstatus und ABI im JSON-Bericht prüfen.',
             'tools/collect_macos.py')
+    wake = report.get('forcewake')
+    if report.get('forcewake_error'):
+        add('error', 'FORCEWAKE_ABI_FAILED', 'Forcewake-Status konnte nicht gelesen werden; Selector 6, Treiberversion und 80-Byte-ABI prüfen.',
+            'native/LunarBridgeDriver.cpp; tools/lb_wire.py')
+    if isinstance(wake, dict) and wake.get('resources_retained'):
+        add('error', 'FORCEWAKE_RETAINED', 'Der eigene Aufweck-Request ist noch nicht sicher abgebaut. BAR-Mapping und Provider bleiben gehalten; Treiber nicht als entladen werten.',
+            'native/LBForceWakeAdapter.cpp: reset; native/LunarBridgeDriver.cpp: retryForcewake')
+    if isinstance(wake, dict) and not wake.get('completed') and (wake.get('attempted') or
+            wake.get('primary_status') not in (None, 'not_attempted')):
+        add('error', 'FORCEWAKE_FAILED', 'GT-Aufwecken oder Abbau fehlgeschlagen: ' + str(wake.get('primary_status')) +
+            ' / ' + str(wake.get('cleanup_status')) + '. ACK, GMD-IP und Energiezustand im JSON prüfen.',
+            'gpu-prototype/lb_forcewake.cpp; native/LBForceWakeAdapter.cpp')
+    if isinstance(wake, dict) and wake.get('completed'):
+        add('info', 'FORCEWAKE_HANDSHAKE', 'Aufwecken und Freigabe des Main-GT bestätigt. Das bestätigt noch keine GPU-Befehlsausführung oder Metal.',
+            'native/LBForceWakeAdapter.cpp')
     dma_test = report.get('dma_preparation_test')
     if isinstance(dma_test, dict) and dma_test.get('state') == 'failed':
         add('error', 'DMA_PROBE_FAILED', 'IOKit-DMA-Vorbereitung oder Pufferprobe fehlgeschlagen; keine GPU-Bindung bestätigt.',
@@ -66,6 +81,9 @@ def findings(report):
     if 43 in ids:
         add('error', 'DMA_RELEASE_FAILED', 'DMA-Freigabe fehlgeschlagen; gehaltene Ressourcen nicht als frei werten. Quarantäne und Neustartqualifikation erforderlich.',
             'native/LBDMAContext.cpp: reset; native/LunarBridgeDriver.cpp: releaseResources')
+    if 51 in ids or 53 in ids:
+        add('error', 'FORCEWAKE_TRACE_FAILED', 'Forcewake-Fehler im Treibertrace. Primär- und Cleanupstatus getrennt auswerten; gehaltene Ressourcen beachten.',
+            'gpu-prototype/lb_forcewake.h; native/LBForceWakeAdapter.cpp')
     if 27 in ids:
         add('info', 'GPU_NOT_IMPLEMENTED', 'GPU-Ausführung ist in dieser Version nicht implementiert; Unsupported ist erwartet.',
             'native/LunarBridgeDriver.cpp: LBSubmit')

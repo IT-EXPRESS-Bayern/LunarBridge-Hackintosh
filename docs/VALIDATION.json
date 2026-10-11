@@ -6,72 +6,84 @@
     "version": "0.15.2"
   },
   "external_build_dependency": "MacKernelSDK headers, separately licensed",
-  "successful_compiles": 11,
+  "successful_compiles": 13,
   "artifacts": [
     {
       "name": "lnl_host.dll",
-      "bytes": 174592,
-      "sha256": "fc4320a99a81722cfa6a090dcd90bafacf3c18f45b6384f069b75a61eb5fb867",
+      "bytes": 183808,
+      "sha256": "b4b7880c9f5cfcbc6fe3455d7055fe05512800b3660a30ed188885b3fa076379",
       "magic_hex": "4d5a7800"
     },
     {
       "name": "lnl_platform.o",
-      "bytes": 4512,
-      "sha256": "e5fa3fb1a8a098645099d6e5d15f9f1dd20b7891bf90cae1e3cb492f9ca4f59e",
+      "bytes": 4440,
+      "sha256": "8b9aaaf16fb47f0d94feb3c178b5bab86e7f267a15a3066be6bdd7ff4abf2714",
       "magic_hex": "cffaedfe"
     },
     {
       "name": "LunarLakePCIProbe.o",
-      "bytes": 136592,
-      "sha256": "be5b7905e5dde49b42007a852099f56545d97fc8d29735518b945e98b9e9ba11",
+      "bytes": 136184,
+      "sha256": "07d7728f25d9ac41ba21b0af8d10e9862fb640d8ff88cefb484ec9ebfc0b072e",
       "magic_hex": "cffaedfe"
     },
     {
       "name": "lb_diagnostics.o",
-      "bytes": 8848,
-      "sha256": "d25a6cc746b57e0de96c7355488f62d11aca5634c100d0379f48d5b509abe1c1",
+      "bytes": 8808,
+      "sha256": "41e79846238dad8535842e0374fcf71c670e4710e88d6944015fe2ac374f2801",
       "magic_hex": "cffaedfe"
     },
     {
       "name": "lb_gpu_memory.o",
-      "bytes": 18208,
-      "sha256": "f0016ae0fad1ba5e0105109fb8a4adafe35c9a91f2a5a4988e7bfa1d5d951501",
+      "bytes": 18160,
+      "sha256": "6d51db9c1b996da2f914809160ded28554acd5dc44c378461426811dde7e29d0",
       "magic_hex": "cffaedfe"
     },
     {
       "name": "lb_guc_transport.o",
-      "bytes": 13792,
-      "sha256": "2d324934743fbab150ac9d49307603a9e22538da0c95fed3bc409c22ba5b5194",
+      "bytes": 13744,
+      "sha256": "8f185f069a989620ff8e8a73a93d2b7cd87932ade759c0f78a4099e11c56a1ac",
       "magic_hex": "cffaedfe"
     },
     {
       "name": "lb_guc_firmware.o",
-      "bytes": 6136,
-      "sha256": "6c638877580cdef6d026ff556238c29363f1d907f077b9334bb1d8f61ce3cb88",
+      "bytes": 6080,
+      "sha256": "9f0fda2f94c4d4c01c37ed3a0335aee5d12b90c52a573026404832640ba7312d",
+      "magic_hex": "cffaedfe"
+    },
+    {
+      "name": "lb_forcewake.o",
+      "bytes": 12024,
+      "sha256": "73e0fdb75366f13e6a62d9baa4227e1475ce4b1416933e719d8725a355a79914",
       "magic_hex": "cffaedfe"
     },
     {
       "name": "LBDMAContext.o",
-      "bytes": 164680,
-      "sha256": "03ea7ed96dbeb0ae1ea855aab966770e089835bcbdc964d5e1a717048dd0418c",
+      "bytes": 164288,
+      "sha256": "0c75cb91c07f0ce25a1ff24f4332df8ef09322f0b4134483c70d3a4b9ad0cb1f",
       "magic_hex": "cffaedfe"
     },
     {
       "name": "LBDMAQuarantine.o",
-      "bytes": 164472,
-      "sha256": "cc9e2c0063063cf0aa336576cb6b162b7d9eb59a31b50e75d4771be8b724cf07",
+      "bytes": 164080,
+      "sha256": "5f81ad1fe4c7dd1ed9a396cd59266124044574fb9ad54b20ead88763e3a164ce",
+      "magic_hex": "cffaedfe"
+    },
+    {
+      "name": "LBForceWakeAdapter.o",
+      "bytes": 157000,
+      "sha256": "d03548188ddbeb75d49bbfd0c78d6068bdeecae8f17643fb6a75fdd5419ab549",
       "magic_hex": "cffaedfe"
     },
     {
       "name": "LunarBridgeDriver.o",
-      "bytes": 277456,
-      "sha256": "cfacc34d4910304537360a77d051afbf34c510d48256a6f9fd4ebb49b05c1f02",
+      "bytes": 283984,
+      "sha256": "0b3d303667c82fe424f1a1f5307270e2070d2c6595dafede7e7b28c9bad37717",
       "magic_hex": "cffaedfe"
     },
     {
       "name": "KmodInfo.o",
-      "bytes": 5392,
-      "sha256": "acc839da493f0d06e9acce56ea090ebe6ae09fd764219a2ab771d2d1606b4b4b",
+      "bytes": 5256,
+      "sha256": "d6419ba8e8917b5878d4f3ccebb5229c81155357b388c63eee7cae32e5142c5b",
       "magic_hex": "cffaedfe"
     }
   ],
@@ -108,7 +120,7 @@
   },
   "trace_tool_tests": {
     "test_type": "Python ABI, privacy, triage and simulated IOKit failure tests; actual Mach-O object format checks",
-    "tests_run": 19,
+    "tests_run": 27,
     "failures": 0,
     "errors": 0,
     "skipped": 0,
@@ -118,7 +130,7 @@
   },
   "installer_tests": {
     "test_type": "Isolated installer transactions, injected failures and synthetic Mach-O/PE format fixtures",
-    "tests_run": 21,
+    "tests_run": 23,
     "failures": 0,
     "errors": 0,
     "skipped": 0,
@@ -148,9 +160,9 @@
     "native_hardware_tested": false,
     "parallel_kernel_lifetime_tested": false
   },
-  "pinned_reference_files_sha256_verified": 12,
-  "total_host_tests_passed": 131,
-  "macos_object_count": 10,
+  "pinned_reference_files_sha256_verified": 16,
+  "total_host_tests_passed": 250,
+  "macos_object_count": 12,
   "native_diagnostic_source_compiled": true,
   "native_diagnostic_kext_linked": true,
   "native_build_workflow": {
@@ -204,7 +216,7 @@
   "metal_hardware_tests": 0,
   "firmware_secure_boot_validated": false,
   "dual_boot_or_external_ssd_install_validated": false,
-  "interpretation": "Executed CPU metadata, Xe2 memory planning, GuC firmware/transport codecs, preflight and trace code; simulated IOKit and isolated installer tests. No proof of target-device GPU execution, Metal or boot support.",
+  "interpretation": "Production forcewake protocol and native adapter executed with CPU/IOKit doubles; own shader ran once on this Arc130V through installed Windows OpenCL. No native Samsung macOS GPU execution, Metal, display or boot proof.",
   "separate_metal_acceptance_workflow": {
     "source_commit": "c4872003430ff804977ac76356f7f0537677a12b",
     "workflow_run_id": 38114157507,
@@ -218,5 +230,58 @@
     "native_target_hardware_tests": 0,
     "arc130v_backend_verified": false,
     "counted_separately_from_core_host_tests": true
+  },
+  "forcewake_protocol_tests": {
+    "source": "tests/test_forcewake.py",
+    "tests_run": 29,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "successful": true,
+    "native_target_hardware_tests": 0,
+    "source_sha256": "843d943ba0ba8d9fc6f307bd7cc6340e0886755d9f5f2eb1f479dc8303747abd"
+  },
+  "forcewake_adapter_tests": {
+    "source": "tests/test_forcewake_adapter.py",
+    "tests_run": 43,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "successful": true,
+    "native_target_hardware_tests": 0,
+    "source_sha256": "8ea10442250de354062985b9f5367e7f13005637d1036e8467160bfbd5ec907b",
+    "distinct_scenarios": 52,
+    "iokit_calls_simulated": true
+  },
+  "own_shader_toolchain_tests": {
+    "test_type": "offline_qualification_results_and_bounded_elf_negative_cases",
+    "tests": 37,
+    "failures": 0,
+    "gpu_api_initialized_by_tests": false,
+    "additional_gpu_dispatches_by_tests": 0,
+    "command": "python -m unittest discover -s gpu-toolchain/tests -p test_xe2_shader.py -v",
+    "test_source_sha256": "47a2f8af7bfe9b431122105a083599681a03204e4495f0d08edee74e12c2cf85",
+    "historical_hardware_execution_source_sha256": "72cbc7f9777c58f2fb86e260b409577db4da23eb4c94db1d5ddced453145ad95",
+    "public_probe_source_sha256": "af606a1e284594667d723c5afddccf686385e0076a8cad01c22970093daf50f4",
+    "public_inspector_source_sha256": "422af81b905303fec1183195e12c6c2d33e3bcef6cd5c38421d37b0b0e037fcd",
+    "public_cli_gpu_execution_tested": false,
+    "read_only_public_inspector_checked_against_actual_fixture": true,
+    "macos_execution_tested": false,
+    "metal_execution_tested": false,
+    "tests_run": 37,
+    "successful": true,
+    "errors": 0,
+    "skipped": 0
+  },
+  "firmware_secure_boot_first_native_attempt_required": false,
+  "firmware_secure_boot_test_profile": "temporary-native-test",
+  "native_forcewake_adapter_implemented": true,
+  "native_forcewake_hardware_tested": false,
+  "own_windows_arc130v_shader_execution_passed": true,
+  "own_windows_arc130v_shader_results_verified": 64,
+  "own_shader_reference": "../gpu-toolchain/fixtures/MANIFEST.json",
+  "forcewake_native_ci": {
+    "status": "prepared; new native link not yet verified",
+    "target_hardware_tested": false
   }
 }

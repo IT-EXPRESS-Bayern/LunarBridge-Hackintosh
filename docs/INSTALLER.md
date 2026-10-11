@@ -5,7 +5,7 @@ einer ausdrücklich ausgewählten OpenCore-EFI. Er bietet `plan`, `install` und
 `rollback`. Die aktuelle Version installiert den experimentellen Diagnosetreiber.
 GPU-Ausführung, Metal und Displaybeschleunigung sind darin nicht implementiert.
 
-Unter Windows wurden 20 Prüfungen an künstlichen EFI-Verzeichnissen bestanden.
+Unter Windows wurden 23 Prüfungen an künstlichen EFI-Verzeichnissen bestanden.
 Zusätzliche Hardware-Personalities und eingebettete Kexts werden vor einer
 EFI-Änderung abgewiesen; der Installer gehört ausschließlich zum Grafikmodul.
 Es wurde keine reale EFI verändert und kein Treiber auf macOS geladen.
@@ -35,6 +35,11 @@ Der Standardbuild lässt MMIO-Registerlesen und zusätzliche Kernelmeldungen aus
 `--debug-log` aktiviert die begrenzten Kernelmeldungen. `--mmio-read` aktiviert
 explizit den experimentellen einmaligen GMD-Registerlesepfad; seine Vorbedingungen
 stehen in [NATIVE_BACKEND.md](NATIVE_BACKEND.md). Er ist keine GPU-Initialisierung.
+Der LNL-Lesepfad führt vor jedem Read vier notwendige Dummywrites aus.
+`--forcewake-probe --debug-log` baut zusätzlich die ausdrücklich aktivierte
+Main-GT-Wake-/Releaseprobe. Der Plan zeigt effektive MMIO-/Flush- und
+Forcewake-Einstellungen getrennt. Die [Bring-up-Beschreibung](GPU_BRINGUP.md)
+nennt deren Umfang und die noch fehlende native GPU-Ausführung.
 
 ## Ziel prüfen und planen
 

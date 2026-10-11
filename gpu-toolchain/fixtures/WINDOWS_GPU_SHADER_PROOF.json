@@ -1,0 +1,53 @@
+{
+  "device": {
+    "name": "Intel(R) Arc(TM) 130V GPU (8GB)",
+    "vendor": "Intel(R) Corporation",
+    "vendor_id": 32902,
+    "device_type": 4,
+    "available": true,
+    "compiler_available": true,
+    "driver_version": "32.0.101.9033",
+    "opencl_version": "OpenCL 3.0 NEO ",
+    "opencl_c_version": "OpenCL C 1.2 ",
+    "address_bits": 64,
+    "compute_units": 56,
+    "platform": {
+      "name": "Intel(R) OpenCL Graphics",
+      "vendor": "Intel(R) Corporation",
+      "version": "OpenCL 3.0 "
+    },
+    "intel_device_ip_version": 83951620,
+    "intel_device_id": 25760
+  },
+  "source_sha256": "0c1593c962ac806dc64a8e05804965dee375e6669fa846987c8263bfa03745a5",
+  "build_options": "-cl-std=CL1.2",
+  "elements": 64,
+  "dispatches": 1,
+  "macos_execution": false,
+  "metal_execution": false,
+  "display_tested": false,
+  "native_mac_shader_submission_implemented": false,
+  "cpu_opencl_execution": false,
+  "build_duration_seconds": 0.718,
+  "program_binary": {
+    "bytes": 5728,
+    "sha256": "1e0127eb0886d686e0c002c75b233fb44b936d193b82d09e34097146523e18c1",
+    "cl_program_binary_type": "EXECUTABLE",
+    "only_own_kernel_source": true
+  },
+  "result": "verified_windows_gpu_execution",
+  "verified_results": {
+    "elements_verified": 64,
+    "all_results_equal": true,
+    "sha256": "85ce5b4c5db393a83a67ff5679ed0e95ebf4648896f852b7a3f9bba2e29ebe8d"
+  },
+  "gpu_duration_nanoseconds": 8541,
+  "gpu_execution": true,
+  "total_duration_seconds": 0.718,
+  "verified_at_utc": "2026-10-11T07:44:43.348583+00:00",
+  "probe_script_sha256": "72cbc7f9777c58f2fb86e260b409577db4da23eb4c94db1d5ddced453145ad95",
+  "executed_probe_source_snapshot": "executed-probe-source.py.txt",
+  "current_public_cli_executed_on_hardware": false,
+  "public_cli_changes_after_execution": "CLI --execute and caller-selected new output directory; historical own source snapshot retained.",
+  "api_resource_releases_succeeded": true
+}

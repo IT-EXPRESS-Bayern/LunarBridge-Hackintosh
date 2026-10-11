@@ -7,6 +7,9 @@ on:
     paths:
       - 'native/**'
       - 'gpu-prototype/**'
+      - 'gpu-toolchain/**'
+      - 'tests/test_forcewake*.py'
+      - 'tests/forcewake_adapter_fake.*'
       - 'installer/**'
       - 'tools/build_native.py'
       - 'tools/macho.py'
@@ -20,9 +23,17 @@ permissions:
 
 jobs:
   build:
-    name: Link diagnostic Kext; no hardware test
+    name: Link ${{ matrix.profile }} Kext; no target hardware test
     runs-on: macos-26-intel
     timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - profile: diagnostic
+            options: ''
+          - profile: forcewake-probe
+            options: '--forcewake-probe --debug-log'
     steps:
       - name: Check out project source
         uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
@@ -35,12 +46,19 @@ jobs:
           ref: 3f750085caa17ec3a7880f11c11bf4f48cd6a164
           path: build/dependencies/MacKernelSDK
           persist-credentials: false
+      - name: Check forcewake production code using explicit host doubles
+        run: |
+          mkdir -p build/forcewake
+          xcrun clang++ -std=c++17 -O2 -Wall -Wextra -Werror -fno-exceptions -fno-rtti -DLB_FORCEWAKE_HOST_TEST -dynamiclib gpu-prototype/lnl_platform.cpp gpu-prototype/lb_diagnostics.cpp gpu-prototype/lb_forcewake.cpp native/LBForceWakeAdapter.cpp tests/forcewake_adapter_fake.cpp -o build/forcewake/libforcewake.dylib
+          LB_FORCEWAKE_LIBRARY="$PWD/build/forcewake/libforcewake.dylib" python3 tests/test_forcewake.py -v
+          python3 tests/test_forcewake_adapter.py --library build/forcewake/libforcewake.dylib -v
+          python3 -m unittest discover -s gpu-toolchain/tests -p test_xe2_shader.py -v
       - name: Build real kernel bundle and installer archive
-        run: python3 tools/build_native.py --sdk build/dependencies/MacKernelSDK --out build/native
+        run: python3 tools/build_native.py --sdk build/dependencies/MacKernelSDK --out build/native ${{ matrix.options }}
       - name: Preserve unsigned diagnostic build
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
-          name: LunarBridge-diagnostic-unsigned
+          name: LunarBridge-${{ matrix.profile }}-unsigned
           retention-days: 14
           if-no-files-found: error
           path: |

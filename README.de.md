@@ -8,10 +8,16 @@ Installer und Tests unter Windows. Eine echte native Diagnose-Kext ist gebaut.
 **GPU-Ausführung, Arc-Metal-Beschleunigung und eine qualifizierte bootfähige EFI
 liegen noch nicht vor.**
 
-[Geprüfter Stand](docs/VALIDATION.md): **131 bestandene Prüfungen unter Windows**,
-elf erfolgreiche Compiler-Aufrufe und zehn macOS-Objektdateien.
+[Geprüfter Stand](docs/VALIDATION.md): **250 bestandene Kernprüfungen unter Windows**,
+13 erfolgreiche Compiler-Aufrufe und zwölf macOS-Objektdateien.
 Der GitHub-macOS-Build hat eine echte Diagnose-Kext gelinkt.
 **Keine bestandene native macOS-Geräteprobe**.
+
+Der [native Main-GT-Aufweckadapter](docs/GPU_BRINGUP.md) ist jetzt implementiert,
+mit dem Lunar-Lake-Registerworkaround und gehaltenen Fehlerressourcen.
+Ein eigener [Xe2-Shader](gpu-toolchain/README.md) wurde auf der tatsächlichen
+Arc 130V unter Windows ausgeführt: 64/64 korrekte Ergebnisse. Die native
+macOS-Ausführung dieses Kernels und Metal fehlen weiterhin.
 
 ## Vorhandene Ergebnisse
 
@@ -59,8 +65,10 @@ HDR/Samsung, native Software, Windows-Programme, Kamera und OpenCore.
 ## Ziel und Abnahme
 
 Die Vorgaben bleiben: natives macOS Tahoe auf einer externen USB-C-SSD,
-Windows auf dem internen Laufwerk, Auswahl beim Start und unterstützter
-Firmware-UEFI-Secure-Boot. Eine VM ersetzt dieses Ziel nicht.
+Windows auf dem internen Laufwerk und Auswahl beim Start. Firmware-UEFI-Secure-Boot
+wird für den ersten nativen Versuch ausdrücklich zurückgestellt; das
+[OpenCore-Testprofil](https://github.com/IT-EXPRESS-Bayern/LunarBridge-OpenCore/blob/main/docs/TEST_PROFILES.md)
+erhält die strenge Variante für später. Eine VM ersetzt dieses Ziel nicht.
 Apples SecureBootModel bestätigt keinen aktivierten Firmware-Secure-Boot.
 Boot, Secure Boot, Arc-130V-Metal-Ausführung, internes Display und Standby sind
 jeweils getrennt am echten Gerät nachzuweisen; bisher ist keiner dieser
@@ -77,7 +85,7 @@ er bestätigt keine Arc-130V-Unterstützung oder Grafikbeschleunigung auf dem Sa
 Python 3, Zig 0.15.2 und externe MacKernelSDK-Header sind erforderlich.
 Die Befehle stehen in der [englischen README](README.md#build-and-check-under-windows).
 Die Referenzdateien werden mit festgehaltenen SHA256-Werten geprüft.
-Der Build erzeugt eine Windows-Test-DLL und zehn macOS-Objektdateien.
+Der Build erzeugt eine Windows-Test-DLL und zwölf macOS-Objektdateien.
 Er erzeugt keine installierbare oder signierte Grafik-Kext.
 
 Der [native Build](docs/INSTALLER.md#echte-diagnose-kext-bauen) ist als Skript und

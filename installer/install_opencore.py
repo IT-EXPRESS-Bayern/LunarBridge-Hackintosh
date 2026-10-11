@@ -79,7 +79,8 @@ def validate_bundle(source):
         raise InstallerError('Kmod-Metadaten passen nicht zum Bundle')
     if not isinstance(personality.get('LBEnableMMIORead'), bool) or \
        not isinstance(personality.get('LBDebugLogging'), bool) or \
-       not isinstance(personality.get('LBEnableDMAPreparation', False), bool): raise InstallerError('Ungültige Diagnose-Einstellungen')
+       not isinstance(personality.get('LBEnableDMAPreparation', False), bool) or \
+       not isinstance(personality.get('LBEnableForceWakeProbe', False), bool): raise InstallerError('Ungültige Diagnose-Einstellungen')
     return {'source': source, 'hashes': hashes, 'inspection': inspection, 'info': info}
 
 def target_state(efi):
@@ -135,7 +136,11 @@ def plan(efi, source, enable=False):
     else: entries.append(entry)
     after = plistlib.dumps(state['data'], sort_keys=False)
     public = {'operation': 'plan_only', 'bundle': BUNDLE, 'enabled_after_next_boot': bool(enable),
-              'mmio_enabled': bundle['info']['IOKitPersonalities']['LunarBridgeArc130VSamsungDiagnostic']['LBEnableMMIORead'],
+              'mmio_enabled': bundle['info']['IOKitPersonalities']['LunarBridgeArc130VSamsungDiagnostic']['LBEnableMMIORead'] or
+                  bundle['info']['IOKitPersonalities']['LunarBridgeArc130VSamsungDiagnostic'].get('LBEnableForceWakeProbe', False),
+              'forcewake_probe_enabled': bundle['info']['IOKitPersonalities']['LunarBridgeArc130VSamsungDiagnostic'].get('LBEnableForceWakeProbe', False),
+              'lnl_read_flush_writes_enabled': bundle['info']['IOKitPersonalities']['LunarBridgeArc130VSamsungDiagnostic']['LBEnableMMIORead'] or
+                  bundle['info']['IOKitPersonalities']['LunarBridgeArc130VSamsungDiagnostic'].get('LBEnableForceWakeProbe', False),
               'dma_preparation_enabled': bundle['info']['IOKitPersonalities']['LunarBridgeArc130VSamsungDiagnostic'].get('LBEnableDMAPreparation', False),
               'config_before_sha256': digest(state['before']), 'config_after_sha256': digest(after),
               'bundle_hashes': bundle['hashes'], 'opencore_sha256_unchanged': state['opencore_sha256'],

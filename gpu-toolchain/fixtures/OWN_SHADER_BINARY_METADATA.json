@@ -1,0 +1,326 @@
+{
+  "format": "ELF64 little-endian Intel GPU",
+  "elf_type": 1,
+  "machine": 205,
+  "machine_name": "EM_INTELGT",
+  "header_flags": 0,
+  "section_count": 10,
+  "sections": [
+    {
+      "index": 0,
+      "type": 0,
+      "flags": 0,
+      "address": 0,
+      "offset": 64,
+      "bytes": 0,
+      "link": 0,
+      "info": 0,
+      "alignment": 0,
+      "entry_size": 0,
+      "name": "",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "index": 1,
+      "type": 1,
+      "flags": 6,
+      "address": 0,
+      "offset": 64,
+      "bytes": 896,
+      "link": 0,
+      "info": 0,
+      "alignment": 0,
+      "entry_size": 0,
+      "name": ".text.lunarbridge_xe2_probe",
+      "sha256": "52168f1f1ee471ccc41d02256f225a55ca866bf08d599b2b2344fca7d43f1930"
+    },
+    {
+      "index": 2,
+      "type": 2,
+      "flags": 0,
+      "address": 0,
+      "offset": 960,
+      "bytes": 96,
+      "link": 9,
+      "info": 3,
+      "alignment": 0,
+      "entry_size": 24,
+      "name": ".symtab",
+      "sha256": "ec3f1bc2dc70e31aa50f889f32acfd9d27482d1f5f9633e055ddd0b080501ca4"
+    },
+    {
+      "index": 3,
+      "type": 4278190089,
+      "flags": 0,
+      "address": 0,
+      "offset": 1056,
+      "bytes": 1464,
+      "link": 0,
+      "info": 0,
+      "alignment": 0,
+      "entry_size": 0,
+      "name": ".spv",
+      "sha256": "43d8cf32d53a48254bbc42389e6fc49e8d6f85363c4c14ec2aa5c53dad4781da"
+    },
+    {
+      "index": 4,
+      "type": 4278190100,
+      "flags": 0,
+      "address": 0,
+      "offset": 2520,
+      "bytes": 13,
+      "link": 0,
+      "info": 0,
+      "alignment": 0,
+      "entry_size": 0,
+      "name": ".misc.buildOptions",
+      "sha256": "b20acb39d408b49e1247270cb418dddad7c96102ce757cc9dd4da131ce063bb3"
+    },
+    {
+      "index": 5,
+      "type": 7,
+      "flags": 0,
+      "address": 0,
+      "offset": 2536,
+      "bytes": 3,
+      "link": 0,
+      "info": 0,
+      "alignment": 0,
+      "entry_size": 0,
+      "name": ".note.intelgt.metrics",
+      "sha256": "709e80c88487a2411e1ee4dfb9f22a861492d20c4765150c0c794abd70f8147c"
+    },
+    {
+      "index": 6,
+      "type": 9,
+      "flags": 0,
+      "address": 0,
+      "offset": 2608,
+      "bytes": 32,
+      "link": 2,
+      "info": 1,
+      "alignment": 0,
+      "entry_size": 16,
+      "name": ".rel.text.lunarbridge_xe2_probe",
+      "sha256": "1e0901df04f721feb450423d70836de8b24b445c58268c542d69a1607dc91a03"
+    },
+    {
+      "index": 7,
+      "type": 4278190097,
+      "flags": 0,
+      "address": 0,
+      "offset": 2640,
+      "bytes": 2047,
+      "link": 0,
+      "info": 0,
+      "alignment": 0,
+      "entry_size": 0,
+      "name": ".ze_info",
+      "sha256": "0e1523f4ef161272599f09ae13e9c9f41e57ce9b6a0c99a49005665a58a002b7"
+    },
+    {
+      "index": 8,
+      "type": 7,
+      "flags": 0,
+      "address": 0,
+      "offset": 4688,
+      "bytes": 172,
+      "link": 0,
+      "info": 0,
+      "alignment": 0,
+      "entry_size": 0,
+      "name": ".note.intelgt.compat",
+      "sha256": "35398a44a1202951d84f04074f79514ec34d94d795002edd1df213611350686b"
+    },
+    {
+      "index": 9,
+      "type": 3,
+      "flags": 0,
+      "address": 0,
+      "offset": 4864,
+      "bytes": 223,
+      "link": 0,
+      "info": 0,
+      "alignment": 0,
+      "entry_size": 0,
+      "name": ".strtab",
+      "sha256": "cd2ed3efe019ebfa3cb6c2137a8813144ac9f12d16c1dcbf85a6c5d4a378bb28"
+    }
+  ],
+  "classification": "zebin_sections_in_intelgt_elf",
+  "raw_isa": {
+    "section": ".text.lunarbridge_xe2_probe",
+    "bytes": 896,
+    "sha256": "52168f1f1ee471ccc41d02256f225a55ca866bf08d599b2b2344fca7d43f1930",
+    "human_disassembly_available": false
+  },
+  "ze_info_utf8": "---\nversion:         '1.73'\nkernels:\n  - name:            lunarbridge_xe2_probe\n    user_attributes:\n      intel_reqd_workgroup_walk_order: [ 0, 1, 2 ]\n    execution_env:\n      disable_mid_thread_preemption: true\n      grf_count:       128\n      has_4gb_buffers: true\n      has_no_stateless_write: true\n      inline_data_payload_size: 32\n      offset_to_skip_per_thread_data_load: 128\n      simd_size:       32\n      subgroup_independent_forward_progress: true\n      eu_thread_count: 8\n    payload_arguments:\n      - arg_type:        global_id_offset\n        offset:          0\n        size:            12\n      - arg_type:        enqueued_local_size\n        offset:          12\n        size:            12\n      - arg_type:        arg_bypointer\n        offset:          24\n        size:            8\n        arg_index:       0\n        addrmode:        stateless\n        addrspace:       global\n        access_type:     readonly\n      - arg_type:        arg_bypointer\n        offset:          32\n        size:            8\n        arg_index:       1\n        addrmode:        stateless\n        addrspace:       global\n        access_type:     readwrite\n      - arg_type:        arg_byvalue\n        offset:          40\n        size:            4\n        arg_index:       2\n    per_thread_payload_arguments:\n      - arg_type:        local_id\n        offset:          0\n        size:            64\nkernels_misc_info:\n  - name:            lunarbridge_xe2_probe\n    args_info:\n      - index:           0\n        name:            input\n        address_qualifier: __global\n        access_qualifier: NONE\n        type_name:       'uint*;8'\n        type_qualifiers: const\n      - index:           1\n        name:            output\n        address_qualifier: __global\n        access_qualifier: NONE\n        type_name:       'uint*;8'\n        type_qualifiers: NONE\n      - index:           2\n        name:            count\n        address_qualifier: __private\n        access_qualifier: NONE\n        type_name:       'uint;4'\n        type_qualifiers: NONE\n...\n",
+  "intelgt_notes": [
+    {
+      "owner": "IntelGT",
+      "type": 1,
+      "bytes": 4,
+      "descriptor_hex": "fb040000",
+      "uint32_value": 1275,
+      "intelgt_kind": "product_family"
+    },
+    {
+      "owner": "IntelGT",
+      "type": 2,
+      "bytes": 4,
+      "descriptor_hex": "090c0000",
+      "uint32_value": 3081,
+      "intelgt_kind": "gfx_core"
+    },
+    {
+      "owner": "IntelGT",
+      "type": 3,
+      "bytes": 4,
+      "descriptor_hex": "00042400",
+      "uint32_value": 2360320,
+      "intelgt_kind": "target_metadata"
+    },
+    {
+      "owner": "IntelGT",
+      "type": 4,
+      "bytes": 5,
+      "descriptor_hex": "312e373300",
+      "intelgt_kind": "zebin_version"
+    },
+    {
+      "owner": "IntelGT",
+      "type": 6,
+      "bytes": 4,
+      "descriptor_hex": "04000105",
+      "uint32_value": 83951620,
+      "intelgt_kind": "product_config"
+    },
+    {
+      "owner": "IntelGT",
+      "type": 7,
+      "bytes": 4,
+      "descriptor_hex": "0a000000",
+      "uint32_value": 10,
+      "intelgt_kind": "indirect_access_detection_version"
+    },
+    {
+      "owner": "IntelGT",
+      "type": 8,
+      "bytes": 4,
+      "descriptor_hex": "01000000",
+      "uint32_value": 1,
+      "intelgt_kind": "indirect_access_buffer_major_version"
+    }
+  ],
+  "symbols": [
+    {
+      "index": 0,
+      "name": "",
+      "binding": 0,
+      "type": 0,
+      "visibility": 0,
+      "section_index": 0,
+      "value": 0,
+      "bytes": 0,
+      "symbol_table": ".symtab"
+    },
+    {
+      "index": 1,
+      "name": "_entry",
+      "binding": 0,
+      "type": 0,
+      "visibility": 0,
+      "section_index": 1,
+      "value": 176,
+      "bytes": 0,
+      "symbol_table": ".symtab"
+    },
+    {
+      "index": 2,
+      "name": "lunarbridge_xe2_probe",
+      "binding": 0,
+      "type": 2,
+      "visibility": 0,
+      "section_index": 1,
+      "value": 0,
+      "bytes": 768,
+      "symbol_table": ".symtab"
+    },
+    {
+      "index": 3,
+      "name": "__INTEL_PATCH_CROSS_THREAD_OFFSET_OFF_R0",
+      "binding": 1,
+      "type": 0,
+      "visibility": 0,
+      "section_index": 0,
+      "value": 0,
+      "bytes": 0,
+      "symbol_table": ".symtab"
+    }
+  ],
+  "relocations": [
+    {
+      "table": ".rel.text.lunarbridge_xe2_probe",
+      "target_section": ".text.lunarbridge_xe2_probe",
+      "offset": 76,
+      "type": 2,
+      "type_name": "R_ZE_SYM_ADDR_32",
+      "symbol_index": 3,
+      "symbol_name": "__INTEL_PATCH_CROSS_THREAD_OFFSET_OFF_R0",
+      "patch_bytes": 4,
+      "implicit_addend_raw_hex": "00000000"
+    },
+    {
+      "table": ".rel.text.lunarbridge_xe2_probe",
+      "target_section": ".text.lunarbridge_xe2_probe",
+      "offset": 156,
+      "type": 2,
+      "type_name": "R_ZE_SYM_ADDR_32",
+      "symbol_index": 3,
+      "symbol_name": "__INTEL_PATCH_CROSS_THREAD_OFFSET_OFF_R0",
+      "patch_bytes": 4,
+      "implicit_addend_raw_hex": "00000000"
+    }
+  ],
+  "relocations_applied_by_inspector": false,
+  "other_note_sections_are_opaque": [
+    ".note.intelgt.metrics"
+  ],
+  "native_macos_execution_demonstrated": false,
+  "binary_executed_by_inspector": false,
+  "exports": [
+    {
+      "filename": "own-xe2-kernel-isa.bin",
+      "source_section": ".text.lunarbridge_xe2_probe",
+      "bytes": 896,
+      "sha256": "52168f1f1ee471ccc41d02256f225a55ca866bf08d599b2b2344fca7d43f1930"
+    },
+    {
+      "filename": "own-xe2-ze-info.yaml",
+      "source_section": ".ze_info",
+      "bytes": 2047,
+      "sha256": "0e1523f4ef161272599f09ae13e9c9f41e57ce9b6a0c99a49005665a58a002b7"
+    },
+    {
+      "filename": "own-xe2-intelgt-note.bin",
+      "source_section": ".note.intelgt.compat",
+      "bytes": 172,
+      "sha256": "35398a44a1202951d84f04074f79514ec34d94d795002edd1df213611350686b"
+    },
+    {
+      "filename": "own-xe2-kernel.spv",
+      "source_section": ".spv",
+      "bytes": 1464,
+      "sha256": "43d8cf32d53a48254bbc42389e6fc49e8d6f85363c4c14ec2aa5c53dad4781da"
+    },
+    {
+      "filename": "own-xe2-kernel-relocations.bin",
+      "source_section": ".rel.text.lunarbridge_xe2_probe",
+      "bytes": 32,
+      "sha256": "1e0901df04f721feb450423d70836de8b24b445c58268c542d69a1607dc91a03"
+    }
+  ],
+  "source_program_bytes": 5728,
+  "source_program_sha256": "1e0127eb0886d686e0c002c75b233fb44b936d193b82d09e34097146523e18c1",
+  "inspector_source_sha256": "f28c04add0fdc472b5b6ff83d45a5b23c080b343c690caafc1279f7efc8ae1ed"
+}

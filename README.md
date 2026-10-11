@@ -11,9 +11,14 @@ The project has a built native diagnostic kext, CPU-buffer service and host
 validation tools. **Arc 130V GPU execution, Metal acceleration and a qualified bootable
 EFI have not been implemented or demonstrated.**
 
-Latest [validation](docs/VALIDATION.md): **131 Windows host tests passed**, eleven
-successful compiler invocations and ten macOS objects. The native macOS workflow
+Latest [validation](docs/VALIDATION.md): **250 Windows core host tests passed**, 13
+successful compiler invocations and twelve macOS objects. The native macOS workflow
 has linked a real diagnostic Kext; **zero target macOS hardware tests have passed**.
+
+The [native Main-GT forcewake adapter](docs/GPU_BRINGUP.md) now implements the
+Lunar Lake read-flush workaround and bounded request/cleanup. An own
+[Xe2 shader](gpu-toolchain/README.md) actually ran on this Samsung's Arc 130V
+under Windows with 64/64 correct results; native macOS dispatch and Metal remain absent.
 
 ## Current work
 
@@ -40,6 +45,7 @@ of executing Xe2 instructions.
 ```text
 native/             IOKit diagnostic service, CPU user client and Kmod metadata
 gpu-prototype/      Portable metadata, preflight/trace code and public Metal test
+gpu-toolchain/      Own Arc 130V shader, Windows proof and bounded Zebin inspector
 installer/          OpenCore plan/install/rollback
 tests/fixtures/     Public hardware ID fixture; no machine dump
 tests/reference-manifest.json   Pinned external inputs and SHA256
@@ -63,9 +69,12 @@ python tests/test_dma_adapter.py
 python tests/test_dma_quarantine.py
 python tests/test_trace_tools.py
 python tests/test_installer.py
+python tests/test_forcewake.py
+python tests/test_forcewake_adapter.py
+python -m unittest discover -s gpu-toolchain/tests -p test_xe2_shader.py
 ```
 
-This builds a Windows DLL and **ten macOS object files**. It does not link,
+This builds a Windows DLL and **twelve macOS object files**. It does not link,
 sign, install or load a macOS GPU driver. Source checks and synthetic fixtures
 cannot establish physical GPU compatibility.
 
@@ -102,8 +111,10 @@ Arc 130V, Samsung boot and target display acceleration remain unverified.
 
 See [GPU architecture](docs/GPU_DESIGN.md) and
 [hardware support](docs/HARDWARE_SUPPORT.md). macOS Tahoe on the external SSD,
-Windows on the internal disk and firmware UEFI Secure Boot remain acceptance
-requirements. This repository does not substitute a VM for native macOS.
+Windows on the internal disk remain acceptance requirements. Firmware UEFI Secure
+Boot is explicitly deferred for the first native attempt via the separate
+[temporary OpenCore profile](https://github.com/IT-EXPRESS-Bayern/LunarBridge-OpenCore/blob/main/docs/TEST_PROFILES.md).
+The strict profile is retained for later qualification. This repository does not substitute a VM for native macOS.
 
 CPU-side GPU-VA, PTE, CSS and CT handling are documented in
 [GPU foundations](docs/GPU_FOUNDATION.md). The native DMA adapter uses the

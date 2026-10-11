@@ -8,10 +8,14 @@
 #include "../gpu-prototype/lb_diagnostics.h"
 #include "LBDMAContext.h"
 #include "LBDMAQuarantine.h"
+#include "LBForceWakeAdapter.h"
 
 class LunarBridgePCI : public IOService {
     OSDeclareDefaultStructors(LunarBridgePCI)
     IOLock *_lock = nullptr;
+    IOLock *_hardwareLock = nullptr;
+    LBForceWakeAdapter _forcewake;
+    bool _forcewakeRetained = false;
     LBDeviceSnapshot _snapshot{};
     LBTraceRing _trace{};
     LBDMAQuarantine _dmaSlots;
@@ -28,6 +32,8 @@ public:
                uint32_t context = 0, uint64_t arg0 = 0, uint64_t arg1 = 0);
     bool snapshot(LBDeviceSnapshot *out);
     bool traceBatch(uint64_t since, LBTraceBatchResult *out);
+    bool forcewakeInfo(LBForceWakeInfo *out);
+    void retryForcewake();
     bool admitClient(uint32_t *id, uint32_t *slot);
     void releaseClient(uint32_t id, uint32_t slot);
     bool quarantineClient(uint32_t id, uint32_t slot, LBDMAContext *context,

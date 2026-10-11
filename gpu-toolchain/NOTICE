@@ -1,0 +1,52 @@
+LunarBridge own Xe2 shader reference
+
+Own OpenCL kernel, Python inspection/qualification code, tests, and artifacts
+generated exclusively from the own kernel source: GPL-3.0-only.
+See ../LICENSE for the full project GPL license.
+
+No proprietary driver DLL, external application executable, or foreign shader
+program is included. The OpenCL-generated program contains the own compiled
+kernel and compiler-generated startup/payload handling for that own program.
+
+Intel primary format references used to interpret numeric constants, section
+names, target notes and relocation symbols:
+
+intel/compute-runtime commit 7323fcafa8979708e73f1865c61cb9790b367948
+  shared/source/device_binary_format/zebin/zebin_elf.h
+  shared/source/device_binary_format/zebin/zebin_decoder.cpp
+  shared/source/compiler_interface/linker.h
+  shared/source/compiler_interface/linker.cpp
+Copyright (C) 2019-2026 Intel Corporation. SPDX-License-Identifier: MIT.
+
+intel/intel-graphics-compiler commit 6f81427a0be7c7c017d5be3f049dabec393cf788
+  visa/iga/IGALibrary/Models/Models.cpp
+Copyright (C) 2017-2023 Intel Corporation. SPDX-License-Identifier: MIT.
+
+Primary OpenCL API definitions:
+https://registry.khronos.org/OpenCL/specs/unified/refpages/man/html/clGetProgramInfo.html
+https://registry.khronos.org/OpenCL/specs/unified/refpages/man/html/clGetDeviceInfo.html
+https://registry.khronos.org/OpenCL/specs/unified/refpages/man/html/clBuildProgram.html
+
+The inspector was independently written. Full upstream source implementations
+are not copied into this module. This notice preserves upstream attribution
+for the referenced format constants and definitions. For those MIT references:
+
+MIT License
+
+Copyright (C) 2021 Intel Corporation
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

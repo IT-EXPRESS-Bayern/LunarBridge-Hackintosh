@@ -29,6 +29,13 @@ class DMAInfo(c.Structure):
     _fields_ = [('bytes', c.c_uint64)] + [(n, c.c_uint32) for n in (
         'abi', 'segments', 'pteEntries', 'deviceMapperUsed', 'dmaPrepared', 'gpuBound')]
 
+class ForceWakeInfo(c.Structure):
+    _fields_ = [(n, c.c_uint32) for n in (
+        'abi', 'structBytes', 'enabled', 'attempted', 'preflight', 'primaryStatus',
+        'cleanupStatus', 'completed', 'reads', 'requestWrites', 'flushWrites', 'lastAck',
+        'polls', 'resourcesRetained', 'gpuExecuted', 'metalVerified', 'graphicsIP',
+        'mediaIP', 'leaseReferences', 'reserved')]
+
 EVENTS = {
     1: 'driver_start', 2: 'pci_identified', 3: 'mmio_read_blocked', 4: 'bar_mapping_failed',
     5: 'gmd_registers_read', 6: 'gmd_values_invalid', 7: 'diagnostics_ready', 8: 'driver_stop',
@@ -36,7 +43,14 @@ EVENTS = {
     23: 'cpu_buffer_allocated', 24: 'cpu_buffer_failed', 25: 'cpu_mapping_requested',
     26: 'method_rejected', 27: 'gpu_submit_unsupported', 28: 'buffer_reference_released',
     29: 'client_rejected', 40: 'dma_prepared', 41: 'dma_preparation_failed',
-    42: 'dma_reference_released', 43: 'dma_release_failed'
+    42: 'dma_reference_released', 43: 'dma_release_failed',
+    50: 'forcewake_handshake_completed', 51: 'forcewake_handshake_failed',
+    52: 'forcewake_cleanup_completed', 53: 'forcewake_cleanup_failed'
+}
+WAKE_STATUS = {
+    0: 'success', 1: 'invalid_callbacks', 2: 'invalid_state', 3: 'existing_request_or_pending_cleanup',
+    4: 'register_access_failed', 5: 'invalid_all_ones_mmio', 6: 'ack_timeout',
+    7: 'clock_not_monotonic', 8: 'not_attempted', 9: 'unexpected_graphics_or_media_ip'
 }
 POLICIES = {
     0: 'allowed_by_preflight', 1: 'explicit_opt_in_missing', 2: 'unsupported_pci',
@@ -64,7 +78,30 @@ def decode_snapshot(data):
     result['claims_metal'] = bool(s.capabilities & 0x20000)
     result['metal_execution_verified'] = False
     result['dma_preparation_enabled'] = bool(s.flags & 32)
+    result['forcewake_probe_enabled'] = bool(s.flags & 64)
     return result
+
+def decode_forcewake_info(data):
+    if len(data) != c.sizeof(ForceWakeInfo): raise ValueError('Forcewake info length mismatch')
+    w = ForceWakeInfo.from_buffer_copy(data)
+    if w.abi != 1 or w.structBytes != 80 or w.reserved or w.gpuExecuted or w.metalVerified or \
+       any(getattr(w, n) not in (0, 1) for n in ('enabled', 'attempted', 'completed', 'resourcesRetained')) or \
+       w.primaryStatus not in WAKE_STATUS or w.cleanupStatus not in WAKE_STATUS or w.leaseReferences > 65535:
+        raise ValueError('Forcewake info ABI/flags mismatch')
+    if w.attempted and not w.enabled or w.leaseReferences and not w.resourcesRetained or \
+       w.completed != int(w.attempted and w.primaryStatus == 0 and w.cleanupStatus == 0) or \
+       w.completed and (w.resourcesRetained or w.leaseReferences or w.lastAck == 0xffffffff or w.lastAck & 1) or \
+       w.flushWrites < 4 * w.reads or w.polls > w.reads or \
+       not w.enabled and (w.requestWrites or w.attempted or w.resourcesRetained):
+        raise ValueError('Forcewake info state mismatch')
+    return {'enabled': bool(w.enabled), 'attempted': bool(w.attempted), 'completed': bool(w.completed),
+            'preflight': int(w.preflight), 'primary_status': WAKE_STATUS[w.primaryStatus],
+            'cleanup_status': WAKE_STATUS[w.cleanupStatus], 'reads': int(w.reads),
+            'request_writes': int(w.requestWrites), 'lnl_read_flush_writes': int(w.flushWrites),
+            'last_ack': int(w.lastAck), 'polls': int(w.polls),
+            'resources_retained': bool(w.resourcesRetained), 'lease_references': int(w.leaseReferences),
+            'graphics_ip': int(w.graphicsIP), 'media_ip': int(w.mediaIP),
+            'gpu_execution_tested': False, 'metal_execution_verified': False}
 
 def decode_dma_info(data):
     if len(data) != c.sizeof(DMAInfo): raise ValueError('DMA info length mismatch')

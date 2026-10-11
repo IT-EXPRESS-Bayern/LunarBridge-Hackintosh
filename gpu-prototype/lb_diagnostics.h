@@ -2,6 +2,7 @@
 // Copyright 2026 IT-EXPRESS Bayern and LunarBridge contributors.
 #pragma once
 #include "lnl_platform.h"
+#include "lb_forcewake.h"
 
 constexpr uint32_t LB_ABI_VERSION = 1;
 constexpr uint32_t LB_TRACE_CAPACITY = 128;
@@ -17,7 +18,9 @@ enum LBEvent : uint32_t {
     LBBufferAllocated = 23, LBBufferFailed = 24, LBBufferMappingRequested = 25,
     LBMethodRejected = 26, LBSubmitUnsupported = 27, LBBufferReleased = 28,
     LBClientRejected = 29, LBDmaPrepared = 40, LBDmaFailed = 41,
-    LBDmaReleased = 42, LBDmaReleaseFailed = 43
+    LBDmaReleased = 42, LBDmaReleaseFailed = 43,
+    LBForceWakeFinished = 50, LBForceWakeFailed = 51,
+    LBForceWakeCleanup = 52, LBForceWakeCleanupFailed = 53
 };
 
 enum LBMMIOReason : uint32_t {
@@ -67,7 +70,8 @@ struct LBTraceRing {
 
 enum LBSelector : uint32_t {
     LBGetSnapshot = 0, LBAllocateBuffer = 1, LBGetBufferInfo = 2,
-    LBReadTrace = 3, LBSubmit = 4, LBGetDMAInfo = 5, LBSelectorCount = 6
+    LBReadTrace = 3, LBSubmit = 4, LBGetDMAInfo = 5,
+    LBGetForceWakeInfo = 6, LBSelectorCount = 7
 };
 
 struct LBBufferInfo {

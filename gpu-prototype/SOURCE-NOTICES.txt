@@ -26,6 +26,16 @@ They do not allocate/bind native DMA pages, program GPU tables, authenticate or
 upload firmware, run a scheduler, drive a display, compile shaders or provide
 macOS Metal. Actual GMD_ID has NOT been read.
 
+The additional Main-GT forcewake implementation uses hardware definitions and
+protocol references from MIT-licensed xe_force_wake.c/.h (Copyright 2022 Intel)
+and xe_mmio.c (Copyright 2021-2023 Intel). Its native IOKit adapter is own code.
+The small xe_device_wa_oob.rules reference records the LNL platform association;
+it has no individual SPDX header and is not republished as project source.
+The adapter performs the four root dummy writes required before each LNL MMIO
+read and, only with explicit forcewake opt-in, paired request/release writes.
+Hardware MMIO and wake acknowledgements remain untested on native macOS.
+No GGTT/PAT/firmware/engine programming or Metal implementation is added.
+
 LunarLakePCIProbe.cpp uses separately licensed MacKernelSDK IOKit headers.
 The SDK is an external build dependency. Its headers retain their own licenses.
 Compiled object files are not executable or installable kexts.
