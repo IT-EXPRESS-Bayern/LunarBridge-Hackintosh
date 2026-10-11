@@ -204,5 +204,19 @@
   "metal_hardware_tests": 0,
   "firmware_secure_boot_validated": false,
   "dual_boot_or_external_ssd_install_validated": false,
-  "interpretation": "Executed CPU metadata, Xe2 memory planning, GuC firmware/transport codecs, preflight and trace code; simulated IOKit and isolated installer tests. No proof of target-device GPU execution, Metal or boot support."
+  "interpretation": "Executed CPU metadata, Xe2 memory planning, GuC firmware/transport codecs, preflight and trace code; simulated IOKit and isolated installer tests. No proof of target-device GPU execution, Metal or boot support.",
+  "separate_metal_acceptance_workflow": {
+    "source_commit": "c4872003430ff804977ac76356f7f0537677a12b",
+    "workflow_run_id": 38114157507,
+    "workflow_url": "https://github.com/IT-EXPRESS-Bayern/LunarBridge-Hackintosh/actions/runs/38114157507",
+    "conclusion": "success",
+    "evidence_file": "METAL_VALIDATION.json",
+    "additional_windows_harness_tests_passed": 18,
+    "ci_host_metal_compute_passed": true,
+    "results_checked": 65536,
+    "mismatches": 0,
+    "native_target_hardware_tests": 0,
+    "arc130v_backend_verified": false,
+    "counted_separately_from_core_host_tests": true
+  }
 }

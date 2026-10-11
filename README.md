@@ -8,7 +8,7 @@
 LunarBridge investigates a native macOS path for Lunar Lake laptops, initially
 Intel Arc 130V (`8086:64A0`) in the Samsung Galaxy Book5 Pro.
 The project has a built native diagnostic kext, CPU-buffer service and host
-validation tools. **GPU execution, Metal acceleration and a qualified bootable
+validation tools. **Arc 130V GPU execution, Metal acceleration and a qualified bootable
 EFI have not been implemented or demonstrated.**
 
 Latest [validation](docs/VALIDATION.md): **131 Windows host tests passed**, eleven
@@ -39,7 +39,7 @@ of executing Xe2 instructions.
 
 ```text
 native/             IOKit diagnostic service, CPU user client and Kmod metadata
-gpu-prototype/      Portable metadata, preflight/trace code and future Metal test
+gpu-prototype/      Portable metadata, preflight/trace code and public Metal test
 installer/          OpenCore plan/install/rollback
 tests/fixtures/     Public hardware ID fixture; no machine dump
 tests/reference-manifest.json   Pinned external inputs and SHA256
@@ -91,9 +91,12 @@ The installer preserves Secure Boot settings and refuses policy bypass or
 Vault-protected modifications. Firmware trust and actual boot behavior remain
 separate target-device checks.
 
-`gpu-prototype/Metal-Minimaltest.mm` is a future native macOS acceptance test:
-it requires an actual Metal provider and validates command completion and
-65,536 computed values. It has not been compiled or run on this project.
+`gpu-prototype/Metal-Minimaltest.mm` is a native macOS acceptance test requiring
+an actual Metal provider. The [separate Intel-macOS CI run](https://github.com/IT-EXPRESS-Bayern/LunarBridge-Hackintosh/actions/runs/38114157507)
+built it and verified completion and all 65,536 shader outputs without mismatch
+or CPU fallback. Its Windows harness passed 18 additional boundary tests.
+[The source-bound evidence](docs/METAL_VALIDATION.json) belongs to that CI host;
+Arc 130V, Samsung boot and target display acceleration remain unverified.
 
 ## Native design
 

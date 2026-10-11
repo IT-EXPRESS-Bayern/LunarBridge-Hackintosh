@@ -62,9 +62,15 @@ Die Vorgaben bleiben: natives macOS Tahoe auf einer externen USB-C-SSD,
 Windows auf dem internen Laufwerk, Auswahl beim Start und unterstützter
 Firmware-UEFI-Secure-Boot. Eine VM ersetzt dieses Ziel nicht.
 Apples SecureBootModel bestätigt keinen aktivierten Firmware-Secure-Boot.
-Boot, Secure Boot, Metal-Ausführung, internes Display und Standby sind
+Boot, Secure Boot, Arc-130V-Metal-Ausführung, internes Display und Standby sind
 jeweils getrennt am echten Gerät nachzuweisen; bisher ist keiner dieser
 nativen Abnahmetests bestanden.
+
+Der eigene Metal-Funktionstest wurde inzwischen auf einem Intel-macOS-CI-Host
+gebaut und ausgeführt: 65.536 Shader-Ergebnisse ohne Abweichung, bestätigter
+Command-Abschluss und kein CPU-Ersatz. Weitere 18 Windows-Grenztests bestanden.
+Der [Nachweis](docs/METAL_VALIDATION.json) gilt für diesen separaten CI-Host;
+er bestätigt keine Arc-130V-Unterstützung oder Grafikbeschleunigung auf dem Samsung.
 
 ## Bauen und prüfen
 

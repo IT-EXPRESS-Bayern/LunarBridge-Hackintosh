@@ -29,11 +29,21 @@ All **131 graphics-repository Windows tests passed** without skips. The installe
 no runnable macOS/EFI code. Simulated IOKit calls are marked as simulated and
 cannot establish native device access. No real EFI or external SSD was changed.
 
-No native macOS hardware test has passed. No actual GPU register was read,
-no GPU operation was submitted by these host tests, and Metal acceleration
-has not been implemented. The future `Metal-Minimaltest.mm` has not been built
-or executed. Display, sleep/wake, firmware Secure Boot and the external-SSD
-dual-boot installation remain unvalidated.
+No native Samsung hardware test has passed. No actual GPU register was read
+by these Windows host tests, and the Arc 130V Metal driver remains unimplemented.
+Display, sleep/wake, firmware Secure Boot and the external-SSD dual-boot
+installation remain unvalidated.
+
+The separate [Metal workflow 38114157507](https://github.com/IT-EXPRESS-Bayern/LunarBridge-Hackintosh/actions/runs/38114157507)
+at source `c4872003430ff804977ac76356f7f0537677a12b` built the real x86_64
+`Metal-Minimaltest.mm` executable on Intel macOS 26.6.1 and executed its shader.
+All 65,536 outputs matched, with completion handler and completed command status
+observed and no CPU fallback. Its additional Windows job passed 18 harness
+boundary tests. These are counted separately from the 131 core tests above.
+Both downloaded report archives passed hash and CRC checks; all five distinct
+source files were compared with that exact Git commit. The binary itself is not
+uploaded. [METAL_VALIDATION.json](METAL_VALIDATION.json) records the evidence and
+keeps Samsung identity, Arc 130V backend, driver support and display proof false.
 
 The final diagnostic build uses project-owned module entry glue and links no
 static SDK library. It was built with Apple clang on an Intel macOS 26 runner

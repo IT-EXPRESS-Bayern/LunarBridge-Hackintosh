@@ -1,0 +1,205 @@
+{
+  "schema": 1,
+  "source_commit": "c4872003430ff804977ac76356f7f0537677a12b",
+  "workflow_run_id": 38114157507,
+  "workflow_url": "https://github.com/IT-EXPRESS-Bayern/LunarBridge-Hackintosh/actions/runs/38114157507",
+  "status": "completed",
+  "conclusion": "success",
+  "independent_source_files_verified": 5,
+  "exact_git_source_hashes_verified": true,
+  "artifacts_independently_hashed_and_crc_checked": true,
+  "mac_job_id": 114395603285,
+  "windows_job_id": 114395603155,
+  "ci_host_metal_compute_passed": true,
+  "results_checked": 65536,
+  "mismatches": 0,
+  "completion_handler_and_completed_status_verified": true,
+  "cpu_fallback_used": false,
+  "native_target_hardware_tests": 0,
+  "arc130v_backend_verified": false,
+  "samsung_boot_verified": false,
+  "native_arc_driver_implemented": false,
+  "native_display_acceleration_verified": false,
+  "additional_windows_harness_tests_passed": 18,
+  "core_module_tests_counted_separately": true,
+  "mac_report": {
+    "schema": 1,
+    "context": "ci-host",
+    "state": "passed",
+    "code": "COMPUTE_VERIFIED",
+    "build_verified": true,
+    "gpu_execution_verified": true,
+    "cpu_fallback_used": false,
+    "target_hardware_identity_verified": false,
+    "arc130v_backend_verified": false,
+    "display_acceleration_verified": false,
+    "native_driver_support_verified": false,
+    "macos_version": "26.6.1",
+    "source_files_sha256": {
+      "gpu-prototype/Metal-Minimaltest.mm": "e4f95a6a724fbaa32f19176169e80e64f953132a396e278245b1f63218621dfb",
+      "tools/metal_smoke_ci.py": "d7bb476b451c2a3546e16dbbe42d0c849ec7d2f7f970d5ff5bec1cdf6b10b19e",
+      ".github/workflows/metal-smoke.yml": "526243b88354287a16445241f40500fe0a61bf040092690d40587c5640af69a7",
+      "docs/METAL_TEST.md": "1ac03d0353968ae396d1ddcf318d7943577f1bdc03e39db510548378a1d35819"
+    },
+    "source_commit": "c4872003430ff804977ac76356f7f0537677a12b",
+    "compiler_version": "21.0.0",
+    "sdk_version": "26.5",
+    "binary_sha256": "b089811f20db6cdf31e0ae8220556a52523aaf14e3f971fd690d5a5c3396b54a",
+    "executable": {
+      "architecture": "x86_64",
+      "filetype": "MH_EXECUTE",
+      "text_and_entry_checked": true
+    },
+    "probe": {
+      "context": "ci-host",
+      "results_checked": 65536,
+      "value_count": 65536,
+      "code": "COMPUTE_VERIFIED",
+      "command_submitted": true,
+      "display_acceleration_verified": false,
+      "shader_compiled": true,
+      "mismatches": 0,
+      "buffers_created": true,
+      "completion_handler_observed": true,
+      "state": "passed",
+      "native_driver_support_verified": false,
+      "target_hardware_identity_verified": false,
+      "schema": 1,
+      "cpu_fallback_used": false,
+      "architecture": "x86_64",
+      "arc130v_backend_verified": false,
+      "command_completed": true,
+      "gpu_execution_verified": true,
+      "gpu_provider_observed": true
+    },
+    "frameworks": [
+      "Foundation",
+      "Metal"
+    ],
+    "timeout_seconds": {
+      "tool_query": 10,
+      "compile": 55,
+      "probe": 45
+    }
+  },
+  "windows_report": {
+    "schema": 1,
+    "test_type": "synthetic protocol, failure and real Windows hostguard boundaries",
+    "host_platform": "win32",
+    "tests_run": 18,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "successful": true,
+    "native_builds": 0,
+    "native_gpu_execution_tests": 0,
+    "gpu_execution_verified": false,
+    "arc130v_backend_verified": false,
+    "target_hardware_identity_verified": false,
+    "actual_windows_cli_checked": true,
+    "source_commit": "c4872003430ff804977ac76356f7f0537677a12b",
+    "source_files_sha256": {
+      "gpu-prototype/Metal-Minimaltest.mm": "e4f95a6a724fbaa32f19176169e80e64f953132a396e278245b1f63218621dfb",
+      "tools/metal_smoke_ci.py": "d7bb476b451c2a3546e16dbbe42d0c849ec7d2f7f970d5ff5bec1cdf6b10b19e",
+      ".github/workflows/metal-smoke.yml": "526243b88354287a16445241f40500fe0a61bf040092690d40587c5640af69a7",
+      "docs/METAL_TEST.md": "1ac03d0353968ae396d1ddcf318d7943577f1bdc03e39db510548378a1d35819",
+      "tests/test_metal_smoke.py": "6bdfc1dfc48630a6063975ba8e3979e8ecb4a2fb524a618618ec41da0365bd69"
+    },
+    "test_cases": [
+      {
+        "name": "test_actual_windows_cli_has_no_filesystem_writes",
+        "state": "passed"
+      },
+      {
+        "name": "test_atomic_report_failure_preserves_previous_report_and_cleans_temporary",
+        "state": "passed"
+      },
+      {
+        "name": "test_complete_compute_message_is_accepted_without_target_proof",
+        "state": "passed"
+      },
+      {
+        "name": "test_cpu_fallback_and_target_claims_are_rejected",
+        "state": "passed"
+      },
+      {
+        "name": "test_execute_entry_must_be_inside_real_code",
+        "state": "passed"
+      },
+      {
+        "name": "test_false_gpu_success_and_incomplete_counts_are_rejected",
+        "state": "passed"
+      },
+      {
+        "name": "test_imported_windows_guard_precedes_paths_and_argument_parsing",
+        "state": "passed"
+      },
+      {
+        "name": "test_malformed_utf8_duplicate_keys_and_oversized_json_are_rejected",
+        "state": "passed"
+      },
+      {
+        "name": "test_no_provider_is_unverified_not_a_compute_success",
+        "state": "passed"
+      },
+      {
+        "name": "test_non_intel_macos_process_is_refused_without_writes",
+        "state": "passed"
+      },
+      {
+        "name": "test_oversized_or_truncated_macho_commands_are_rejected",
+        "state": "passed"
+      },
+      {
+        "name": "test_private_paths_do_not_reuse_or_follow_a_selected_symlink",
+        "state": "passed"
+      },
+      {
+        "name": "test_registry_paths_extra_fields_and_wrong_context_are_rejected",
+        "state": "passed"
+      },
+      {
+        "name": "test_report_selection_cannot_overwrite_repository_source_or_foreign_json",
+        "state": "passed"
+      },
+      {
+        "name": "test_shader_and_command_error_reports_remain_failures",
+        "state": "passed"
+      },
+      {
+        "name": "test_timeout_and_mismatch_require_no_gpu_success",
+        "state": "passed"
+      },
+      {
+        "name": "test_timeout_limit_is_enforced_before_process_or_spool_creation",
+        "state": "passed"
+      },
+      {
+        "name": "test_wrong_json_types_exit_codes_and_phase_order_are_rejected",
+        "state": "passed"
+      }
+    ]
+  },
+  "binary_independently_downloaded": false,
+  "binary_hash_origin": "Computed by checked CI source; only sanitized reports are uploaded.",
+  "artifacts": [
+    {
+      "id": 11693515056,
+      "file": "metal-ci.zip",
+      "bytes": 1041,
+      "sha256": "739e0aea6608679833e96a9b50b880a04988430cc3289c4124871b93f089c753"
+    },
+    {
+      "id": 11692353073,
+      "file": "windows-harness-ci.zip",
+      "bytes": 1326,
+      "sha256": "a70fcfc94b8ad3ac0870b0d9eb81487e106135fe08bdca595be6c075dcfa4367"
+    }
+  ],
+  "limits": [
+    "Metal execution belongs to the separate Intel CI host.",
+    "The selected provider is intentionally not identified by name or RegistryID.",
+    "No Samsung, Arc 130V, driver installation, firmware trust or display proof."
+  ],
+  "later_documentation_commits_are_separate": true
+}
