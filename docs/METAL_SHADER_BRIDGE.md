@@ -5,10 +5,14 @@ The separate Intel-macOS CI job compiles our own
 metal2vulkan commit `43c46ac8a24adf1a6e872b8a52c706ec9614fad0`, and translates
 AIR to Vulkan 1.2 Shader SPIR-V plus reflection. This is a compiler integration.
 Native Arc 130V execution, a system Metal provider, display acceleration and
-WindowServer integration remain unverified. Native CI execution is pending
-until the actual workflow artifact has been reviewed.
+WindowServer integration remain unverified. The first actual compiler run,
+[38127106743](https://github.com/IT-EXPRESS-Bayern/LunarBridge-Hackintosh/actions/runs/38127106743),
+returned `unverified / toolchain / STEP_TIMEOUT` before converter building or
+shader compilation. Its artifact hash and exact source were checked; the
+workflow's original green result did not establish compiler success. The
+workflow now fails when the compiler report remains unverified.
 
-The 35 Windows offline boundary tests passed locally with zero failures,
+The 39 Windows offline boundary tests passed locally with zero failures,
 errors or skips. They include the actual no-write Windows host guard;
 process-group cleanup uses controlled process doubles and an actual held-pipe
 CPU regression supervised by a separate 13-second deadline. These checks do
@@ -56,10 +60,14 @@ within five seconds, then joins each pipe reader for at most five seconds.
 An active reader owns its buffered stream; the caller never synchronously
 closes a stream whose read is still blocked. Failed kill/reap/drain returns
 an unverified cleanup error and cannot become compiler success.
-The Cargo build may take up to 300 seconds. In an expressly enabled,
-ephemeral GitHub CI environment, a missing Metal compiler permits only
-`xcodebuild -downloadComponent MetalToolchain`, also bounded to 300 seconds;
-that download has its own report fields. There are no Security Policy,
+Metal discovery and version checks each allow 60 seconds and record separate
+fixed stages with timeout and completion details. The Cargo build may take
+up to 300 seconds. In an expressly enabled, ephemeral GitHub CI environment,
+an unavailable compiler or cleanly terminated initial probe timeout permits
+one `xcodebuild -downloadComponent MetalToolchain` attempt, also bounded to
+300 seconds. Its trigger, completion and elapsed time are recorded. Cleanup
+errors and failed probes after this attempt remain terminal; target probes
+do not download components. There are no Security Policy,
 EFI, SIP, driver-installation or GPU-control operations. Missing prerequisites
 or failed phases return 2 and `unverified`; they cannot set shader or GPU success.
 

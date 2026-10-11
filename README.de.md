@@ -66,7 +66,7 @@ flowchart TD
 | Eigene CPU-Shader-Payload | **Fertig — CPU-Format** | 37 Payloadtests plus 37 historische Inspectorprüfungen; GPU-Pointer bleiben offen. [Payloadvertrag](gpu-toolchain/KERNEL_PAYLOAD.md) |
 | GGTT-Schreibplan | **Fertig — CPU-Planer** | 31 Tests / 132 echte C++-Aufrufe; Host-DLL und macOS-Objektbuild integriert, keine Hardwarebindung. [GGTT](docs/GGTT_BINDING.md) |
 | GuC-Schedulercodec | **Fertig — CPU-Protokoll** | 25 Prüfungen des tatsächlichen C++-Codecs; Register-/Mode-/Submit-/Deregister-Nachrichten, keine laufende Firmware oder Queue. [Schedulervertrag](docs/GUC_SCHEDULER.md) |
-| MSL → AIR → Shader-SPIR-V | **In Arbeit — Compilerqualifikation** | Fünf vorbereitete Dateien; geprüfte Reflection-v55-/Cleanup-Fixes, 35 Offlineprüfungen bestanden; noch kein echter Compiler-CI-Nachweis. [Compilerbrücke](docs/METAL_SHADER_BRIDGE.md) |
+| MSL → AIR → Shader-SPIR-V | **In Arbeit — Compilerqualifikation** | 39 Offlineprüfungen bestanden; erster echter Compilerlauf mit Timeout vor der Übersetzung. Der korrigierte Workflow fordert geprüfte Compilerausgabe. [Compilerbrücke](docs/METAL_SHADER_BRIDGE.md) |
 | Nativer Speicher + Ausführung | **Blockiert — Implementierung fehlt** | GPU-VA-Bindung, programmierter PAT2, globale GGTT-Ownership, GuC-Start und Queue-Submission fehlen. [Architektur](docs/GPU_DESIGN.md) |
 | Metal-Anbieter + Display | **Blockiert — Implementierung fehlt** | Kein LunarBridge-System-Metal-Anbieter, keine beschleunigte Ausgabe oder WindowServer-Anbindung. [Hardwareumfang](docs/HARDWARE_SUPPORT.md) |
 
@@ -99,10 +99,12 @@ python -m unittest discover -s gpu-toolchain/tests -p test_own_kernel_payload.py
 
 Damit entstehen die Windows-Test-DLL und macOS-Objektdateien; die Prüfungen
 laufen auf der CPU beziehungsweise offline. Unter Windows wird keine Kext
-gelinkt oder geladen. Bis zur Buildintegration braucht der GGTT-Test eine
-separate Hostbibliothek; siehe [GGTT-Anleitung](docs/GGTT_BINDING.md).
+gelinkt oder geladen. Die integrierte Hostbibliothek enthält auch den
+[GGTT-Planer](docs/GGTT_BINDING.md) und [GuC-Codec](docs/GUC_SCHEDULER.md).
 Der [Prüfstand](docs/VALIDATION.md) nennt die weiteren Tests mit ihren jeweiligen
-Grenzen.
+Grenzen. Die [Hardwarevarianten](docs/HARDWARE_VARIANTS.md) erklären, weshalb
+die gemeinsame Intel-Geräte-ID hilft und welche OEM-Display- und
+Laufzeitbedingungen zusätzlich zu prüfen sind.
 
 ## Die echte native Diagnose-Kext bauen
 

@@ -40,6 +40,14 @@ REFLECTION_SOURCE_SHA = 'a9ccc05d22e417594181b6f39222476fb4fd66d7dc887e7d8af32a5
 MAX_FILE = 4 * 1024 * 1024
 MAX_SPIRV = 1024 * 1024
 MAX_CAPTURE = 4 * 1024 * 1024
+METAL_PROBE_TIMEOUT = 60
+METAL_DOWNLOAD_TIMEOUT = 300
+COMMAND_STAGES = frozenset(('cargo-version', 'rustc-version', 'llvm-dis-version', 'spirv-val-version',
+                           'metal-discovery', 'metal-version', 'ci-metal-toolchain-download',
+                           'metal-discovery-after-download', 'metal-version-after-download', 'macos-sdk-version'))
+COMMAND_ERRORS = frozenset(('STEP_TIMEOUT', 'STEP_TIMEOUT_INVALID', 'PROCESS_GROUPS_REQUIRED',
+                           'PROCESS_GROUP_CLEANUP_FAILED', 'STEP_TERMINATION_UNCONFIRMED',
+                           'STEP_OUTPUT_DRAIN_UNCONFIRMED', 'STEP_OUTPUT_LIMIT', 'STEP_OUTPUT_READ_FAILED'))
 SOURCE_NAMES = ('gpu-toolchain/xe2_compute_probe.metal', 'tools/metal_shader_ci.py',
                 'tests/test_metal_shader.py', '.github/workflows/metal-shader.yml',
                 'docs/METAL_SHADER_BRIDGE.md', 'gpu-toolchain/xe2_integer_probe.cl')
@@ -328,11 +336,48 @@ def version(raw):
     return match.group(1).decode('ascii') if match else None
 
 
-def qualify_tool(name, command, directory, path=None):
-    code, raw = run_step(command, directory, timeout=15)
+def reported_step(stage, command, directory, report, timeout, **options):
+    need(stage in COMMAND_STAGES, 'COMMAND_STAGE_INVALID')
+    report['phase'] = stage
+    detail = {'stage': stage, 'timeout_seconds': timeout, 'timed_out': False,
+              'completed': False, 'returncode': None, 'code': 'NOT_STARTED'}
+    report.setdefault('command_steps', []).append(detail)
+    try:
+        code, raw = run_step(command, directory, timeout=timeout, **options)
+    except ShaderError as error:
+        fixed = str(error) if str(error) in COMMAND_ERRORS else 'CONTROLLED_TOOL_OR_IO_FAILURE'
+        detail.update(timed_out=fixed == 'STEP_TIMEOUT', code=fixed)
+        raise ShaderError(fixed) from None
+    except OSError:
+        detail['code'] = 'CONTROLLED_TOOL_OR_IO_FAILURE'
+        raise
+    detail.update(completed=True, returncode=code,
+                  code='COMMAND_COMPLETED' if code == 0 else 'COMMAND_RETURNED_NONZERO')
+    return code, raw
+
+
+def qualify_tool(name, command, directory, path=None, timeout=15, report=None, stage=None):
+    code, raw = (run_step(command, directory, timeout=timeout) if report is None else
+                 reported_step(stage, command, directory, report, timeout))
     need(code == 0 and version(raw) is not None, 'TOOL_VERSION_UNVERIFIED')
     selected = Path(path or shutil.which(command[0]) or '').resolve()
     return {'name': name, 'version': version(raw), 'executable_sha256': sha(read_regular(selected, 128 * 1024 * 1024))}
+
+
+def probe_metal(xcrun, directory, report, after_download=False):
+    suffix = '-after-download' if after_download else ''
+    code, raw = reported_step('metal-discovery' + suffix,
+                             [xcrun, '-sdk', 'macosx', '-find', 'metal'], directory, report,
+                             METAL_PROBE_TIMEOUT, stdout_only=True)
+    need(code == 0, 'XCODE_METAL_TOOLCHAIN_MISSING')
+    name = raw.decode('utf-8').strip()
+    need(bool(name) and '\n' not in name and '\r' not in name, 'METAL_DISCOVERY_OUTPUT_INVALID')
+    selected = Path(name).resolve()
+    # Qualify the selected executable once. A resolved Xcode launcher alone
+    # does not prove that its optional Metal toolchain is installed.
+    return qualify_tool('metal', [xcrun, '-sdk', 'macosx', 'metal', '--version'],
+                        directory, selected, timeout=METAL_PROBE_TIMEOUT,
+                        report=report, stage='metal-version' + suffix)
 
 
 def converter_provenance(source, directory):
@@ -461,7 +506,9 @@ def main(argv=None):
               'metal_provider_registered': False, 'arc130v_backend_verified': False,
               'target_hardware_identity_verified': False, 'display_acceleration_verified': False,
               'cpu_fallback_used': False, 'metal_toolchain_download': {'attempted': False},
-              'architecture': 'x86_64', 'timeouts_seconds': {'probe': 60, 'cargo_build': 300, 'ci_metal_download': 300}}
+              'command_steps': [], 'architecture': 'x86_64',
+              'timeouts_seconds': {'probe': METAL_PROBE_TIMEOUT, 'cargo_build': 300,
+                                   'ci_metal_download': METAL_DOWNLOAD_TIMEOUT}}
     artifacts = None
     try:
         source = private_path(args.converter_source, root)
@@ -493,35 +540,35 @@ def main(argv=None):
             required = {name: shutil.which(name) for name in ('cargo', 'rustc', 'llvm-dis', 'spirv-val', 'xcrun')}
             need(all(required.values()), 'REQUIRED_TOOL_MISSING')
             for name in ('cargo', 'rustc', 'llvm-dis', 'spirv-val'):
-                report['tools'].append(qualify_tool(name, [required[name], '--version'], directory))
+                report['tools'].append(qualify_tool(name, [required[name], '--version'], directory,
+                                                   report=report, stage=name + '-version'))
             rust_version = next(item['version'] for item in report['tools'] if item['name'] == 'rustc')
             need(tuple(int(item) for item in rust_version.split('.')[:2]) >= (1, 87), 'RUST_VERSION_TOO_OLD')
-            status, metal_path = run_step([required['xcrun'], '-sdk', 'macosx', '-find', 'metal'], directory,
-                                          15, stdout_only=True)
-            metal_status, metal_version = run_step([required['xcrun'], '-sdk', 'macosx', 'metal', '--version'],
-                                                   directory, 15) if status == 0 else (status, b'')
-            # Recent Xcode may resolve a launcher even when the actual optional
-            # Metal toolchain is absent. Finding that path alone is not readiness.
-            if (status or metal_status or version(metal_version) is None) and args.allow_ci_metal_download:
-                report['phase'] = 'ci-metal-toolchain-download'
+            try:
+                metal = probe_metal(required['xcrun'], directory, report)
+            except ShaderError as error:
+                # Only a cleanly terminated initial timeout or unavailable
+                # tool may trigger this explicitly authorized ephemeral CI step.
+                # Cleanup failures and all post-download probes remain terminal.
+                need(args.allow_ci_metal_download and str(error) in
+                     ('STEP_TIMEOUT', 'XCODE_METAL_TOOLCHAIN_MISSING', 'TOOL_VERSION_UNVERIFIED'), str(error))
+                trigger_stage, trigger_code = report['phase'], str(error)
                 started = time.monotonic()
                 report['metal_toolchain_download'] = {'attempted': True, 'ephemeral_ci_only': True,
-                                                       'completed': False, 'returncode': None}
-                status, _ = run_step(['xcodebuild', '-downloadComponent', 'MetalToolchain'], directory,
-                                     300, env=environment, slow_step='toolchain-download')
-                report['metal_toolchain_download'].update(returncode=status, completed=status == 0,
-                                                         elapsed_seconds=round(time.monotonic() - started, 3))
-                report['phase'] = 'toolchain'
-                status, metal_path = run_step([required['xcrun'], '-sdk', 'macosx', '-find', 'metal'], directory,
-                                              15, stdout_only=True)
-                metal_status, metal_version = run_step([required['xcrun'], '-sdk', 'macosx', 'metal', '--version'],
-                                                       directory, 15) if status == 0 else (status, b'')
-            need(status == 0 and metal_status == 0 and version(metal_version) is not None,
-                 'XCODE_METAL_TOOLCHAIN_MISSING')
-            selected_metal = Path(metal_path.decode('utf-8').strip()).resolve()
-            report['tools'].append(qualify_tool('metal', [required['xcrun'], '-sdk', 'macosx', 'metal', '--version'],
-                                              directory, selected_metal))
-            status, sdk = run_step([required['xcrun'], '-sdk', 'macosx', '--show-sdk-version'], directory, 15)
+                                                       'completed': False, 'returncode': None,
+                                                       'trigger_stage': trigger_stage, 'trigger_code': trigger_code}
+                try:
+                    status, _ = reported_step('ci-metal-toolchain-download',
+                        ['xcodebuild', '-downloadComponent', 'MetalToolchain'], directory, report,
+                        METAL_DOWNLOAD_TIMEOUT, env=environment, slow_step='toolchain-download')
+                    report['metal_toolchain_download'].update(returncode=status, completed=status == 0)
+                finally:
+                    report['metal_toolchain_download']['elapsed_seconds'] = round(time.monotonic() - started, 3)
+                need(status == 0, 'METAL_TOOLCHAIN_DOWNLOAD_FAILED')
+                metal = probe_metal(required['xcrun'], directory, report, after_download=True)
+            report['tools'].append(metal)
+            status, sdk = reported_step('macos-sdk-version',
+                [required['xcrun'], '-sdk', 'macosx', '--show-sdk-version'], directory, report, 15)
             need(status == 0 and version(sdk) is not None, 'MACOS_SDK_UNVERIFIED')
             report['sdk_version'] = version(sdk)
             environment['METAL2VULKAN_LLVM_DIS'] = str(Path(required['llvm-dis']).resolve())

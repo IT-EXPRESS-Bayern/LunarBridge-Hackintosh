@@ -115,7 +115,8 @@ jobs:
           print('Shader compiler evidence checked; native Arc submission and Metal registration remain unverified.')
           PY
           if [ "$status" -eq 2 ]; then
-            echo '::warning::Compiler chain remains unverified; inspect the fixed phase/code in report.json.'
+            echo '::error::Compiler chain remains unverified; inspect the fixed phase/code in report.json.'
+            exit 2
           fi
       - name: Upload own shader outputs and sanitized provenance
         if: always()

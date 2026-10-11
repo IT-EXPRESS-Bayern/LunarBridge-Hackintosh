@@ -173,7 +173,7 @@
     "parallel_kernel_lifetime_tested": false
   },
   "pinned_reference_files_sha256_verified": 16,
-  "total_host_tests_passed": 378,
+  "total_host_tests_passed": 382,
   "macos_object_count": 14,
   "native_diagnostic_source_compiled": true,
   "native_diagnostic_kext_linked": true,
@@ -336,22 +336,23 @@
     "native_target_hardware_tests": 0
   },
   "metal_shader_compiler_harness_tests": {
-    "tests_run": 35,
+    "tests_run": 39,
     "failures": 0,
     "errors": 0,
     "skipped": 0,
     "successful": true,
     "source_files_sha256": {
       "gpu-toolchain/xe2_compute_probe.metal": "2626f1a6f99fdc145e10718b8ced5d5007aff51c07e2bf26ba9ffb8a5a2f0c5c",
-      "tools/metal_shader_ci.py": "b1fd5f39a02a5fd72169da19cd46ae72828b3b60953e55aef9d3f338114894e8",
-      "tests/test_metal_shader.py": "f258c2f66c4919a9c8e42ab147ae9ff5740b22d69939325638ca5b4d8ff3a29d",
-      ".github/workflows/metal-shader.yml": "4e41912702b7fc51f02ece43401c5e8512370cf3d3913f901ad6373c46444cab",
-      "docs/METAL_SHADER_BRIDGE.md": "3d343d539d5cc6dc96ce61cd7c6cb0e86f8e2b829af3ff0ae87cc5a8e9ed5ea8",
+      "tools/metal_shader_ci.py": "f8da672c080da7f33ac2f41617991d9003c216322a9994963d792167aabd68a6",
+      "tests/test_metal_shader.py": "33067a235d189a446ca527511cb9ffbff699e53009d5f61df3bfb6e157d31991",
+      ".github/workflows/metal-shader.yml": "6c8b3aabbd3e1c57b31d436f3334e2aa746070efb2c5543401f6cc5ec0f975c2",
+      "docs/METAL_SHADER_BRIDGE.md": "63ccf34157193c94148e04017f206a59b761c683d87aad233485aacf34a7737e",
       "gpu-toolchain/xe2_integer_probe.cl": "0c1593c962ac806dc64a8e05804965dee375e6669fa846987c8263bfa03745a5"
     },
     "test_type": "MSL/AIR/Shader SPIR-V/reflection parser and bounded process runner with explicit offline doubles",
     "native_compilation_tested": false,
-    "native_target_hardware_tests": 0
+    "native_target_hardware_tests": 0,
+    "source_hash_scope": "Executed code/test/workflow snapshot; updated explanatory document hashed after tests."
   },
   "ggtt_planner_tests": {
     "tests_run": 31,
@@ -510,5 +511,45 @@
   },
   "new_queue_helpers_native_build_status": "integrated in native build recipe; current published binary proof remains the recorded earlier source",
   "native_ggtt_binding_implemented": false,
-  "native_guc_scheduler_implemented": false
+  "native_guc_scheduler_implemented": false,
+  "metal_shader_compiler_last_reviewed_ci": {
+    "source_commit": "d67c61f0796d2c6e5bb6ea25140e5c0e9ea16647",
+    "workflow_run_id": 38127106743,
+    "workflow_url": "https://github.com/IT-EXPRESS-Bayern/LunarBridge-Hackintosh/actions/runs/38127106743",
+    "github_workflow_conclusion": "success",
+    "actual_compiler_report": {
+      "state": "unverified",
+      "phase": "toolchain",
+      "code": "STEP_TIMEOUT",
+      "converter_build_verified": false,
+      "air_compilation_verified": false,
+      "shader_translation_verified": false,
+      "gpu_execution_verified": false,
+      "metal_provider_registered": false,
+      "arc130v_backend_verified": false,
+      "target_hardware_identity_verified": false,
+      "display_acceleration_verified": false
+    },
+    "exact_own_git_source_files_checked": 6,
+    "artifact_authentication": [
+      {
+        "artifact_id": 11697068428,
+        "artifact_name": "LunarBridge-Metal-Shader-CI",
+        "bytes": 4164,
+        "actual_full_sha256": "0b6a32e807a6f187ce6d0c1f68da4d105fca6974a7ddf4ecebae29d9f5b592ce",
+        "full_digest_verified": true,
+        "all_zip_crc_verified": true
+      },
+      {
+        "artifact_id": 11696978650,
+        "artifact_name": "LunarBridge-Metal-Shader-Windows",
+        "bytes": 1870,
+        "actual_full_sha256": "4e957c45345001d5fb1c862fc562387f1f7ebcae550a08d7d84639f4492e264d",
+        "full_digest_verified": true,
+        "all_zip_crc_verified": true
+      }
+    ],
+    "actual_shader_outputs_available": false,
+    "interpretation": "Reviewed toolchain timeout before converter build; old green workflow was not compiler success."
+  }
 }

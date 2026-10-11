@@ -65,7 +65,7 @@ flowchart TD
 | Own CPU shader payload | **Done — CPU format** | 37 payload tests plus 37 historical inspector tests; GPU pointers remain unresolved. [Payload contract](gpu-toolchain/KERNEL_PAYLOAD.md) |
 | GGTT write plan | **Complete — CPU planner** | 31 tests / 132 actual C++ calls; integrated host DLL and macOS object build, no hardware binding. [GGTT](docs/GGTT_BINDING.md) |
 | GuC scheduler codec | **Complete — CPU protocol** | 25 tests at the production C++ codec; register/mode/submit/deregister messages, no live firmware or queue. [Scheduler contract](docs/GUC_SCHEDULER.md) |
-| MSL → AIR → Shader SPIR-V | **In progress — compiler qualification** | Five prepared files; reviewed reflection v55 / cleanup fixes, 35 offline tests passed; no real compiler CI proof yet. [Compiler bridge](docs/METAL_SHADER_BRIDGE.md) |
+| MSL → AIR → Shader SPIR-V | **In progress — compiler qualification** | 39 offline tests passed; first actual compiler attempt timed out before translation. The fixed workflow requires verified compiler output. [Compiler bridge](docs/METAL_SHADER_BRIDGE.md) |
 | Native memory + execution | **Blocked — implementation missing** | GPU-VA binding, programmed PAT2, global GGTT ownership, GuC startup and queue submission remain missing. [Architecture](docs/GPU_DESIGN.md) |
 | Metal provider + display | **Blocked — implementation missing** | No LunarBridge system Metal provider, accelerated display or WindowServer integration. [Hardware scope](docs/HARDWARE_SUPPORT.md) |
 
@@ -98,7 +98,9 @@ This builds the Windows test DLL and macOS object files, and runs CPU/offline
 checks. It does not link or load a Kext on Windows. The integrated host library
 also contains the [GGTT planner](docs/GGTT_BINDING.md) and [GuC codec](docs/GUC_SCHEDULER.md).
 The [validation record](docs/VALIDATION.md) lists the other test suites and their
-specific limits.
+specific limits. [Hardware variants](docs/HARDWARE_VARIANTS.md) explains why
+the common Intel device ID is useful while OEM display and runtime qualification
+remain separate requirements.
 
 ## Build the real native diagnostic bundle
 

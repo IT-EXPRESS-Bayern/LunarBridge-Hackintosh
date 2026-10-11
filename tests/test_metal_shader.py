@@ -79,6 +79,154 @@ class ShaderBoundaries(unittest.TestCase):
     def parse_reflection(self, value):
         return checker.inspect_reflection(json.dumps(value).encode())
 
+    def metal_probe_cli(self, context, *, allow=False, outcomes=None, authorized_ci=True):
+        # Offline control-flow fixtures. No compiler/component installer runs,
+        # and every scenario stops before compilation can claim success.
+        with temporary_directory() as name:
+            directory = Path(name)
+            tool_names = ('cargo', 'rustc', 'llvm-dis', 'spirv-val', 'xcrun', 'metal')
+            tools = {tool: directory / tool for tool in tool_names}
+            for path in tools.values():
+                path.write_bytes(b'synthetic offline tool qualification fixture')
+            calls, outcomes = [], outcomes or {}
+            versions = {'cargo': b'cargo 1.98.0', 'rustc': b'rustc 1.98.0',
+                        'llvm-dis': b'LLVM 22.1.8', 'spirv-val': b'SPIRV-Tools 2026.3'}
+
+            def step(command, cwd, timeout=60, **options):
+                after = any(item['stage'] == 'ci-metal-toolchain-download' for item in calls)
+                executable = Path(command[0]).name
+                if executable in versions:
+                    stage, value = executable + '-version', (0, versions[executable])
+                elif executable == 'xcodebuild':
+                    self.assertEqual(command, ['xcodebuild', '-downloadComponent', 'MetalToolchain'])
+                    stage, value = 'ci-metal-toolchain-download', (0, b'')
+                    self.assertEqual(options['slow_step'], 'toolchain-download')
+                elif '-find' in command:
+                    stage = 'metal-discovery' + ('-after-download' if after else '')
+                    value = (0, str(tools['metal']).encode())
+                    self.assertTrue(options['stdout_only'])
+                elif 'metal' in command:
+                    stage = 'metal-version' + ('-after-download' if after else '')
+                    value = (0, b'Metal version 32023.27')
+                elif '--show-sdk-version' in command:
+                    stage, value = 'macos-sdk-version', (1, b'')
+                else:
+                    raise AssertionError('No native compilation is permitted in this fixture')
+                calls.append({'stage': stage, 'timeout': timeout})
+                value = outcomes.get(stage, value)
+                if isinstance(value, Exception):
+                    raise value
+                return value
+
+            environment = {'GITHUB_ACTIONS': 'true' if authorized_ci else 'false',
+                           'CI': 'true', 'GITHUB_SHA': 'a' * 40}
+            output = io.StringIO()
+            arguments = ['--context', context, '--converter-source', str(directory / 'source'),
+                         '--artifact-root', str(directory / 'artifacts')]
+            if allow:
+                arguments.append('--allow-ci-metal-download')
+            with mock.patch.object(checker.sys, 'platform', 'darwin'), \
+                 mock.patch.object(checker.platform, 'machine', return_value='x86_64'), \
+                 mock.patch.dict(checker.os.environ, environment), \
+                 mock.patch.object(checker.shutil, 'which', side_effect=lambda tool: str(tools[Path(tool).name])), \
+                 mock.patch.object(checker, 'converter_provenance', return_value=(
+                     {'commit': checker.CONVERTER_PIN}, b'synthetic offline license fixture')), \
+                 mock.patch.object(checker, 'run_step', side_effect=step), \
+                 contextlib.redirect_stdout(output):
+                status = checker.main(arguments)
+            report = json.loads((directory / 'artifacts/report.json').read_text())
+            self.assertEqual(status, 2)
+            self.assertEqual(report['state'], 'unverified')
+            for key in ('converter_build_verified', 'air_compilation_verified', 'shader_translation_verified',
+                        'gpu_execution_verified', 'metal_provider_registered', 'arc130v_backend_verified',
+                        'target_hardware_identity_verified', 'display_acceleration_verified', 'cpu_fallback_used'):
+                self.assertIs(report[key], False)
+            self.assertNotIn(name, json.dumps(report))
+            self.assertNotIn(name, output.getvalue())
+            return report, calls
+
+    def test_cold_metal_probe_timeout_has_exact_stage_and_sixty_second_budget(self):
+        with temporary_directory() as name:
+            directory = Path(name)
+            executable = directory / 'metal'
+            executable.write_bytes(b'synthetic executable fixture')
+            for stage, results in (
+                ('metal-discovery', [checker.ShaderError('STEP_TIMEOUT')]),
+                ('metal-version', [(0, str(executable).encode()), checker.ShaderError('STEP_TIMEOUT')])):
+                report = {}
+                with mock.patch.object(checker, 'run_step', side_effect=results) as runner:
+                    with self.assertRaisesRegex(checker.ShaderError, '^STEP_TIMEOUT$'):
+                        checker.probe_metal('synthetic-xcrun', directory, report)
+                self.assertEqual(report['phase'], stage)
+                self.assertEqual(report['command_steps'][-1], {
+                    'stage': stage, 'timeout_seconds': 60, 'timed_out': True,
+                    'completed': False, 'returncode': None, 'code': 'STEP_TIMEOUT'})
+                self.assertTrue(all(call.kwargs['timeout'] == 60 for call in runner.call_args_list))
+                self.assertNotIn(name, json.dumps(report))
+            with mock.patch.object(checker, 'run_step', return_value=(0, b'cargo 1.98.0')) as runner:
+                checker.qualify_tool('cargo', ['synthetic-cargo', '--version'], directory, executable)
+            self.assertEqual(runner.call_args.kwargs['timeout'], 15)
+            with mock.patch.object(checker.subprocess, 'Popen', side_effect=AssertionError('no process')):
+                for timeout in (0, True, 61):
+                    with self.assertRaisesRegex(checker.ShaderError, '^STEP_TIMEOUT_INVALID$'):
+                        checker.qualify_tool('metal', ['synthetic', '--version'], directory, timeout=timeout)
+
+    def test_initial_timeout_on_authorized_ci_attempts_one_bounded_component_download(self):
+        for stage, outcome, trigger in (
+            ('metal-discovery', checker.ShaderError('STEP_TIMEOUT'), 'STEP_TIMEOUT'),
+            ('metal-version', checker.ShaderError('STEP_TIMEOUT'), 'STEP_TIMEOUT'),
+            ('metal-discovery', (1, b'unavailable'), 'XCODE_METAL_TOOLCHAIN_MISSING'),
+            ('metal-version', (0, b'no installed toolchain'), 'TOOL_VERSION_UNVERIFIED')):
+            report, calls = self.metal_probe_cli('ci-host', allow=True,
+                outcomes={stage: outcome})
+            download = report['metal_toolchain_download']
+            self.assertTrue(download['attempted'])
+            self.assertTrue(download['completed'])
+            self.assertEqual((download['trigger_stage'], download['trigger_code']), (stage, trigger))
+            self.assertEqual([item for item in calls if item['stage'] == 'ci-metal-toolchain-download'],
+                             [{'stage': 'ci-metal-toolchain-download', 'timeout': 300}])
+            self.assertTrue(all(item['timeout'] == 60 for item in calls if item['stage'].startswith('metal-')))
+            self.assertEqual(report['phase'], 'macos-sdk-version')
+            self.assertEqual(report['code'], 'MACOS_SDK_UNVERIFIED')
+            self.assertEqual([item['name'] for item in report['tools']], ['cargo', 'rustc', 'llvm-dis', 'spirv-val', 'metal'])
+
+    def test_non_ci_or_unapproved_probe_never_downloads_after_initial_timeout(self):
+        for context in ('target-probe', 'ci-host'):
+            for stage in ('metal-discovery', 'metal-version'):
+                report, calls = self.metal_probe_cli(context,
+                    outcomes={stage: checker.ShaderError('STEP_TIMEOUT')})
+                self.assertEqual((report['phase'], report['code']), (stage, 'STEP_TIMEOUT'))
+                self.assertFalse(report['metal_toolchain_download']['attempted'])
+                self.assertFalse(any(item['stage'] == 'ci-metal-toolchain-download' for item in calls))
+        for context, authorized in (('target-probe', True), ('ci-host', False)):
+            report, calls = self.metal_probe_cli(context, allow=True, authorized_ci=authorized)
+            self.assertEqual(report['code'], 'METAL_DOWNLOAD_REQUIRES_EPHEMERAL_CI')
+            self.assertEqual(calls, [])
+
+    def test_post_download_timeout_failure_or_unconfirmed_cleanup_cannot_pass_or_retry(self):
+        cases = (
+            ('metal-discovery-after-download', checker.ShaderError('STEP_TIMEOUT'), 'STEP_TIMEOUT'),
+            ('metal-version-after-download', checker.ShaderError('STEP_TIMEOUT'), 'STEP_TIMEOUT'),
+            ('metal-version-after-download', (1, b'no tool'), 'TOOL_VERSION_UNVERIFIED'),
+            ('ci-metal-toolchain-download', checker.ShaderError('STEP_TIMEOUT'), 'STEP_TIMEOUT'),
+            ('ci-metal-toolchain-download', (1, b''), 'METAL_TOOLCHAIN_DOWNLOAD_FAILED'))
+        for stage, outcome, code in cases:
+            report, calls = self.metal_probe_cli('ci-host', allow=True, outcomes={
+                'metal-discovery': checker.ShaderError('STEP_TIMEOUT'), stage: outcome})
+            self.assertEqual((report['phase'], report['code']), (stage, code))
+            self.assertTrue(report['metal_toolchain_download']['attempted'])
+            self.assertEqual(sum(item['stage'] == 'ci-metal-toolchain-download' for item in calls), 1)
+            self.assertTrue(all(item['stage'] in checker.COMMAND_STAGES for item in report['command_steps']))
+        for failure in ('PROCESS_GROUP_CLEANUP_FAILED', 'STEP_TERMINATION_UNCONFIRMED',
+                        'STEP_OUTPUT_DRAIN_UNCONFIRMED', '/Users/private-unexpected-error'):
+            report, calls = self.metal_probe_cli('ci-host', allow=True, outcomes={
+                'metal-discovery': checker.ShaderError(failure)})
+            self.assertEqual(report['phase'], 'metal-discovery')
+            self.assertEqual(report['code'], failure if failure in checker.COMMAND_ERRORS else 'CONTROLLED_TOOL_OR_IO_FAILURE')
+            self.assertFalse(report['metal_toolchain_download']['attempted'])
+            self.assertFalse(any(item['stage'] == 'ci-metal-toolchain-download' for item in calls))
+            self.assertNotIn('private-unexpected-error', json.dumps(report))
+
     def test_air_container_and_required_metadata_are_checked(self):
         data, llvm = air_fixture()
         self.assertTrue(checker.inspect_air(data, llvm)['kernel_metadata_checked'])
