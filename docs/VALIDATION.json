@@ -910,5 +910,34 @@
     "apple_binary_present_in_repository": false,
     "bundle_content_in_output": false,
     "symbols_read_without_the_bundle": false
-  }
+  },
+  "recon_audit_tests": {
+    "test_type": "Executed the recon orchestrator and its own suite: every extraction rule matched its hash-pinned source, stage degradation, write discipline and report wording",
+    "environment": "Linux x86_64 container, clang 18.1.3, Python 3.13",
+    "tests_run": 27,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "successful": true,
+    "extraction_rules": 31,
+    "facts_extracted": 52,
+    "extraction_drift": 0,
+    "suites_orchestrated": 15,
+    "suites_passed": 15,
+    "libraries_built_with_werror": [
+      "modules (7 sources)",
+      "host test (16 sources)"
+    ],
+    "macos_only_stages_skipped_here": [
+      "appledriver",
+      "system",
+      "device"
+    ],
+    "system_state_changed": false,
+    "registers_written": false,
+    "apple_binary_read_or_copied": false,
+    "hardware_acceleration_established": false,
+    "tests_in_orchestrated_suites": 423
+  },
+  "recon_audit_ci_runs_recorded": false
 }

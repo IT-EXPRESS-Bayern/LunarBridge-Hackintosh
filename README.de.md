@@ -69,6 +69,7 @@ flowchart TD
 | MSL → AIR → Shader-SPIR-V | **In Arbeit — Compilerqualifikation** | 64 Offlineprüfungen bestanden; echte MSL- und LLVM-Befehle erfolgreich, danach private AIR-Metadaten verweigert. Begrenzte Klassifikation und echte Compilerhilfe diagnostizieren das Feld; Übersetzung bleibt ungeprüft. [Compilerbrücke](docs/METAL_SHADER_BRIDGE.md) |
 | Mesa-CPU-Parser | **In Arbeit — Herkunftsnachweis** | 29 Offlineprüfungen bestanden; das gepinnte `spirv2nir` in echter CI gebaut. Streaminghashes prüfen jetzt auch seine große erzeugte NIR-Quelle; Binary-/Hilfe-/Quellenabnahme bleibt offen. [Backend-Anschlüsse](docs/METAL_BACKEND_SEAMS.md) |
 | Arc-Schnittstellenvertrag | **Fertig — CPU-Vertrag** | 46 Prüfungen der kompilierten Tabelle und 13 gegen die gepinnten Quellen; die 12 Linux-Arc-ioctls auf die macOS-26-Externalmethod-Form abgebildet und abweichungsfrei verifiziert. Apples jüngster Intel-Treiber ist Gen11, ein Xe2-Treiber zur Übernahme existiert nicht. [Schnittstellenvergleich](docs/ARC_INTERFACE_DIFF.md) |
+| Recon-Audit | **Fertig — ein Befehl** | Ein Lauf baut beide Bibliotheken mit `-Werror`, führt alle 15 Suiten aus (423 Tests), verifiziert die 49 gepinnten Quellen, leitet 52 Upstream-Fakten mit Zeilenzitat neu her und sortiert, was offen ist; 27 Tests halten die eigenen Zusagen fest. [Recon](docs/RECON.md) |
 | Portierte Xe2-PAT- und LRC-Verträge | **Fertig — CPU-Port** | 31 Tests, deren Erwartungswerte aus den gepinnten Intel-MIT-Quellen geparst werden: die 32er-PAT-Tabelle mit Schreibplan sowie Layout, Kontextimage, Deskriptor und Ringprolog des Render-/Compute-LRC. Es wird nichts programmiert oder submittiert. [Linux-Port](docs/ARC_PORT_FROM_LINUX.md) |
 | Nativer Speicher + Ausführung | **Blockiert — Implementierung fehlt** | GPU-VA-Bindung, programmierter PAT2, globale GGTT-Ownership, GuC-Start und Queue-Submission fehlen. [Architektur](docs/GPU_DESIGN.md) |
 | Metal-Anbieter + Display | **Blockiert — Implementierung fehlt** | Kein LunarBridge-System-Metal-Anbieter, keine beschleunigte Ausgabe oder WindowServer-Anbindung. [Hardwareumfang](docs/HARDWARE_SUPPORT.md) |
@@ -173,7 +174,9 @@ geformt nach der letzten Apple-kompatiblen Treibergeneration, mit Nachweis je We
 Für die macOS-Hälfte, die keine veröffentlichte Quelle abdeckt, beschreibt die
 [Apple-Treiberanalyse](docs/APPLE_DRIVER_ANALYSIS.md), wie sich die
 Schnittstelle eines lokal installierten Gen11-Treibers erheben lässt — nur
-Namen, Zahlen und Hashes, das Binary bleibt, wo es ist. Die [Architektur und Modulverträge](docs/ARCHITECTURE.md)
+Namen, Zahlen und Hashes, das Binary bleibt, wo es ist.
+[`tools/recon.py`](tools/recon.py) führt all das in einem Befehl aus und
+schreibt einen sortierten Befundbericht; siehe [Recon](docs/RECON.md). Die [Architektur und Modulverträge](docs/ARCHITECTURE.md)
 erklären die Bausteingrenzen; die [Portierungsanleitung](docs/PORTING_GUIDE.md)
 beschreibt Wiederverwendung, generationsabhängige Arbeit, Tests und Lizenzen.
 Nach Fertigstellung und Qualifikation des ersten nativen Arc-130V-Pfads sollen

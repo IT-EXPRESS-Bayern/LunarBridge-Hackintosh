@@ -1,0 +1,54 @@
+name: Recon audit
+
+on:
+  push:
+    paths:
+      - tools/**
+      - tests/**
+      - gpu-prototype/**
+      - native/**
+      - .github/workflows/recon.yml
+  pull_request:
+    paths:
+      - tools/**
+      - tests/**
+      - gpu-prototype/**
+      - native/**
+      - .github/workflows/recon.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  recon:
+    name: One run that builds, tests and re-derives every pinned fact
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: '3.12'
+      - name: Fetch the hash-pinned upstream sources
+        run: python3 -B tools/fetch_references.py
+      - name: Check the orchestrator itself
+        run: python3 -B tests/test_recon.py
+      # The macOS-only stages record why they were skipped; the exit code
+      # reflects drift, a broken build or a failing suite, nothing else.
+      - name: Run the recon audit
+        run: python3 -B tools/recon.py --out build/recon
+      - name: Upload the recon report
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        with:
+          name: LunarBridge-Recon-Report
+          path: |
+            build/recon/recon.json
+            build/recon/RECON.md
+            build/recon/upstream-facts.json
+            build/recon/interface-extraction.json
+          if-no-files-found: error
+          retention-days: 14

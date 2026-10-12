@@ -67,6 +67,11 @@ Stufen. Auch eine erfolgreiche MSL-Übersetzung registriert kein Metalgerät.
 | `tools/metal_shader_ci.py` | Eigene MSL/AIR/SPIR-V-Ausgaben und Reflection des externen Konverters qualifizieren | Compilererfolg ist vom nativen GPU-/Metalbetrieb getrennt |
 | `tools/collect_macos.py` und `analyze_trace.py` | Snapshots und begrenzte Traces sammeln und Fehler einordnen | Kein erfundener Hardwareerfolg aus fehlenden oder alten Daten |
 | `installer/install_opencore.py` | Gewähltes Grafik-Kext planen, sichern, installieren und zurücknehmen | Installer-Tests liefen an künstlichen EFIs; Boot und Kext-Akzeptanz offen |
+| `tools/recon.py` | Ein Lauf: bauen, alle Suiten fahren, gepinnte Quellen verifizieren, Upstream-Fakten mit Zeilenzitat neu herleiten, Apple-Bundles und lebenden Grafikstapel lesen, Befunde sortieren | Nur lesend; schreibt allein ins Ausgabeverzeichnis und belegt keinen Hardwarezustand |
+
+Das [Recon-Audit](RECON.md) fasst diese Werkzeuge in einem Einstiegspunkt
+zusammen und schreibt einen sortierten Befundbericht; sein Exit-Code meldet
+Drift, Build- oder Testfehler, nicht offene Portierungsarbeit.
 
 Der [Linux-Port](ARC_PORT_FROM_LINUX.md) beschreibt die erste portierte Etappe:
 PAT-Programmierplan und LRC-Kontextaufbau für Arc 130V, mit Zeilennachweis je

@@ -105,3 +105,14 @@ machine paths and generated binaries are excluded from the public repository.
 The GGTT planner and GuC scheduler codec are now included in the host DLL, macOS object compilation and native build recipe. Their production code passed its tests in that integrated DLL. The reviewed native binary above includes these two helpers; its exact source commit remains explicit. Native global GGTT ownership, PAT programming, GuC firmware startup, ADS/LRC/queues and hardware submission remain unimplemented.
 
 Fourteen fresh kernel objects were cross-compiled after adding the upstream kernel build flag `-fno-stack-check`. Every header was verified against the pinned SDK tree, and those objects contain no Darwin userspace stack-probe symbol. The historical 755ba093 CI binary had that import. The actual 3b7550d Apple-clang build now proves its removal from both imports and definitions; native kernel admission and stack budget remain unqualified.
+
+One command now establishes all of that in a single run. `tools/recon.py`
+builds the CPU modules and the host-test library with `-Werror`, runs all fifteen
+suites, verifies the SHA-256 of all 49 pinned sources, re-derives 54 upstream
+facts with `file:line` citations, and ranks what is still open. Its own 27 tests
+check that every extraction rule still matches its pinned source, that each
+stage records why it was skipped rather than guessing, that a run writes nothing
+outside its output directory, and that the report never claims hardware state.
+The macOS-only stages — installed Apple driver, live graphics stack, target
+device — are skipped on this host and say so. Nothing in that run touches
+hardware.

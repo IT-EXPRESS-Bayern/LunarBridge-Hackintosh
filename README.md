@@ -69,6 +69,7 @@ flowchart TD
 | Mesa CPU parser | **In progress — provenance qualification** | 29 offline tests passed; pinned `spirv2nir` built on real CI. Streaming hashes now handle its large generated NIR source; binary/help/source qualification remains open. [Backend seams](docs/METAL_BACKEND_SEAMS.md) |
 | Arc interface contract | **Complete — CPU contract** | 46 tests against the compiled table plus 13 against the pinned sources; the 12 Linux Arc ioctls mapped onto the macOS 26 external-method shape, verified with no mismatch. Apple's newest Intel driver is Gen11, so no Xe2 driver exists to reuse. [Interface diff](docs/ARC_INTERFACE_DIFF.md) |
 | Ported Xe2 PAT and LRC contracts | **Complete — CPU port** | 31 tests whose expected values are parsed out of the pinned Intel MIT sources: the 32-entry PAT table with its register plan, and the render/compute LRC layout, context image, descriptor and ring prologue. Nothing is programmed or submitted. [Linux port](docs/ARC_PORT_FROM_LINUX.md) |
+| Recon audit | **Complete — one command** | One run builds both libraries with `-Werror`, runs all 15 suites (423 tests), verifies the 49 pinned sources, re-derives 52 upstream facts with line citations and ranks what is still open; 27 tests hold its own guarantees. [Recon](docs/RECON.md) |
 | Native memory + execution | **Blocked — implementation missing** | GPU-VA binding, programmed PAT2, global GGTT ownership, GuC startup and queue submission remain missing. [Architecture](docs/GPU_DESIGN.md) |
 | Metal provider + display | **Blocked — implementation missing** | No LunarBridge system Metal provider, accelerated display or WindowServer integration. [Hardware scope](docs/HARDWARE_SUPPORT.md) |
 
@@ -168,7 +169,9 @@ Apple-compatible driver generation, with every value cited back to its source.
 For the macOS half that no published source covers, the
 [Apple driver analysis](docs/APPLE_DRIVER_ANALYSIS.md) describes how to map the
 interface of a locally installed Gen11 driver — names, counts and hashes only,
-with the binary staying where it is.
+with the binary staying where it is. [`tools/recon.py`](tools/recon.py) runs all
+of that in one command and writes a ranked findings report; see
+[Recon](docs/RECON.md).
 The [architecture and module contracts](docs/ARCHITECTURE.md) explain
 component boundaries; the [porting guide](docs/PORTING_GUIDE.md) describes reuse,
 generation-specific work, tests and licensing. After the initial native Arc
