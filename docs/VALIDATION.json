@@ -172,7 +172,7 @@
     "native_hardware_tested": false,
     "parallel_kernel_lifetime_tested": false
   },
-  "pinned_reference_files_sha256_verified": 16,
+  "pinned_reference_files_sha256_verified": 34,
   "total_host_tests_passed": 444,
   "macos_object_count": 14,
   "native_diagnostic_source_compiled": true,
@@ -835,5 +835,40 @@
     "verified_native_binary_sha256": "83bfacd88b86f97f9e7d5547c64caf2c6c1975b4b8fe19d68d157af08ddfa098",
     "verified_native_ci_run_id": 38132276514
   },
-  "mesa_cpu_native_build_verified": false
+  "mesa_cpu_native_build_verified": false,
+  "arc_interface_contract_tests": {
+    "test_type": "Executed the actual compiled lb_arc_interface C++ through ctypes: wire sizes, operation table, external-method call shapes, per-operation accept/reject matrix, owner binding, buffer aliasing and user-space decoding",
+    "environment": "Linux x86_64 container, clang 18.1.3, -O2 -Wall -Wextra -Werror",
+    "tests_run": 46,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "successful": true,
+    "actual_production_cpp_executed": true,
+    "mmio_dma_firmware_or_gpu_used": false,
+    "accepted_request_is_a_submission": false,
+    "native_macos_hardware_tests": 0
+  },
+  "arc_interface_source_comparison": {
+    "test_type": "Extracted the pinned Linux v6.17 Xe uAPI and the published Apple xnu / IOGraphics / IOPCIFamily contracts, then verified the compiled operation table against them",
+    "environment": "Linux x86_64 container, Python 3.13",
+    "tests_run": 13,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "successful": true,
+    "linux_arc_ioctls_extracted": 12,
+    "operations_mapped": 11,
+    "unmapped_linux_ioctls": [
+      "DRM_XE_OBSERVATION"
+    ],
+    "driver_table_mismatches": 0,
+    "apple_intel_graphics_kexts_in_public_inventory": 20,
+    "newest_apple_intel_graphics_driver": "com.apple.driver.AppleIntelICLGraphics (Ice Lake, Gen11)",
+    "apple_xe_or_xe2_driver_present": false,
+    "apple_driver_code_or_binary_used": false,
+    "record": "docs/ARC_INTERFACE_DIFF.json"
+  },
+  "arc_interface_ci_runs_recorded": false,
+  "native_arc_interface_selectors_hardware_tested": false
 }

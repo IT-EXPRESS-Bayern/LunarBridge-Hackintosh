@@ -1,0 +1,68 @@
+name: Arc interface comparison
+
+on:
+  push:
+    paths:
+      - gpu-prototype/lb_arc_interface.*
+      - tools/compare_interfaces.py
+      - tests/test_arc_interface.py
+      - tests/test_interface_diff.py
+      - tests/reference-manifest.json
+      - docs/ARC_INTERFACE_DIFF.json
+      - .github/workflows/interface-diff.yml
+  pull_request:
+    paths:
+      - gpu-prototype/lb_arc_interface.*
+      - tools/compare_interfaces.py
+      - tests/test_arc_interface.py
+      - tests/test_interface_diff.py
+      - tests/reference-manifest.json
+      - docs/ARC_INTERFACE_DIFF.json
+      - .github/workflows/interface-diff.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compare:
+    name: Check the Arc interface table against the pinned sources
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: '3.12'
+      - name: Fetch the hash-pinned upstream interface sources
+        run: python3 -B tools/fetch_references.py
+      - name: Build the actual interface module
+        run: |
+          mkdir -p build/interface
+          clang++ -std=c++17 -O2 -Wall -Wextra -Werror -fno-exceptions -fno-rtti -fPIC -shared \
+            gpu-prototype/lb_gpu_memory.cpp gpu-prototype/lb_ggtt_plan.cpp \
+            gpu-prototype/lb_guc_transport.cpp gpu-prototype/lb_guc_scheduler.cpp \
+            gpu-prototype/lb_arc_interface.cpp -o build/interface/libarcinterface.so
+      - name: Run the interface contract tests
+        run: |
+          python3 -B tests/test_arc_interface.py build/interface/libarcinterface.so \
+            --report build/interface/arc-interface-test-report.json
+          python3 -B tests/test_interface_diff.py build/interface/libarcinterface.so
+      - name: Verify the compiled table and the committed comparison record
+        run: |
+          python3 -B tools/compare_interfaces.py --library build/interface/libarcinterface.so \
+            --out build/interface/ARC_INTERFACE_VERIFICATION.json
+          python3 -B tools/compare_interfaces.py
+          git diff --exit-code -- docs/ARC_INTERFACE_DIFF.json
+      - name: Upload the comparison evidence
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        with:
+          name: LunarBridge-Arc-Interface-Comparison
+          path: |
+            build/interface/ARC_INTERFACE_VERIFICATION.json
+            build/interface/arc-interface-test-report.json
+          if-no-files-found: error
+          retention-days: 14

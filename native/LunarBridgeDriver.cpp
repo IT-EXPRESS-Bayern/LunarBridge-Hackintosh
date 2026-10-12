@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright 2026 IT-EXPRESS Bayern and LunarBridge contributors.
 #include "LunarBridgeDriver.h"
+#include "../gpu-prototype/lb_arc_interface.h"
 #include <IOKit/pci/IOPCIDevice.h>
 #include <libkern/c++/OSBoolean.h>
 #include <kern/clock.h>
@@ -353,7 +354,9 @@ IOReturn LunarBridgeUserClient::externalMethod(uint32_t selector, IOExternalMeth
         {invoke, 1, 0, 0, sizeof(LBTraceBatchResult)},
         {invoke, 0, 0, 0, 0},
         {invoke, 0, 0, 0, sizeof(LBDMAInfo)},
-        {invoke, 0, 0, 0, sizeof(LBForceWakeInfo)}
+        {invoke, 0, 0, 0, sizeof(LBForceWakeInfo)},
+        {invoke, 0, 0, 0, sizeof(LBArcInterfaceReport)},
+        {invoke, 0, sizeof(LBArcRequest), 0, sizeof(LBArcDecision)}
     };
     if (!args || selector >= LBSelectorCount) {
         traceRequest(LBMethodRejected, kIOReturnBadArgument, selector);
@@ -449,6 +452,38 @@ IOReturn LunarBridgeUserClient::perform(uint32_t selector, IOExternalMethodArgum
             return args->structureOutput &&
                 _owner->forcewakeInfo(static_cast<LBForceWakeInfo *>(args->structureOutput))
                 ? kIOReturnSuccess : kIOReturnNotReady;
+        case LBGetArcInterface: {
+            if (!args->structureOutput) return kIOReturnBadArgument;
+            // Build in aligned local storage: an inline Mach message payload
+            // is only 4-byte aligned, and the module requires 8.
+            LBArcInterfaceReport report{};
+            if (lb_arc_interface_describe(&report, sizeof(report)) != LBArcOK)
+                return kIOReturnInternalError;
+            *static_cast<LBArcInterfaceReport *>(args->structureOutput) = report;
+            _owner->trace(LBArcInterfaceQueried, kIOReturnSuccess, _context, report.opCount);
+            return kIOReturnSuccess;
+        }
+        case LBCheckArcRequest: {
+            if (!args->structureInput || !args->structureOutput ||
+                args->structureInputSize != sizeof(LBArcRequest)) return kIOReturnBadArgument;
+            LBArcRequest request = *static_cast<const LBArcRequest *>(args->structureInput);
+            // Ownership comes from this user client, never from the request:
+            // Linux derives it from the open render node, so a client-supplied
+            // owner id would be the one field that could forge another client.
+            if (request.owner) return kIOReturnBadArgument;
+            request.owner = _context;
+            LBArcDecision decision{};
+            // The verdict is the payload: a refused request is answered with
+            // its reason, and no selector of this ABI submits GPU work.
+            const uint32_t verdict = lb_arc_interface_evaluate(&request, _context, nullptr,
+                                                               &decision, sizeof(decision));
+            if (decision.structBytes != sizeof(decision)) return kIOReturnInternalError;
+            *static_cast<LBArcDecision *>(args->structureOutput) = decision;
+            _owner->trace(verdict ? LBArcRequestRejected : LBArcRequestAccepted,
+                          kIOReturnSuccess, _context, decision.op,
+                          (uint64_t(verdict) << 32) | decision.reason);
+            return kIOReturnSuccess;
+        }
         case LBSubmit:
             _owner->trace(LBSubmitUnsupported, kIOReturnUnsupported, _context);
             return kIOReturnUnsupported;

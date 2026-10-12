@@ -53,6 +53,14 @@ von Selector 6. Handshake und Cleanup werden getrennt berichtet. Bei ungeklärte
 Abbau werden gehaltene Ressourcen als Fehler markiert; ein ACK bestätigt keine
 Shader-Ausführung oder Metal. Siehe [GPU-Anschluss](GPU_BRINGUP.md).
 
+Der Sammler liest zusätzlich die 576-Byte-Arc-Operationstabelle von Selector 7
+nach `arc_interface`. Der Dekoder weist eine Tabelle ab, die Ausführung oder
+Metal behauptet, unbekannte Bits führt oder Deskriptoren mit Skalaren meldet.
+Scheitert der Aufruf, bleibt der Bericht erhalten und trägt
+`arc_interface_error`. Die Tabelle beschreibt nur Schnittstellenformen; sie
+belegt keinen geladenen GPU-Pfad. Siehe
+[Schnittstellenvergleich](ARC_INTERFACE_DIFF.md).
+
 Auswertung eines vorhandenen Berichts funktioniert auch unter Windows:
 
 ```sh
@@ -77,6 +85,8 @@ python3 tools/analyze_trace.py diagnostics/diagnostics.json --out FEHLERBERICHT.
 | 42 / 43 | DMA-Referenzen freigegeben / Freigabefehler | Keine GPU-Ausführung; Fehlerressourcen nicht als frei zählen |
 | 50 / 51 | Main-GT-Handschlag / Fehler | GMD-IP, Primärstatus und Put getrennt auswerten |
 | 52 / 53 | Wake-Cleanup / Cleanupfehler | BAR-/Provider-/Servicereferenzen bleiben bei ungeklärtem Put gehalten |
+| 60 | Arc-Schnittstellentabelle gelesen | `arg0` ist die Operationszahl; kein GPU-Pfad belegt |
+| 61 / 62 | Arc-Anfrage akzeptiert / abgelehnt | `arg0` ist die Operation, `arg1` enthält Ergebnis und Grund; Annahme ist keine Submission |
 
 Der Fehlerbericht nennt die zugehörigen Quelldateien/Funktionen und unterscheidet
 erwartete Einschränkungen von Fehlern. Ein gesetztes Capability-Bit wird nicht

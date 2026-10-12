@@ -29,6 +29,27 @@ class DMAInfo(c.Structure):
     _fields_ = [('bytes', c.c_uint64)] + [(n, c.c_uint32) for n in (
         'abi', 'segments', 'pteEntries', 'deviceMapperUsed', 'dmaPrepared', 'gpuBound')]
 
+class ArcOpDescriptor(c.Structure):
+    _fields_ = [(n, c.c_uint32) for n in (
+        'op', 'selector', 'scalarInputCount', 'scalarOutputCount', 'structInputBytes',
+        'structOutputBytes', 'differences', 'requiredQualifications', 'linuxIoctlNr',
+        'linuxConstructs', 'linuxDirection', 'reserved')]
+
+class ArcInterfaceReport(c.Structure):
+    _fields_ = [(n, c.c_uint32) for n in (
+        'abi', 'structBytes', 'opCount', 'differences', 'linuxUapiVersion', 'darwinKernelMajor',
+        'scalarLimit', 'maxSegments', 'maxSyncs', 'unmappedLinuxIoctls',
+        'gpuExecutionImplemented', 'metalProviderImplemented')] + [('ops', ArcOpDescriptor * 11)]
+
+class ArcDecision(c.Structure):
+    _fields_ = [(n, c.c_uint32) for n in (
+        'abi', 'structBytes', 'op', 'result', 'reason', 'differences',
+        'requiredQualifications', 'acceptedSegments')] + [
+        (n, c.c_uint64) for n in ('translatedBytes', 'translatedGpuAddress')] + [
+        (n, c.c_uint32) for n in (
+            'pageCount', 'ggttWriteCount', 'expectedPatValue', 'fenceSlots',
+            'hardwareBound', 'gpuExecuted', 'metalVerified', 'reserved')]
+
 class ForceWakeInfo(c.Structure):
     _fields_ = [(n, c.c_uint32) for n in (
         'abi', 'structBytes', 'enabled', 'attempted', 'preflight', 'primaryStatus',
@@ -45,12 +66,43 @@ EVENTS = {
     29: 'client_rejected', 40: 'dma_prepared', 41: 'dma_preparation_failed',
     42: 'dma_reference_released', 43: 'dma_release_failed',
     50: 'forcewake_handshake_completed', 51: 'forcewake_handshake_failed',
-    52: 'forcewake_cleanup_completed', 53: 'forcewake_cleanup_failed'
+    52: 'forcewake_cleanup_completed', 53: 'forcewake_cleanup_failed',
+    60: 'arc_interface_queried', 61: 'arc_request_accepted', 62: 'arc_request_rejected'
 }
 WAKE_STATUS = {
     0: 'success', 1: 'invalid_callbacks', 2: 'invalid_state', 3: 'existing_request_or_pending_cleanup',
     4: 'register_access_failed', 5: 'invalid_all_ones_mmio', 6: 'ack_timeout',
     7: 'clock_not_monotonic', 8: 'not_attempted', 9: 'unexpected_graphics_or_media_ip'
+}
+ARC_OPERATIONS = {
+    1: 'device_query', 2: 'resource_create', 3: 'resource_map', 4: 'vm_create',
+    5: 'vm_destroy', 6: 'vm_bind', 7: 'queue_create', 8: 'queue_destroy',
+    9: 'queue_property', 10: 'exec', 11: 'fence_wait'
+}
+ARC_RESULTS = {
+    0: 'accepted', 1: 'invalid_input', 2: 'abi_mismatch', 3: 'wrong_owner',
+    4: 'unknown_operation', 5: 'invalid_call_shape', 6: 'linux_only_construct',
+    7: 'unsupported', 8: 'out_of_range', 9: 'misaligned', 10: 'over_capacity',
+    11: 'policy_refused', 12: 'aliasing_buffers'
+}
+ARC_REASONS = {
+    0: 'none', 1: 'field_outside_operation', 2: 'user_pointer', 3: 'sync_object',
+    4: 'mmap_offset', 5: 'handle_namespace', 6: 'variable_structure', 7: 'scalar_count',
+    8: 'async_unsupported', 9: 'pat_index', 10: 'engine_class', 11: 'segment_sum',
+    12: 'page_alignment', 13: 'fence_address', 14: 'timeout', 15: 'unmapped_operation',
+    16: 'missing_token', 17: 'global_window', 18: 'batch_alignment', 19: 'capacity',
+    20: 'flags', 21: 'no_completion_signal'
+}
+ARC_DIFFERENCES = {
+    1 << 0: 'fixed_structure_size', 1 << 1: 'no_extension_chain', 1 << 2: 'no_user_pointer',
+    1 << 3: 'flattened_vector', 1 << 4: 'no_sync_object', 1 << 5: 'no_mmap_offset',
+    1 << 6: 'owner_bound_token', 1 << 7: 'explicit_pat', 1 << 8: 'async_reference',
+    1 << 9: 'bounded_timeout', 1 << 10: 'no_render_node', 1 << 11: 'entitlement_gate'
+}
+ARC_QUALIFICATIONS = {
+    1 << 0: 'device_mapper', 1 << 1: 'ggtt_ownership', 1 << 2: 'pat_programmed',
+    1 << 3: 'guc_running', 1 << 4: 'lrc_prepared', 1 << 5: 'fence_memory',
+    1 << 6: 'fuse_topology', 1 << 7: 'metal_provider', 1 << 8: 'display_engine'
 }
 POLICIES = {
     0: 'allowed_by_preflight', 1: 'explicit_opt_in_missing', 2: 'unsupported_pci',
@@ -102,6 +154,59 @@ def decode_forcewake_info(data):
             'resources_retained': bool(w.resourcesRetained), 'lease_references': int(w.leaseReferences),
             'graphics_ip': int(w.graphicsIP), 'media_ip': int(w.mediaIP),
             'gpu_execution_tested': False, 'metal_execution_verified': False}
+
+def _named_bits(value, names):
+    if value & ~sum(names): raise ValueError('Unknown Arc interface bit reported')
+    return [name for bit, name in sorted(names.items()) if value & bit]
+
+def decode_arc_interface(data):
+    if len(data) != c.sizeof(ArcInterfaceReport): raise ValueError('Arc interface length mismatch')
+    r = ArcInterfaceReport.from_buffer_copy(data)
+    if r.abi != 1 or r.structBytes != c.sizeof(ArcInterfaceReport) or r.opCount != 11 or \
+       r.gpuExecutionImplemented or r.metalProviderImplemented:
+        raise ValueError('Arc interface ABI mismatch')
+    operations = []
+    for row in r.ops[:r.opCount]:
+        if row.op not in ARC_OPERATIONS or row.reserved or row.scalarInputCount or \
+           row.scalarOutputCount or row.linuxDirection not in (1, 2, 3):
+            raise ValueError('Arc operation descriptor mismatch')
+        operations.append({
+            'operation': ARC_OPERATIONS[row.op], 'selector': int(row.selector),
+            'struct_input_bytes': int(row.structInputBytes),
+            'struct_output_bytes': int(row.structOutputBytes),
+            'linux_ioctl_nr': int(row.linuxIoctlNr),
+            'linux_direction': {1: 'write', 2: 'read', 3: 'read_write'}[row.linuxDirection],
+            'differences': _named_bits(row.differences, ARC_DIFFERENCES),
+            'missing_qualifications': _named_bits(row.requiredQualifications, ARC_QUALIFICATIONS)})
+    return {'abi': int(r.abi), 'operation_count': int(r.opCount),
+            'linux_uapi_version': f'{r.linuxUapiVersion >> 16}.{r.linuxUapiVersion & 0xffff}',
+            'darwin_kernel_major': int(r.darwinKernelMajor),
+            'scalar_limit': int(r.scalarLimit), 'max_segments': int(r.maxSegments),
+            'max_syncs': int(r.maxSyncs), 'unmapped_linux_ioctls': int(r.unmappedLinuxIoctls),
+            'differences': _named_bits(r.differences, ARC_DIFFERENCES),
+            'operations': operations, 'gpu_execution_implemented': False,
+            'metal_provider_implemented': False}
+
+def decode_arc_decision(data):
+    if len(data) != c.sizeof(ArcDecision): raise ValueError('Arc decision length mismatch')
+    d = ArcDecision.from_buffer_copy(data)
+    if d.abi != 1 or d.structBytes != c.sizeof(ArcDecision) or d.op not in ARC_OPERATIONS or \
+       d.result not in ARC_RESULTS or d.reason not in ARC_REASONS or d.reserved or \
+       d.hardwareBound or d.gpuExecuted or d.metalVerified:
+        raise ValueError('Arc decision ABI mismatch')
+    if d.result and (d.translatedBytes or d.translatedGpuAddress or d.pageCount or
+                     d.ggttWriteCount or d.fenceSlots or d.acceptedSegments):
+        raise ValueError('Refused Arc request reported translated values')
+    return {'operation': ARC_OPERATIONS[d.op], 'result': ARC_RESULTS[d.result],
+            'reason': ARC_REASONS[d.reason],
+            'differences': _named_bits(d.differences, ARC_DIFFERENCES),
+            'missing_qualifications': _named_bits(d.requiredQualifications, ARC_QUALIFICATIONS),
+            'accepted_segments': int(d.acceptedSegments),
+            'translated_bytes': int(d.translatedBytes),
+            'translated_gpu_address': int(d.translatedGpuAddress),
+            'page_count': int(d.pageCount), 'ggtt_write_count': int(d.ggttWriteCount),
+            'expected_pat_value': int(d.expectedPatValue), 'fence_slots': int(d.fenceSlots),
+            'hardware_bound': False, 'gpu_executed': False, 'metal_verified': False}
 
 def decode_dma_info(data):
     if len(data) != c.sizeof(DMAInfo): raise ValueError('DMA info length mismatch')

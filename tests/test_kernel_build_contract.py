@@ -84,7 +84,8 @@ class KernelBuildContractTests(unittest.TestCase):
                 with self.assertRaises(_LinkReached):
                     module.main()
         kernels = [command for command in commands if '-c' in command]
-        self.assertEqual(len(kernels), 13)
+        # Thirteen original kernel sources plus lb_arc_interface.cpp.
+        self.assertEqual(len(kernels), 14)
         for command in kernels:
             self.assertEqual(command.count('-fno-stack-check'), 1)
             self.assertIn('-mkernel', command)
@@ -110,7 +111,8 @@ class KernelBuildContractTests(unittest.TestCase):
                 with self.assertRaises(SystemExit) as status:
                     runpy.run_path(str(ROOT / 'gpu-prototype/build_gpu.py'), run_name='__main__')
             self.assertEqual(status.exception.code, 0)
-        self.assertEqual(len(commands), 15)
+        # One Windows DLL command plus fifteen macOS object commands.
+        self.assertEqual(len(commands), 16)
         windows, kernels = commands[0], commands[1:]
         self.assertEqual(windows[windows.index('-target') + 1], 'x86_64-windows-gnu')
         self.assertIn('-shared', windows)

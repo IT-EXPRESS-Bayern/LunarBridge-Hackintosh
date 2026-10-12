@@ -1,0 +1,554 @@
+{
+  "generated_by": "tools/compare_interfaces.py",
+  "scope": "Interface shapes only. No Apple or Intel driver code is copied, no system is inspected, no GPU is used. Driver loading, GPU execution and Metal remain unimplemented.",
+  "linux_arc_130v_driver": {
+    "pin": "torvalds/linux e5f0a698b34ed76002dc5cff3804a61c80233a7a (v6.17)",
+    "drm_command_base": 64,
+    "ioctl_count": 12,
+    "served_by_driver_table": 12,
+    "permission_model": [
+      "DRM_RENDER_ALLOW"
+    ],
+    "ioctls": {
+      "DEVICE_QUERY": {
+        "offset": 0,
+        "ioctl_nr": 64,
+        "direction": 3,
+        "direction_macro": "DRM_IOWR",
+        "structure": "drm_xe_device_query",
+        "field_count": 5,
+        "fields": [
+          "extensions",
+          "query",
+          "size",
+          "data",
+          "reserved"
+        ],
+        "constructs": 3,
+        "construct_names": [
+          "extension_chain",
+          "user_pointer"
+        ]
+      },
+      "GEM_CREATE": {
+        "offset": 1,
+        "ioctl_nr": 65,
+        "direction": 3,
+        "direction_macro": "DRM_IOWR",
+        "structure": "drm_xe_gem_create",
+        "field_count": 9,
+        "fields": [
+          "extensions",
+          "size",
+          "placement",
+          "flags",
+          "vm_id",
+          "handle",
+          "cpu_caching",
+          "pad",
+          "reserved"
+        ],
+        "constructs": 17,
+        "construct_names": [
+          "extension_chain",
+          "handle_id"
+        ]
+      },
+      "GEM_MMAP_OFFSET": {
+        "offset": 2,
+        "ioctl_nr": 66,
+        "direction": 3,
+        "direction_macro": "DRM_IOWR",
+        "structure": "drm_xe_gem_mmap_offset",
+        "field_count": 5,
+        "fields": [
+          "extensions",
+          "handle",
+          "flags",
+          "offset",
+          "reserved"
+        ],
+        "constructs": 49,
+        "construct_names": [
+          "extension_chain",
+          "handle_id",
+          "mmap_offset"
+        ]
+      },
+      "VM_CREATE": {
+        "offset": 3,
+        "ioctl_nr": 67,
+        "direction": 3,
+        "direction_macro": "DRM_IOWR",
+        "structure": "drm_xe_vm_create",
+        "field_count": 4,
+        "fields": [
+          "extensions",
+          "flags",
+          "vm_id",
+          "reserved"
+        ],
+        "constructs": 17,
+        "construct_names": [
+          "extension_chain",
+          "handle_id"
+        ]
+      },
+      "VM_DESTROY": {
+        "offset": 4,
+        "ioctl_nr": 68,
+        "direction": 1,
+        "direction_macro": "DRM_IOW",
+        "structure": "drm_xe_vm_destroy",
+        "field_count": 3,
+        "fields": [
+          "vm_id",
+          "pad",
+          "reserved"
+        ],
+        "constructs": 16,
+        "construct_names": [
+          "handle_id"
+        ]
+      },
+      "VM_BIND": {
+        "offset": 5,
+        "ioctl_nr": 69,
+        "direction": 1,
+        "direction_macro": "DRM_IOW",
+        "structure": "drm_xe_vm_bind",
+        "field_count": 11,
+        "fields": [
+          "extensions",
+          "vm_id",
+          "exec_queue_id",
+          "pad",
+          "num_binds",
+          "bind",
+          "vector_of_binds",
+          "pad2",
+          "num_syncs",
+          "syncs",
+          "reserved"
+        ],
+        "constructs": 31,
+        "construct_names": [
+          "extension_chain",
+          "handle_id",
+          "sync_array",
+          "user_pointer",
+          "vector_of_ops"
+        ]
+      },
+      "EXEC_QUEUE_CREATE": {
+        "offset": 6,
+        "ioctl_nr": 70,
+        "direction": 3,
+        "direction_macro": "DRM_IOWR",
+        "structure": "drm_xe_exec_queue_create",
+        "field_count": 8,
+        "fields": [
+          "extensions",
+          "width",
+          "num_placements",
+          "vm_id",
+          "flags",
+          "exec_queue_id",
+          "instances",
+          "reserved"
+        ],
+        "constructs": 19,
+        "construct_names": [
+          "extension_chain",
+          "handle_id",
+          "user_pointer"
+        ]
+      },
+      "EXEC_QUEUE_DESTROY": {
+        "offset": 7,
+        "ioctl_nr": 71,
+        "direction": 1,
+        "direction_macro": "DRM_IOW",
+        "structure": "drm_xe_exec_queue_destroy",
+        "field_count": 3,
+        "fields": [
+          "exec_queue_id",
+          "pad",
+          "reserved"
+        ],
+        "constructs": 16,
+        "construct_names": [
+          "handle_id"
+        ]
+      },
+      "EXEC_QUEUE_GET_PROPERTY": {
+        "offset": 8,
+        "ioctl_nr": 72,
+        "direction": 3,
+        "direction_macro": "DRM_IOWR",
+        "structure": "drm_xe_exec_queue_get_property",
+        "field_count": 5,
+        "fields": [
+          "extensions",
+          "exec_queue_id",
+          "property",
+          "value",
+          "reserved"
+        ],
+        "constructs": 17,
+        "construct_names": [
+          "extension_chain",
+          "handle_id"
+        ]
+      },
+      "EXEC": {
+        "offset": 9,
+        "ioctl_nr": 73,
+        "direction": 1,
+        "direction_macro": "DRM_IOW",
+        "structure": "drm_xe_exec",
+        "field_count": 8,
+        "fields": [
+          "extensions",
+          "exec_queue_id",
+          "num_syncs",
+          "syncs",
+          "address",
+          "num_batch_buffer",
+          "pad",
+          "reserved"
+        ],
+        "constructs": 27,
+        "construct_names": [
+          "extension_chain",
+          "handle_id",
+          "sync_array",
+          "user_pointer"
+        ]
+      },
+      "WAIT_USER_FENCE": {
+        "offset": 10,
+        "ioctl_nr": 74,
+        "direction": 3,
+        "direction_macro": "DRM_IOWR",
+        "structure": "drm_xe_wait_user_fence",
+        "field_count": 11,
+        "fields": [
+          "extensions",
+          "addr",
+          "op",
+          "flags",
+          "pad",
+          "value",
+          "mask",
+          "timeout",
+          "exec_queue_id",
+          "pad2",
+          "reserved"
+        ],
+        "constructs": 209,
+        "construct_names": [
+          "extension_chain",
+          "handle_id",
+          "infinite_wait",
+          "user_fence_address"
+        ]
+      },
+      "OBSERVATION": {
+        "offset": 11,
+        "ioctl_nr": 75,
+        "direction": 1,
+        "direction_macro": "DRM_IOW",
+        "structure": "drm_xe_observation_param",
+        "field_count": 4,
+        "fields": [
+          "extensions",
+          "observation_type",
+          "observation_op",
+          "param"
+        ],
+        "constructs": 1,
+        "construct_names": [
+          "extension_chain"
+        ]
+      }
+    },
+    "sync_types": {
+      "SYNCOBJ": "0x0",
+      "TIMELINE_SYNCOBJ": "0x1",
+      "USER_FENCE": "0x2"
+    },
+    "bind_operations": {
+      "MAP": "0x0",
+      "UNMAP": "0x1",
+      "MAP_USERPTR": "0x2",
+      "UNMAP_ALL": "0x3",
+      "PREFETCH": "0x4"
+    },
+    "bind_op_fields": [
+      "extensions",
+      "obj",
+      "pat_index",
+      "pad",
+      "obj_offset",
+      "userptr",
+      "cpu_addr_mirror_offset",
+      "range",
+      "addr",
+      "op",
+      "flags",
+      "prefetch_mem_region_instance",
+      "pad2",
+      "reserved"
+    ],
+    "bind_op_pat_index": true
+  },
+  "macos_tahoe_driver_contract": {
+    "pins": {
+      "xnu": "apple-oss-distributions/xnu xnu-12377.121.6",
+      "iographics": "apple-oss-distributions/IOGraphics IOGraphics-600",
+      "iopcifamily": "apple-oss-distributions/IOPCIFamily IOPCIFamily-726.100.6"
+    },
+    "external_method_arguments_fields": [
+      "version",
+      "selector",
+      "asyncWakePort",
+      "asyncReference",
+      "asyncReferenceCount",
+      "scalarInput",
+      "scalarInputCount",
+      "structureInput",
+      "structureInputSize",
+      "structureInputDescriptor",
+      "scalarOutput",
+      "scalarOutputCount",
+      "structureOutput",
+      "structureOutputSize",
+      "structureOutputDescriptor",
+      "structureOutputDescriptorSize",
+      "__reservedA",
+      "structureVariableOutputData",
+      "__reserved"
+    ],
+    "has_structure_input_descriptor": true,
+    "has_async_reference": true,
+    "dispatch_check_fields": [
+      "checkScalarInputCount",
+      "checkStructureInputSize",
+      "checkScalarOutputCount",
+      "checkStructureOutputSize"
+    ],
+    "dispatch_2022_extra_fields": [
+      "allowAsync",
+      "checkEntitlement"
+    ],
+    "scalar_input_count_max": 16,
+    "scalar_output_count_max": 16,
+    "variable_structure_size": 4294967295,
+    "accelerator_client_types": [
+      "kIOAccelSurfaceClientType",
+      "kIOAccelNumClientTypes"
+    ],
+    "accelerator_surface_method_count": 19,
+    "public_accelerator_interface": "IOAccelSurface locking, shaping and flushing only; no public command-submission or page-table interface",
+    "dma_command_segment_api": true,
+    "pci_memory_mapping_api": true
+  },
+  "apple_intel_driver_inventory": {
+    "pin": "acidanthera/WhateverGreen 093e76fec5655001f38b367dd22459c756ee89fa",
+    "kext_count": 20,
+    "bundle_identifiers": [
+      "com.apple.driver.AppleIntelHDGraphics",
+      "com.apple.driver.AppleIntelHDGraphicsFB",
+      "com.apple.driver.AppleIntelHD3000Graphics",
+      "com.apple.driver.AppleIntelSNBGraphicsFB",
+      "com.apple.driver.AppleIntelHD4000Graphics",
+      "com.apple.driver.AppleIntelFramebufferCapri",
+      "com.apple.driver.AppleIntelHD5000Graphics",
+      "com.apple.driver.AppleIntelFramebufferAzul",
+      "com.apple.driver.AppleIntelBDWGraphics",
+      "com.apple.driver.AppleIntelBDWGraphicsFramebuffer",
+      "com.apple.driver.AppleIntelSKLGraphics",
+      "com.apple.driver.AppleIntelSKLGraphicsFramebuffer",
+      "com.apple.driver.AppleIntelKBLGraphics",
+      "com.apple.driver.AppleIntelKBLGraphicsFramebuffer",
+      "com.apple.driver.AppleIntelCFLGraphicsFramebuffer",
+      "com.apple.driver.AppleIntelCNLGraphics",
+      "com.apple.driver.AppleIntelCNLGraphicsFramebuffer",
+      "com.apple.driver.AppleIntelICLGraphics",
+      "com.apple.driver.AppleIntelICLLPGraphicsFramebuffer",
+      "com.apple.driver.AppleIntelICLHPGraphicsFramebuffer"
+    ],
+    "newest_generation": "ICL (Gen11)",
+    "newest_accelerator_bundle": "com.apple.driver.AppleIntelICLGraphics",
+    "newest_framebuffer_bundles": [
+      "com.apple.driver.AppleIntelICLLPGraphicsFramebuffer",
+      "com.apple.driver.AppleIntelICLHPGraphicsFramebuffer"
+    ],
+    "newest_paths": {
+      "ICL": "/System/Library/Extensions/AppleIntelICLGraphics.kext/Contents/MacOS/AppleIntelICLGraphics",
+      "ICLLPFb": "/System/Library/Extensions/AppleIntelICLLPGraphicsFramebuffer.kext/Contents/MacOS/AppleIntelICLLPGraphicsFramebuffer",
+      "ICLHPFb": "/System/Library/Extensions/AppleIntelICLHPGraphicsFramebuffer.kext/Contents/MacOS/AppleIntelICLHPGraphicsFramebuffer"
+    },
+    "xe_or_xe2_driver_present": false,
+    "note": "Public inventory of Apple-shipped Intel graphics kexts. The newest family is Ice Lake / Gen11; no Apple driver exists for Gen12, Xe or Xe2. Apple binaries are neither read nor redistributed here."
+  },
+  "operation_mapping": {
+    "mapped": [
+      {
+        "operation": "LBArcOpDeviceQuery",
+        "op_value": 1,
+        "linux_ioctl": "DRM_IOCTL_XE_DEVICE_QUERY",
+        "linux_structure": "drm_xe_device_query",
+        "linux_ioctl_nr": 64,
+        "linux_direction_macro": "DRM_IOWR",
+        "linux_field_count": 5,
+        "linux_constructs": [
+          "extension_chain",
+          "user_pointer"
+        ]
+      },
+      {
+        "operation": "LBArcOpResourceCreate",
+        "op_value": 2,
+        "linux_ioctl": "DRM_IOCTL_XE_GEM_CREATE",
+        "linux_structure": "drm_xe_gem_create",
+        "linux_ioctl_nr": 65,
+        "linux_direction_macro": "DRM_IOWR",
+        "linux_field_count": 9,
+        "linux_constructs": [
+          "extension_chain",
+          "handle_id"
+        ]
+      },
+      {
+        "operation": "LBArcOpResourceMap",
+        "op_value": 3,
+        "linux_ioctl": "DRM_IOCTL_XE_GEM_MMAP_OFFSET",
+        "linux_structure": "drm_xe_gem_mmap_offset",
+        "linux_ioctl_nr": 66,
+        "linux_direction_macro": "DRM_IOWR",
+        "linux_field_count": 5,
+        "linux_constructs": [
+          "extension_chain",
+          "handle_id",
+          "mmap_offset"
+        ]
+      },
+      {
+        "operation": "LBArcOpVmCreate",
+        "op_value": 4,
+        "linux_ioctl": "DRM_IOCTL_XE_VM_CREATE",
+        "linux_structure": "drm_xe_vm_create",
+        "linux_ioctl_nr": 67,
+        "linux_direction_macro": "DRM_IOWR",
+        "linux_field_count": 4,
+        "linux_constructs": [
+          "extension_chain",
+          "handle_id"
+        ]
+      },
+      {
+        "operation": "LBArcOpVmDestroy",
+        "op_value": 5,
+        "linux_ioctl": "DRM_IOCTL_XE_VM_DESTROY",
+        "linux_structure": "drm_xe_vm_destroy",
+        "linux_ioctl_nr": 68,
+        "linux_direction_macro": "DRM_IOW",
+        "linux_field_count": 3,
+        "linux_constructs": [
+          "handle_id"
+        ]
+      },
+      {
+        "operation": "LBArcOpVmBind",
+        "op_value": 6,
+        "linux_ioctl": "DRM_IOCTL_XE_VM_BIND",
+        "linux_structure": "drm_xe_vm_bind",
+        "linux_ioctl_nr": 69,
+        "linux_direction_macro": "DRM_IOW",
+        "linux_field_count": 11,
+        "linux_constructs": [
+          "extension_chain",
+          "handle_id",
+          "sync_array",
+          "user_pointer",
+          "vector_of_ops"
+        ]
+      },
+      {
+        "operation": "LBArcOpQueueCreate",
+        "op_value": 7,
+        "linux_ioctl": "DRM_IOCTL_XE_EXEC_QUEUE_CREATE",
+        "linux_structure": "drm_xe_exec_queue_create",
+        "linux_ioctl_nr": 70,
+        "linux_direction_macro": "DRM_IOWR",
+        "linux_field_count": 8,
+        "linux_constructs": [
+          "extension_chain",
+          "handle_id",
+          "user_pointer"
+        ]
+      },
+      {
+        "operation": "LBArcOpQueueDestroy",
+        "op_value": 8,
+        "linux_ioctl": "DRM_IOCTL_XE_EXEC_QUEUE_DESTROY",
+        "linux_structure": "drm_xe_exec_queue_destroy",
+        "linux_ioctl_nr": 71,
+        "linux_direction_macro": "DRM_IOW",
+        "linux_field_count": 3,
+        "linux_constructs": [
+          "handle_id"
+        ]
+      },
+      {
+        "operation": "LBArcOpQueueProperty",
+        "op_value": 9,
+        "linux_ioctl": "DRM_IOCTL_XE_EXEC_QUEUE_GET_PROPERTY",
+        "linux_structure": "drm_xe_exec_queue_get_property",
+        "linux_ioctl_nr": 72,
+        "linux_direction_macro": "DRM_IOWR",
+        "linux_field_count": 5,
+        "linux_constructs": [
+          "extension_chain",
+          "handle_id"
+        ]
+      },
+      {
+        "operation": "LBArcOpExec",
+        "op_value": 10,
+        "linux_ioctl": "DRM_IOCTL_XE_EXEC",
+        "linux_structure": "drm_xe_exec",
+        "linux_ioctl_nr": 73,
+        "linux_direction_macro": "DRM_IOW",
+        "linux_field_count": 8,
+        "linux_constructs": [
+          "extension_chain",
+          "handle_id",
+          "sync_array",
+          "user_pointer"
+        ]
+      },
+      {
+        "operation": "LBArcOpFenceWait",
+        "op_value": 11,
+        "linux_ioctl": "DRM_IOCTL_XE_WAIT_USER_FENCE",
+        "linux_structure": "drm_xe_wait_user_fence",
+        "linux_ioctl_nr": 74,
+        "linux_direction_macro": "DRM_IOWR",
+        "linux_field_count": 11,
+        "linux_constructs": [
+          "extension_chain",
+          "handle_id",
+          "infinite_wait",
+          "user_fence_address"
+        ]
+      }
+    ],
+    "unmapped": [
+      "OBSERVATION"
+    ],
+    "macos_carrier": "One user-client selector with a fixed 480-byte request and an 80-byte verdict; see docs/ARC_INTERFACE_DIFF.md."
+  }
+}

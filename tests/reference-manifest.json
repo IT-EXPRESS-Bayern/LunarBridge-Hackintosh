@@ -79,6 +79,96 @@
       "path": "linux-v6.17/drivers/gpu/drm/xe/xe_device_wa_oob.rules",
       "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/drivers/gpu/drm/xe/xe_device_wa_oob.rules",
       "sha256": "79edcc65c1179b3f4e1ceeed60756b07dda6c32a25898a4311bb94e17eb4e360"
+    },
+    {
+      "path": "linux-v6.17/include/uapi/drm/xe_drm.h",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/include/uapi/drm/xe_drm.h",
+      "sha256": "fc2d1a7bb23ea327910a4e276b89f6f142d22eb8a4fbc380e1112e8eb4584b44"
+    },
+    {
+      "path": "linux-v6.17/include/uapi/drm/drm.h",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/include/uapi/drm/drm.h",
+      "sha256": "2c3fad391cef5f3950aa2731b87e19031f7dd8b8dd31baaa8b3c930208cbd47b"
+    },
+    {
+      "path": "linux-v6.17/drivers/gpu/drm/xe/xe_device.c",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/drivers/gpu/drm/xe/xe_device.c",
+      "sha256": "bf616e1cd56b09059c561c0aad6474936edd69210959101120d595991541ee72"
+    },
+    {
+      "path": "linux-v6.17/drivers/gpu/drm/xe/xe_exec.c",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/drivers/gpu/drm/xe/xe_exec.c",
+      "sha256": "48a0dff500aeb26fd733d99edc73b741f813f8bf8767d4efd419ceb20e333d85"
+    },
+    {
+      "path": "linux-v6.17/drivers/gpu/drm/xe/xe_exec_queue.c",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/drivers/gpu/drm/xe/xe_exec_queue.c",
+      "sha256": "50f634c051261d36a3fd0b0c37fe0c3fb37c277dbe061b09bfd4d47c880317b1"
+    },
+    {
+      "path": "linux-v6.17/drivers/gpu/drm/xe/xe_query.c",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/drivers/gpu/drm/xe/xe_query.c",
+      "sha256": "1961bc3d2e8c7d2af8e282bb075c8082ff5f4380c1be37d1dbd40f2691f11bc3"
+    },
+    {
+      "path": "linux-v6.17/drivers/gpu/drm/xe/xe_sync.c",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/drivers/gpu/drm/xe/xe_sync.c",
+      "sha256": "ce7815235de8ca5bfb107388d9d3dac819a4a1b2b036abc4085c456d688adc0c"
+    },
+    {
+      "path": "macos-tahoe/xnu-12377.121.6/iokit/IOKit/IOUserClient.h",
+      "url": "https://raw.githubusercontent.com/apple-oss-distributions/xnu/xnu-12377.121.6/iokit/IOKit/IOUserClient.h",
+      "sha256": "01c419c05d471eac01292153afb650dd6abfccd30e0cc3b48ad8ffe6e7793cf9"
+    },
+    {
+      "path": "macos-tahoe/xnu-12377.121.6/iokit/IOKit/IOMemoryDescriptor.h",
+      "url": "https://raw.githubusercontent.com/apple-oss-distributions/xnu/xnu-12377.121.6/iokit/IOKit/IOMemoryDescriptor.h",
+      "sha256": "f55ae31c85a90790731b943898a8ad8bf7123c96604b3b12a8f055d519f3189e"
+    },
+    {
+      "path": "macos-tahoe/xnu-12377.121.6/iokit/IOKit/IODMACommand.h",
+      "url": "https://raw.githubusercontent.com/apple-oss-distributions/xnu/xnu-12377.121.6/iokit/IOKit/IODMACommand.h",
+      "sha256": "14cf81900488a4a11e676fc846e5ecf5fc915bbbfe67fcd9cd0ec3a551999e71"
+    },
+    {
+      "path": "macos-tahoe/IOGraphics-600/IOGraphicsFamily/IOKit/graphics/IOAccelTypes.h",
+      "url": "https://raw.githubusercontent.com/apple-oss-distributions/IOGraphics/IOGraphics-600/IOGraphicsFamily/IOKit/graphics/IOAccelTypes.h",
+      "sha256": "a771c96c3e3c146deed6d2f169a4f2e95c3692c3b26617a921c1fc17aa8ff22b"
+    },
+    {
+      "path": "macos-tahoe/IOGraphics-600/IOGraphicsFamily/IOKit/graphics/IOAccelClientConnect.h",
+      "url": "https://raw.githubusercontent.com/apple-oss-distributions/IOGraphics/IOGraphics-600/IOGraphicsFamily/IOKit/graphics/IOAccelClientConnect.h",
+      "sha256": "ec81ea124dbf27961104756edaff78e67e70ecf35ccda527df9c0262406dcaf8"
+    },
+    {
+      "path": "macos-tahoe/IOGraphics-600/IOGraphicsFamily/IOKit/graphics/IOAccelSurfaceConnect.h",
+      "url": "https://raw.githubusercontent.com/apple-oss-distributions/IOGraphics/IOGraphics-600/IOGraphicsFamily/IOKit/graphics/IOAccelSurfaceConnect.h",
+      "sha256": "ca75a8ecc33ee22305f4ac05d30a6491cdf6e1e17d4b44e04af617b0ced2c167"
+    },
+    {
+      "path": "macos-tahoe/IOGraphics-600/IOGraphicsFamily/IOKit/graphics/IOAccelerator.h",
+      "url": "https://raw.githubusercontent.com/apple-oss-distributions/IOGraphics/IOGraphics-600/IOGraphicsFamily/IOKit/graphics/IOAccelerator.h",
+      "sha256": "f7505dca7d73166c7b7d26a1a0a92fbd6ec993f049cb8628ee437a6c0629bac7"
+    },
+    {
+      "path": "macos-tahoe/IOGraphics-600/IOGraphicsFamily/IOKit/graphics/IOFramebuffer.h",
+      "url": "https://raw.githubusercontent.com/apple-oss-distributions/IOGraphics/IOGraphics-600/IOGraphicsFamily/IOKit/graphics/IOFramebuffer.h",
+      "sha256": "37ea230709a1654c95142c433ad08fb247a8231d76ece371926e123bceb96237"
+    },
+    {
+      "path": "macos-tahoe/IOPCIFamily-726.100.6/IOKit/pci/IOPCIDevice.h",
+      "url": "https://raw.githubusercontent.com/apple-oss-distributions/IOPCIFamily/IOPCIFamily-726.100.6/IOKit/pci/IOPCIDevice.h",
+      "sha256": "4199bda0880142f69425f52202394035eb070eb1f5e31018637d5e390007191a"
+    },
+    {
+      "path": "apple-driver-surface/WhateverGreen-093e76f/WhateverGreen/kern_igfx_kexts.cpp",
+      "url": "https://raw.githubusercontent.com/acidanthera/WhateverGreen/093e76fec5655001f38b367dd22459c756ee89fa/WhateverGreen/kern_igfx_kexts.cpp",
+      "sha256": "1545511e4351b293839d37fb3113f0d9ebdfc9003200106887abe66969fa8d3d"
+    },
+    {
+      "path": "apple-driver-surface/WhateverGreen-093e76f/WhateverGreen/kern_igfx_kexts.hpp",
+      "url": "https://raw.githubusercontent.com/acidanthera/WhateverGreen/093e76fec5655001f38b367dd22459c756ee89fa/WhateverGreen/kern_igfx_kexts.hpp",
+      "sha256": "e25ab43bacbdbae53173fe6a508e7e7496a290c2946ce6ba995e510b1f7899ae"
     }
   ]
 }

@@ -68,6 +68,7 @@ flowchart TD
 | GuC-Schedulercodec | **Fertig — CPU-Protokoll** | 25 Prüfungen des tatsächlichen C++-Codecs; Register-/Mode-/Submit-/Deregister-Nachrichten, keine laufende Firmware oder Queue. [Schedulervertrag](docs/GUC_SCHEDULER.md) |
 | MSL → AIR → Shader-SPIR-V | **In Arbeit — Compilerqualifikation** | 64 Offlineprüfungen bestanden; echte MSL- und LLVM-Befehle erfolgreich, danach private AIR-Metadaten verweigert. Begrenzte Klassifikation und echte Compilerhilfe diagnostizieren das Feld; Übersetzung bleibt ungeprüft. [Compilerbrücke](docs/METAL_SHADER_BRIDGE.md) |
 | Mesa-CPU-Parser | **In Arbeit — Herkunftsnachweis** | 29 Offlineprüfungen bestanden; das gepinnte `spirv2nir` in echter CI gebaut. Streaminghashes prüfen jetzt auch seine große erzeugte NIR-Quelle; Binary-/Hilfe-/Quellenabnahme bleibt offen. [Backend-Anschlüsse](docs/METAL_BACKEND_SEAMS.md) |
+| Arc-Schnittstellenvertrag | **Fertig — CPU-Vertrag** | 46 Prüfungen der kompilierten Tabelle und 13 gegen die gepinnten Quellen; die 12 Linux-Arc-ioctls auf die macOS-26-Externalmethod-Form abgebildet und abweichungsfrei verifiziert. Apples jüngster Intel-Treiber ist Gen11, ein Xe2-Treiber zur Übernahme existiert nicht. [Schnittstellenvergleich](docs/ARC_INTERFACE_DIFF.md) |
 | Nativer Speicher + Ausführung | **Blockiert — Implementierung fehlt** | GPU-VA-Bindung, programmierter PAT2, globale GGTT-Ownership, GuC-Start und Queue-Submission fehlen. [Architektur](docs/GPU_DESIGN.md) |
 | Metal-Anbieter + Display | **Blockiert — Implementierung fehlt** | Kein LunarBridge-System-Metal-Anbieter, keine beschleunigte Ausgabe oder WindowServer-Anbindung. [Hardwareumfang](docs/HARDWARE_SUPPORT.md) |
 
@@ -162,7 +163,10 @@ Prüfungen. Die Paketgrenzen stehen in [Treibermodule](docs/DRIVER_MODULES.md).
 ## Community-Entwicklung und spätere Grafikports
 
 LunarBridge soll eine gemeinsame Basis für den Aufbau und die Modifikation
-nativer Treiber werden. Die [Architektur und Modulverträge](docs/ARCHITECTURE.md)
+nativer Treiber werden. Der [Arc-Schnittstellenvergleich](docs/ARC_INTERFACE_DIFF.md)
+stellt die Schnittstelle des Linux-Arc-130V-Treibers operationsweise gegen den
+macOS-26-Kernelkontrakt und hält fest, was die macOS-geformte Operationstabelle
+geändert hat und warum. Die [Architektur und Modulverträge](docs/ARCHITECTURE.md)
 erklären die Bausteingrenzen; die [Portierungsanleitung](docs/PORTING_GUIDE.md)
 beschreibt Wiederverwendung, generationsabhängige Arbeit, Tests und Lizenzen.
 Nach Fertigstellung und Qualifikation des ersten nativen Arc-130V-Pfads sollen

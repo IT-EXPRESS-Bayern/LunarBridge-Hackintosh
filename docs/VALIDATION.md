@@ -23,11 +23,20 @@ x86_64 macOS Mach-O object files; these are local build outputs excluded from Gi
 | GuC scheduler codec | 25 tests passed | Actual 12-DW serial registration, FastRequest/event/error parsing, revision/owner/epoch and bounded fence ledger; CPU messages only |
 | Kernel build contract | 8 tests passed | Kernel-only stack-check flags and real Mach-O import boundaries; target load and stack budget remain open |
 | Mesa CPU build harness | 29 tests passed | Host guards, source and wheel provenance, actual process timeout and parser format boundaries; real Intel CI parser build pending |
-| Pinned GPU test references | 16 SHA256 values verified | Exact external inputs including forcewake, MMIO and LNL workaround association; no vendored Linux driver |
+| Arc interface contract | 46 tests passed | Actual compiled `lb_arc_interface` C++ through ctypes on Linux/clang 18.1.3: wire sizes, operation table, external-method call shapes, per-operation accept/reject matrix, owner binding, buffer aliasing and user-space decoding; no MMIO, DMA, firmware or GPU |
+| Arc interface source comparison | 13 tests passed, 0 mismatches | Pinned Linux v6.17 Xe uAPI (12 ioctls, 11 mapped) against the published Apple xnu / IOGraphics / IOPCIFamily contracts; the compiled table verified against those sources; the public Apple Intel inventory ends at Gen11 |
+| Pinned GPU test references | 34 SHA256 values verified | Exact external inputs including forcewake, MMIO and LNL workaround association; no vendored Linux driver |
 | macOS object format | Fourteen Mach-O objects verified | Actual x86_64 object compilation and parser inspection; these objects are rejected by the installer |
 | Native macOS link workflow | Real diagnostic Kext linked | Pinned external SDK and macOS linker; source commit, hashes and unsigned status in VALIDATION.json; no target-hardware loading |
 | Native bundle installer integration | Passed in a synthetic EFI under Windows | Actual CI bundle planned/installed/rolled back; config bytes restored; no real EFI modified |
 | Packaged CLI and corresponding source | Passed for the exact recorded build | Packaged plan/install/rollback CLI executed in a synthetic EFI; corresponding-source hash count, binary hash and archive CRC recorded in VALIDATION.json |
+
+The two Arc interface suites were executed in a Linux x86_64 container, not on
+the Windows host, and are therefore counted separately from the Windows total
+below. They are wired into the Intel macOS CI profile and the new Linux
+interface workflow; no CI run of them is recorded yet. They establish a CPU
+interface contract only: an accepted request shape is neither a submission nor
+GPU execution, and the new selectors have not been called on target hardware.
 
 The public hardware fixture is a documented device-ID fixture, not a captured
 machine inventory or a native device test. I2C source and build qualification

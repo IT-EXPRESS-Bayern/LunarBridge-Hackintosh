@@ -38,6 +38,7 @@ def main():
                root/'gpu-prototype/lb_gpu_memory.cpp', root/'gpu-prototype/lb_ggtt_plan.cpp',
                root/'gpu-prototype/lb_guc_transport.cpp', root/'gpu-prototype/lb_guc_scheduler.cpp',
                root/'gpu-prototype/lb_guc_firmware.cpp',
+               root/'gpu-prototype/lb_arc_interface.cpp',
                root/'gpu-prototype/lb_forcewake.cpp', root/'native/LBForceWakeAdapter.cpp',
                root/'native/LBDMAContext.cpp', root/'native/LBDMAQuarantine.cpp',
                root/'native/LunarBridgeDriver.cpp', root/'native/KmodInfo.cpp']
@@ -96,6 +97,7 @@ def main():
                     'gpu-prototype/lb_ggtt_plan.cpp', 'gpu-prototype/lb_ggtt_plan.h',
                     'gpu-prototype/lb_guc_transport.cpp', 'gpu-prototype/lb_guc_transport.h',
                     'gpu-prototype/lb_guc_scheduler.cpp', 'gpu-prototype/lb_guc_scheduler.h',
+                    'gpu-prototype/lb_arc_interface.cpp', 'gpu-prototype/lb_arc_interface.h',
                     'gpu-prototype/lb_guc_firmware.cpp', 'gpu-prototype/lb_guc_firmware.h',
                     'tools/build_native.py')
     reference = {key: report[key] for key in ('source_commit', 'macos_version', 'compiler_version',
@@ -119,7 +121,10 @@ def main():
               'docs/GGTT_BINDING_SOURCES.json', 'docs/GUC_SCHEDULER.md',
               'gpu-prototype/GUC_SCHEDULER_SOURCES.json', 'docs/ARCHITECTURE.md', 'docs/PORTING_GUIDE.md',
               'docs/DMA_BACKEND.md', 'docs/DRIVER_MODULES.md',
-              'docs/VALIDATION.md', 'docs/VALIDATION.json', 'README.md', 'README.de.md',
+              'docs/VALIDATION.md', 'docs/VALIDATION.json',
+              'docs/ARC_INTERFACE_DIFF.md', 'docs/ARC_INTERFACE_DIFF.json',
+              'docs/ARC_INTERFACE_SOURCES.json', 'tools/compare_interfaces.py',
+              'README.md', 'README.de.md',
               '.github/ISSUE_TEMPLATE/native-diagnostics.yml',
               'LICENSE', 'NOTICE', 'LICENSE-STATUS.txt', 'LICENSES/MIT-Intel.txt')]
     with zipfile.ZipFile(archive, 'w', zipfile.ZIP_DEFLATED) as z:
