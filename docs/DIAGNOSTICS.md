@@ -61,6 +61,13 @@ Scheitert der Aufruf, bleibt der Bericht erhalten und trägt
 belegt keinen geladenen GPU-Pfad. Siehe
 [Schnittstellenvergleich](ARC_INTERFACE_DIFF.md).
 
+Zusätzlich liest der Sammler über Selector 9 den 112-Byte-Bericht der
+[portierten Xe2-Module](ARC_PORT_FROM_LINUX.md) nach `arc_port_plan`: PAT-Plan,
+Cache-Indizes, LRC-Layout und Deskriptorvorlage. Der Dekoder weist einen
+Bericht ab, der programmierte Hardware oder abweichende Portwerte behauptet.
+Ein Fehler hinterlässt `arc_port_plan_error` und lässt den übrigen Bericht
+unangetastet. Gelesener Plan heißt nicht programmierte PAT.
+
 Auswertung eines vorhandenen Berichts funktioniert auch unter Windows:
 
 ```sh
@@ -87,6 +94,7 @@ python3 tools/analyze_trace.py diagnostics/diagnostics.json --out FEHLERBERICHT.
 | 52 / 53 | Wake-Cleanup / Cleanupfehler | BAR-/Provider-/Servicereferenzen bleiben bei ungeklärtem Put gehalten |
 | 60 | Arc-Schnittstellentabelle gelesen | `arg0` ist die Operationszahl; kein GPU-Pfad belegt |
 | 61 / 62 | Arc-Anfrage akzeptiert / abgelehnt | `arg0` ist die Operation, `arg1` enthält Ergebnis und Grund; Annahme ist keine Submission |
+| 63 | Portierter Plan gelesen | `arg0` ist die PAT-Schreibanzahl, `arg1` die Render-LRC-Größe; Lesen programmiert nichts |
 
 Der Fehlerbericht nennt die zugehörigen Quelldateien/Funktionen und unterscheidet
 erwartete Einschränkungen von Fehlern. Ein gesetztes Capability-Bit wird nicht

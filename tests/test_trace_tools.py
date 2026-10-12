@@ -11,7 +11,7 @@ from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT/'tools'))
-from lb_wire import Snapshot, TraceRecord, TraceBatch, BufferInfo, DMAInfo, ForceWakeInfo, ArcInterfaceReport, decode_snapshot, decode_batch, decode_dma_info, decode_forcewake_info, parse_kernel_messages
+from lb_wire import Snapshot, TraceRecord, TraceBatch, BufferInfo, DMAInfo, ForceWakeInfo, ArcInterfaceReport, ArcPortReport, decode_snapshot, decode_batch, decode_dma_info, decode_forcewake_info, parse_kernel_messages
 from analyze_trace import findings, markdown
 import collect_macos as collector
 from macho import inspect_macho
@@ -40,6 +40,27 @@ def arc_interface_bytes():
         row.linuxIoctlNr, row.linuxDirection = 0x40 + index, 3
     return bytes(report)
 
+def arc_port_report_bytes():
+    """Synthetic but ABI-valid port plan; the real values are checked against
+    the compiled modules in tests/test_arc_interface.py and test_arc_port.py."""
+    report = ArcPortReport()
+    report.abi, report.structBytes = 1, c.sizeof(report)
+    report.patEntryCount, report.patWriteCount, report.patMulticastRequired = 32, 33, 1
+    report.patAtsOffset = 0x47FC
+    report.patWriteBackValue = report.patAtsValue = 0x0F
+    report.patIndexWriteBack, report.patIndexNone = 2, 3
+    report.patIndexWriteThrough, report.patIndexNoneCompression = 15, 12
+    report.lrcRingBytes = 16 * 1024
+    report.lrcContextControl = 0x00090009
+    report.lrcRingControl = (report.lrcRingBytes - 4096) | 1
+    report.lrcImagePagesRender, report.lrcImagePagesCompute = 3, 2
+    report.lrcRenderTotalBytes = 16 * 1024 + 4 * 4096
+    report.lrcComputeTotalBytes = 16 * 1024 + 3 * 4096
+    report.lrcWriteCount = 10
+    report.lrcDescriptorTemplate = 0x119
+    report.requiredQualifications = 0x1F1F
+    return bytes(report)
+
 class Function:
     def __init__(self, fn): self.fn = fn
     def __call__(self, *args): return self.fn(*args)
@@ -56,6 +77,7 @@ class FakeKit:
         wake.primaryStatus = wake.cleanupStatus = 8
         self.wake_info, self.wake_status = bytes(wake), 0
         self.arc_interface, self.arc_status = arc_interface_bytes(), 0
+        self.arc_port, self.arc_port_status = arc_port_report_bytes(), 0
         self.IOServiceMatching = Function(lambda name: 1)
         self.IOServiceGetMatchingServices = Function(lambda port, match, out: self.put(out, 10))
         self.IOIteratorNext = Function(lambda iterator: 11)
@@ -87,6 +109,9 @@ class FakeKit:
         elif selector == 7:
             if self.arc_status: return self.arc_status
             data = self.arc_interface
+        elif selector == 9:
+            if self.arc_port_status: return self.arc_port_status
+            data = self.arc_port
         elif selector == 3:
             if self.trace_status: return self.trace_status
             batch = TraceBatch()
@@ -174,7 +199,10 @@ class TraceToolTests(unittest.TestCase):
         # The interface table is read next; it claims no execution or Metal.
         self.assertEqual(report['arc_interface']['operation_count'], 11)
         self.assertFalse(report['arc_interface']['gpu_execution_implemented'])
-        self.assertEqual(kit.calls, [0, 6, 7, 3, 3])
+        # The ported plan is reported next, and programs nothing.
+        self.assertEqual(report['arc_port_plan']['pat_write_count'], 33)
+        self.assertFalse(report['arc_port_plan']['pat_programmed_on_hardware'])
+        self.assertEqual(kit.calls, [0, 6, 7, 9, 3, 3])
         self.assertEqual(kit.closed, [12])
 
     def test_collector_keeps_its_snapshot_when_the_interface_table_fails(self):
@@ -186,6 +214,18 @@ class TraceToolTests(unittest.TestCase):
         self.assertIn('0xe00002c2', report['arc_interface_error'])
         self.assertNotIn('arc_interface', report)
         self.assertIn('snapshot', report)
+        self.assertIn('arc_port_plan', report)
+        self.assertEqual([row['event'] for row in report['trace']], [1, 7])
+
+    def test_collector_keeps_its_snapshot_when_the_port_plan_fails(self):
+        kit = FakeKit()
+        kit.arc_port_status = 0xe00002c2
+        with mock.patch.object(collector.c, 'CDLL', side_effect=[kit, object()]), \
+                mock.patch.object(collector.c.c_uint32, 'in_dll', return_value=c.c_uint32(1)):
+            report = collector.collect_iokit()
+        self.assertIn('0xe00002c2', report['arc_port_plan_error'])
+        self.assertNotIn('arc_port_plan', report)
+        self.assertIn('arc_interface', report)
         self.assertEqual([row['event'] for row in report['trace']], [1, 7])
 
     def test_collector_preserves_snapshot_and_trace_after_forcewake_call_failure(self):

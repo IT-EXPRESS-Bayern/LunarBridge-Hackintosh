@@ -135,7 +135,8 @@ unabhängig vom einzelnen Feld: `FixedStructSize`, `NoExtensionChain`,
    Render-Node ab – ein vom Client gesetztes Feld wäre genau die Stelle, an der
    sich ein anderer Client fälschen ließe.
 4. **ABI 1 additiv erweitert**: Selector 7 liefert die Tabelle, Selector 8
-   prüft eine Anfrage. Selector 0 bis 6 bleiben unverändert, Selector 4
+   prüft eine Anfrage, Selector 9 berichtet den
+   [portierten Xe2-Plan](ARC_PORT_FROM_LINUX.md). Selector 0 bis 6 bleiben unverändert, Selector 4
    (`LBSubmit`) bleibt ausdrücklich `kIOReturnUnsupported`. Trace-Ereignisse
    60 bis 62 halten Abfrage, Annahme und Ablehnung fest.
 5. **Werkzeuge und Builds**: `tools/compare_interfaces.py` erzeugt den

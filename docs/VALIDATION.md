@@ -14,7 +14,7 @@ x86_64 macOS Mach-O object files; these are local build outputs excluded from Gi
 | DMA ownership quarantine | 10 tests passed | Actual eight-slot table, owner identity, atomic transfer, exclusive retry, retained accounting and commit only after successful adapter cleanup; no native kernel concurrency |
 | Forcewake protocol | 29 tests passed | Actual production C++ with register callbacks; masked paired writes, foreign request refusal, post-read deadlines, all-ones, partial writes, timeout, reference integrity and retained failed cleanup |
 | Native Forcewake adapter | 43 tests / 52 scenarios passed | Actual adapter with explicit IOKit doubles; GMD/IP/BAR/D0 guards, four root flush writes per read, held map/open/PCI until confirmed cleanup; no native hardware |
-| Trace/collector tools | 27 tests passed | ABI/length/order checks, forcewake status and retained cleanup, privacy, DMA double opt-in, error triage, simulated IOKit failures and real object-format checks |
+| Trace/collector tools | 29 tests passed | ABI/length/order checks, forcewake status and retained cleanup, privacy, DMA double opt-in, error triage, simulated IOKit failures and real object-format checks |
 | GPU OpenCore installer | 23 tests passed | Isolated EFI transactions and failures, concurrent edits, policy/Vault refusal, DMA/forcewake flag types, effective MMIO/flush exposure and module boundaries |
 | Own shader toolchain | 37 offline tests passed | Actual recorded own Windows GPU result bytes; device qualification, bounded ELF/Zebin and relocation validation; no GPU initialized by tests |
 | Own Xe2 CPU payload | 37 offline tests passed | Authenticated own Zebin, 64/32/32-byte layout, unresolved pointer holes, original zero ImplicitArgs relocations and bounded planned group dimensions; no GPU job |
@@ -23,7 +23,7 @@ x86_64 macOS Mach-O object files; these are local build outputs excluded from Gi
 | GuC scheduler codec | 25 tests passed | Actual 12-DW serial registration, FastRequest/event/error parsing, revision/owner/epoch and bounded fence ledger; CPU messages only |
 | Kernel build contract | 8 tests passed | Kernel-only stack-check flags and real Mach-O import boundaries; target load and stack budget remain open |
 | Mesa CPU build harness | 29 tests passed | Host guards, source and wheel provenance, actual process timeout and parser format boundaries; real Intel CI parser build pending |
-| Arc interface contract | 46 tests passed | Actual compiled `lb_arc_interface` C++ through ctypes on Linux/clang 18.1.3: wire sizes, operation table, external-method call shapes, per-operation accept/reject matrix, owner binding, buffer aliasing and user-space decoding; no MMIO, DMA, firmware or GPU |
+| Arc interface contract | 51 tests passed | Actual compiled `lb_arc_interface` C++ through ctypes on Linux/clang 18.1.3: wire sizes, operation table, external-method call shapes, per-operation accept/reject matrix, owner binding, buffer aliasing and user-space decoding; no MMIO, DMA, firmware or GPU |
 | Arc interface source comparison | 13 tests passed, 0 mismatches | Pinned Linux v6.17 Xe uAPI (12 ioctls, 11 mapped) against the published Apple xnu / IOGraphics / IOPCIFamily contracts; the compiled table verified against those sources; the public Apple Intel inventory ends at Gen11 |
 | Ported Xe2 PAT and LRC contracts | 23 tests passed | Compiled `lb_xe2_pat` and `lb_lrc` C++ against values parsed live from the pinned Intel MIT sources: 32 PAT entries, 32 register offsets, the 33-write plan with readback check, LRC layout, 10 context-image writes, descriptor, PPGTT root and ring prologue; no MMIO, GGTT write, firmware or submission |
 | Pinned GPU test references | 44 SHA256 values verified | Exact external inputs including forcewake, MMIO and LNL workaround association; no vendored Linux driver |
@@ -44,7 +44,9 @@ machine inventory or a native device test. I2C source and build qualification
 now belong to the independent LunarBridge-I2C repository and are not counted
 as graphics-repository tests.
 
-All **444 graphics-repository core Windows tests passed** without skips. The installer fixtures contain
+All **444 graphics-repository core Windows tests passed** without skips in the
+recorded run of 2026-10-11; the suites added later are listed above with their
+own environments and counts rather than folded into that figure. The installer fixtures contain
 no runnable macOS/EFI code. Simulated IOKit calls are marked as simulated and
 cannot establish native device access. No real EFI or external SSD was changed.
 

@@ -22,7 +22,7 @@ enum LBEvent : uint32_t {
     LBForceWakeFinished = 50, LBForceWakeFailed = 51,
     LBForceWakeCleanup = 52, LBForceWakeCleanupFailed = 53,
     LBArcInterfaceQueried = 60, LBArcRequestAccepted = 61,
-    LBArcRequestRejected = 62
+    LBArcRequestRejected = 62, LBArcPortQueried = 63
 };
 
 enum LBMMIOReason : uint32_t {
@@ -71,13 +71,14 @@ struct LBTraceRing {
 };
 
 // Selectors 0 to 6 keep their ABI-1 input/output shapes unchanged. Selectors 7
-// and 8 are additive: they publish the Arc interface table and check one
-// request shape against it. Neither submits work; LBSubmit stays unsupported.
+// to 9 are additive: they publish the Arc interface table, check one request
+// shape against it, and report what the ported Xe2 modules would program.
+// None of them submits work; LBSubmit stays unsupported.
 enum LBSelector : uint32_t {
     LBGetSnapshot = 0, LBAllocateBuffer = 1, LBGetBufferInfo = 2,
     LBReadTrace = 3, LBSubmit = 4, LBGetDMAInfo = 5,
     LBGetForceWakeInfo = 6, LBGetArcInterface = 7, LBCheckArcRequest = 8,
-    LBSelectorCount = 9
+    LBGetArcPortPlan = 9, LBSelectorCount = 10
 };
 
 struct LBBufferInfo {

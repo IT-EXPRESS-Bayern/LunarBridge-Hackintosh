@@ -141,6 +141,10 @@ LNL_API uint32_t lb_lrc_descriptor(uint64_t pphwspGpuAddress, uint32_t privilege
 LNL_API uint32_t lb_lrc_build(const LBLrcLayout *layout, uint64_t ggttAddress,
                              uint64_t pageDirectoryAddress, uint32_t asid,
                              uint32_t ringTail, LBLrcImage *out, uint32_t outputBytes);
+// The two control words a context of this ring size carries, without needing
+// an allocation or an address. Used by the diagnostic port report.
+LNL_API uint32_t lb_lrc_control_words(uint64_t ringBytes, uint32_t *contextControl,
+                                     uint32_t *ringControl);
 // Apply a built image to a caller-owned context-image buffer of `dwords`
 // dwords. The buffer must be the context image itself, not the allocation.
 LNL_API uint32_t lb_lrc_apply(const LBLrcImage *image, uint32_t *imageDwords,

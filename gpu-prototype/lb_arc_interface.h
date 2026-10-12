@@ -45,6 +45,7 @@ constexpr uint32_t LB_ARC_MEMORY_TYPE_SHARED = 0;
 // that they stay identical to the LBSelector enum of the diagnostic ABI.
 constexpr uint32_t LB_ARC_SELECTOR_DESCRIBE = 7;
 constexpr uint32_t LB_ARC_SELECTOR_CHECK = 8;
+constexpr uint32_t LB_ARC_SELECTOR_PORT = 9;
 // Pinned Xe ioctls without a mapped operation: DRM_XE_OBSERVATION only.
 constexpr uint32_t LB_ARC_UNMAPPED_LINUX_IOCTLS = 1;
 
@@ -168,6 +169,19 @@ struct LBArcInterfaceReport {
     LBArcOpDescriptor ops[LB_ARC_MAX_OPS];
 };
 
+// What the ported Xe2 modules would program and build, so a loaded driver can
+// be asked for its own port state instead of the question being answered from
+// documentation. Every "programmed" or "submitted" field stays 0 here.
+struct LBArcPortReport {
+    uint32_t abi, structBytes, patEntryCount, patWriteCount;
+    uint32_t patMulticastRequired, patAtsOffset, patAtsValue, patWriteBackValue;
+    uint32_t patIndexWriteBack, patIndexNone, patIndexWriteThrough, patIndexNoneCompression;
+    uint32_t lrcRingBytes, lrcContextControl, lrcRingControl, lrcImagePagesRender;
+    uint32_t lrcImagePagesCompute, lrcWriteCount, patProgrammed, lrcSubmitted;
+    uint64_t lrcRenderTotalBytes, lrcComputeTotalBytes, lrcDescriptorTemplate;
+    uint32_t requiredQualifications, reserved;
+};
+
 struct LBArcSyncPoint {
     uint32_t type, flags;
     uint64_t address, value;
@@ -201,6 +215,7 @@ struct LBArcDecision {
 
 static_assert(sizeof(LBArcOpDescriptor) == 48, "Arc op descriptor wire ABI");
 static_assert(sizeof(LBArcInterfaceReport) == 48 + 11 * 48, "Arc interface report wire ABI");
+static_assert(sizeof(LBArcPortReport) == 112, "Arc port report wire ABI");
 static_assert(sizeof(LBArcSyncPoint) == 24, "Arc sync point wire ABI");
 static_assert(sizeof(LBArcRequest) == 480, "Arc request wire ABI");
 static_assert(sizeof(LBArcDecision) == 80, "Arc decision wire ABI");
@@ -208,6 +223,9 @@ static_assert(sizeof(LBArcDecision) == 80, "Arc decision wire ABI");
 extern "C" {
 // Publish the whole operation table. Output is written only after validation.
 LNL_API uint32_t lb_arc_interface_describe(LBArcInterfaceReport *out, uint32_t outputBytes);
+// Publish what the ported PAT and LRC modules hold. This reads no register and
+// builds no context: it reports the plan a bring-up would carry out.
+LNL_API uint32_t lb_arc_interface_port_report(LBArcPortReport *out, uint32_t outputBytes);
 // One operation's descriptor; unknown operations are refused, never defaulted.
 LNL_API uint32_t lb_arc_interface_descriptor(uint32_t op, LBArcOpDescriptor *out);
 // Check the actual external-method call shape before any body is parsed. The

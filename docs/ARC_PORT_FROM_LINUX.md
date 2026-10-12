@@ -113,7 +113,7 @@ sowie PXP, Run-Alone, OA und Parallel-Submission.
 | Nachweis | Umfang |
 | --- | --- |
 | `tests/test_arc_port.py` | 23 Tests: **jeder** erwartete Wert wird aus den gepinnten Intel-Quellen geparst und gegen das kompilierte Modul geprüft — alle 32 Tabellenwerte, alle 32 Registeroffsets, die Cache-Indizes, Layout, Dword-Offsets, Steuerworte, Deskriptor, PDE und Ringinstruktion |
-| `tests/test_arc_interface.py` | 46 Tests, jetzt einschließlich der vom LRC-Port zusammengesetzten GuC-Registrierung |
+| `tests/test_arc_interface.py` | 51 Tests, einschließlich der vom LRC-Port zusammengesetzten GuC-Registrierung und des Portberichts von Selector 9 |
 | `tests/test_interface_diff.py` | 13 Tests des Schnittstellenvergleichs gegen dieselben Pins |
 | `tests/test_kernel_build_contract.py` | Kernelflags und Quellenzahl des Kextbuilds, jetzt 16 Kernelquellen |
 | `.github/workflows/interface-diff.yml` | Linux-CI: Quellen holen, Module bauen, alle drei Suiten |
@@ -123,6 +123,18 @@ Ein Transkriptionsfehler im Port fällt damit im Test auf, nicht erst am Gerät:
 Die Erwartungswerte stehen nicht im Test, sondern werden aus `xe_pat.c`,
 `xe_lrc.c`, `xe_lrc_layout.h`, `xe_engine_regs.h`, `xe_mi_commands.h`,
 `xe_instr_defs.h`, `xe_gtt_defs.h`, `xe_vm.c` und `xe_pci.c` gelesen.
+
+## Beobachtbar am Gerät
+
+Der Port wäre sonst toter Code in der Kext. Selector 9 veröffentlicht deshalb
+einen 112-Byte-Bericht: PAT-Eintragszahl und Schreibanzahl, ATS-Offset und
+-Wert, die vier Cache-Indizes, Ringgröße, Kontext- und Ringsteuerwort,
+Imageseiten und Gesamtgrößen für Render und Compute sowie die
+Deskriptorvorlage `0x119`. `tools/collect_macos.py` liest ihn als
+`arc_port_plan` mit, `tools/lb_wire.py` weist einen Bericht ab, der von den
+Portwerten abweicht oder programmierte Hardware behauptet, und Trace-Ereignis
+63 hält die Abfrage fest. Damit lässt sich an der geladenen Kext prüfen, was
+sie programmieren *würde* — und später gegen eine echte Lesekontrolle stellen.
 
 ## Grenzen
 

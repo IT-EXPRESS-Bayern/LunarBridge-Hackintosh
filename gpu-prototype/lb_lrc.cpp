@@ -178,6 +178,19 @@ extern "C" uint32_t lb_lrc_build(const LBLrcLayout *layout, uint64_t ggttAddress
     return LBLrcOK;
 }
 
+extern "C" uint32_t lb_lrc_control_words(uint64_t ringBytes, uint32_t *contextControl,
+                                         uint32_t *ringControl) {
+    if (!contextControl || !ringControl ||
+        ((reinterpret_cast<uintptr_t>(contextControl) |
+          reinterpret_cast<uintptr_t>(ringControl)) & 3)) return LBLrcInput;
+    if (!page_aligned(ringBytes) || ringBytes < LB_LRC_MIN_RING_BYTES ||
+        ringBytes > LB_LRC_MAX_RING_BYTES) return LBLrcRange;
+    *contextControl = masked_enable(LB_CTX_CTRL_INHIBIT_SYN_CTX_SWITCH |
+                                    LB_CTX_CTRL_ENGINE_CTX_RESTORE_INHIBIT);
+    *ringControl = uint32_t(ringBytes - LB_GPU_PAGE) | LB_RING_VALID;
+    return LBLrcOK;
+}
+
 extern "C" uint32_t lb_lrc_apply(const LBLrcImage *image, uint32_t *imageDwords,
                                  uint32_t dwordCapacity) {
     if (!image || !imageDwords || !dwordCapacity ||

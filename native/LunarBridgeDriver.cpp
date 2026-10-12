@@ -356,7 +356,8 @@ IOReturn LunarBridgeUserClient::externalMethod(uint32_t selector, IOExternalMeth
         {invoke, 0, 0, 0, sizeof(LBDMAInfo)},
         {invoke, 0, 0, 0, sizeof(LBForceWakeInfo)},
         {invoke, 0, 0, 0, sizeof(LBArcInterfaceReport)},
-        {invoke, 0, sizeof(LBArcRequest), 0, sizeof(LBArcDecision)}
+        {invoke, 0, sizeof(LBArcRequest), 0, sizeof(LBArcDecision)},
+        {invoke, 0, 0, 0, sizeof(LBArcPortReport)}
     };
     if (!args || selector >= LBSelectorCount) {
         traceRequest(LBMethodRejected, kIOReturnBadArgument, selector);
@@ -482,6 +483,17 @@ IOReturn LunarBridgeUserClient::perform(uint32_t selector, IOExternalMethodArgum
             _owner->trace(verdict ? LBArcRequestRejected : LBArcRequestAccepted,
                           kIOReturnSuccess, _context, decision.op,
                           (uint64_t(verdict) << 32) | decision.reason);
+            return kIOReturnSuccess;
+        }
+        case LBGetArcPortPlan: {
+            if (!args->structureOutput) return kIOReturnBadArgument;
+            LBArcPortReport report{};
+            if (lb_arc_interface_port_report(&report, sizeof(report)) != LBArcOK)
+                return kIOReturnInternalError;
+            *static_cast<LBArcPortReport *>(args->structureOutput) = report;
+            // Reading the plan programs nothing: both state fields stay zero.
+            _owner->trace(LBArcPortQueried, kIOReturnSuccess, _context,
+                          report.patWriteCount, report.lrcRenderTotalBytes);
             return kIOReturnSuccess;
         }
         case LBSubmit:

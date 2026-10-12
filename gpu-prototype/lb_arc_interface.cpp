@@ -5,10 +5,12 @@
 #include "lb_arc_interface.h"
 #include "lb_diagnostics.h"
 #include "lb_lrc.h"
+#include "lb_xe2_pat.h"
 
 static_assert(LBGetArcInterface == LB_ARC_SELECTOR_DESCRIBE, "Arc describe selector drifted");
 static_assert(LBCheckArcRequest == LB_ARC_SELECTOR_CHECK, "Arc check selector drifted");
-static_assert(LBSelectorCount == LB_ARC_SELECTOR_CHECK + 1, "Selector count drifted");
+static_assert(LBGetArcPortPlan == LB_ARC_SELECTOR_PORT, "Arc port selector drifted");
+static_assert(LBSelectorCount == LB_ARC_SELECTOR_PORT + 1, "Selector count drifted");
 
 namespace {
 // DRM ioctl directions of the pinned uAPI: DRM_IOW writes only, DRM_IOWR both.
@@ -214,6 +216,53 @@ extern "C" uint32_t lb_arc_interface_describe(LBArcInterfaceReport *out, uint32_
         descriptor_from(kOps[i], &report.ops[i]);
         report.differences |= kOps[i].differences;
     }
+    *out = report;
+    return LBArcOK;
+}
+
+extern "C" uint32_t lb_arc_interface_port_report(LBArcPortReport *out, uint32_t outputBytes) {
+    if (!out || outputBytes != sizeof(LBArcPortReport) || !valid_span(out, sizeof(*out)))
+        return LBArcInput;
+    if (reinterpret_cast<uintptr_t>(out) & 7) return LBArcAlignment;
+    LBArcPortReport report{};
+    report.abi = LB_ARC_IF_ABI;
+    report.structBytes = uint32_t(sizeof(LBArcPortReport));
+    report.patEntryCount = LB_PAT_ENTRIES;
+    // Every index register plus the ATS entry; the PTA register belongs to
+    // discrete devices, which Lunar Lake is not.
+    report.patWriteCount = LB_PAT_ENTRIES + 1;
+    report.patMulticastRequired = 1;
+    report.patAtsOffset = LB_PAT_ATS_OFFSET;
+    report.patIndexWriteBack = LB_PAT_INDEX_WB;
+    report.patIndexNone = LB_PAT_INDEX_NONE;
+    report.patIndexWriteThrough = LB_PAT_INDEX_WT;
+    report.patIndexNoneCompression = LB_PAT_INDEX_NONE_COMPRESSION;
+    if (lb_xe2_pat_entry_value(LB_PAT_INDEX_WB, &report.patWriteBackValue) != LBPatOK)
+        return LBArcUnsupported;
+    // Upstream programs the ATS entry with the write-back encoding.
+    report.patAtsValue = report.patWriteBackValue;
+
+    LBLrcLayout render{};
+    LBLrcLayout compute{};
+    if (lb_lrc_layout(LBLrcRenderClass, LB_LRC_DEFAULT_RING_BYTES, 0, &render,
+                      uint32_t(sizeof(render))) != LBLrcOK ||
+        lb_lrc_layout(LBLrcComputeClass, LB_LRC_DEFAULT_RING_BYTES, 0, &compute,
+                      uint32_t(sizeof(compute))) != LBLrcOK) return LBArcUnsupported;
+    if (lb_lrc_control_words(LB_LRC_DEFAULT_RING_BYTES, &report.lrcContextControl,
+                             &report.lrcRingControl) != LBLrcOK) return LBArcUnsupported;
+    report.lrcRingBytes = uint32_t(LB_LRC_DEFAULT_RING_BYTES);
+    report.lrcImagePagesRender = render.imagePages;
+    report.lrcImagePagesCompute = compute.imagePages;
+    report.lrcRenderTotalBytes = render.totalBytes;
+    report.lrcComputeTotalBytes = compute.totalBytes;
+    report.lrcWriteCount = 10;
+    // Descriptor bits without an address: valid, legacy 64-bit mode, privilege.
+    report.lrcDescriptorTemplate = LB_LRC_VALID |
+        (LB_LRC_LEGACY_64B_CONTEXT << LB_LRC_ADDRESSING_MODE_SHIFT) | LB_LRC_PRIVILEGE;
+    report.requiredQualifications = LB_PAT_REQUIRED_QUALIFICATIONS |
+        (LB_LRC_REQUIRED_QUALIFICATIONS << 8);
+    report.patProgrammed = 0;
+    report.lrcSubmitted = 0;
     *out = report;
     return LBArcOK;
 }

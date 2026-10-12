@@ -132,7 +132,7 @@
   },
   "trace_tool_tests": {
     "test_type": "Python ABI, privacy, triage and simulated IOKit failure tests; actual Mach-O object format checks",
-    "tests_run": 27,
+    "tests_run": 29,
     "failures": 0,
     "errors": 0,
     "skipped": 0,
@@ -839,7 +839,7 @@
   "arc_interface_contract_tests": {
     "test_type": "Executed the actual compiled lb_arc_interface C++ through ctypes: wire sizes, operation table, external-method call shapes, per-operation accept/reject matrix, owner binding, buffer aliasing and user-space decoding",
     "environment": "Linux x86_64 container, clang 18.1.3, -O2 -Wall -Wextra -Werror",
-    "tests_run": 46,
+    "tests_run": 51,
     "failures": 0,
     "errors": 0,
     "skipped": 0,
@@ -847,7 +847,12 @@
     "actual_production_cpp_executed": true,
     "mmio_dma_firmware_or_gpu_used": false,
     "accepted_request_is_a_submission": false,
-    "native_macos_hardware_tests": 0
+    "native_macos_hardware_tests": 0,
+    "selectors_covered": [
+      7,
+      8,
+      9
+    ]
   },
   "arc_interface_source_comparison": {
     "test_type": "Extracted the pinned Linux v6.17 Xe uAPI and the published Apple xnu / IOGraphics / IOPCIFamily contracts, then verified the compiled operation table against them",
@@ -889,7 +894,8 @@
     "ggtt_binding_performed": false,
     "lrc_submitted": false,
     "gpu_execution_implemented": false,
-    "provenance": "docs/ARC_PORT_SOURCES.json"
+    "provenance": "docs/ARC_PORT_SOURCES.json",
+    "observable_through_user_client_selector": 9
   },
   "arc_port_ci_runs_recorded": false
 }

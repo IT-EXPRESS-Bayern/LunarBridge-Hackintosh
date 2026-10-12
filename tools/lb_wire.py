@@ -41,6 +41,17 @@ class ArcInterfaceReport(c.Structure):
         'scalarLimit', 'maxSegments', 'maxSyncs', 'unmappedLinuxIoctls',
         'gpuExecutionImplemented', 'metalProviderImplemented')] + [('ops', ArcOpDescriptor * 11)]
 
+class ArcPortReport(c.Structure):
+    _fields_ = [(n, c.c_uint32) for n in (
+        'abi', 'structBytes', 'patEntryCount', 'patWriteCount', 'patMulticastRequired',
+        'patAtsOffset', 'patAtsValue', 'patWriteBackValue', 'patIndexWriteBack',
+        'patIndexNone', 'patIndexWriteThrough', 'patIndexNoneCompression', 'lrcRingBytes',
+        'lrcContextControl', 'lrcRingControl', 'lrcImagePagesRender', 'lrcImagePagesCompute',
+        'lrcWriteCount', 'patProgrammed', 'lrcSubmitted')] + [
+        (n, c.c_uint64) for n in ('lrcRenderTotalBytes', 'lrcComputeTotalBytes',
+                                  'lrcDescriptorTemplate')] + [
+        ('requiredQualifications', c.c_uint32), ('reserved', c.c_uint32)]
+
 class ArcDecision(c.Structure):
     _fields_ = [(n, c.c_uint32) for n in (
         'abi', 'structBytes', 'op', 'result', 'reason', 'differences',
@@ -67,7 +78,8 @@ EVENTS = {
     42: 'dma_reference_released', 43: 'dma_release_failed',
     50: 'forcewake_handshake_completed', 51: 'forcewake_handshake_failed',
     52: 'forcewake_cleanup_completed', 53: 'forcewake_cleanup_failed',
-    60: 'arc_interface_queried', 61: 'arc_request_accepted', 62: 'arc_request_rejected'
+    60: 'arc_interface_queried', 61: 'arc_request_accepted', 62: 'arc_request_rejected',
+    63: 'arc_port_plan_queried'
 }
 WAKE_STATUS = {
     0: 'success', 1: 'invalid_callbacks', 2: 'invalid_state', 3: 'existing_request_or_pending_cleanup',
@@ -186,6 +198,40 @@ def decode_arc_interface(data):
             'differences': _named_bits(r.differences, ARC_DIFFERENCES),
             'operations': operations, 'gpu_execution_implemented': False,
             'metal_provider_implemented': False}
+
+def decode_arc_port_report(data):
+    if len(data) != c.sizeof(ArcPortReport): raise ValueError('Arc port report length mismatch')
+    r = ArcPortReport.from_buffer_copy(data)
+    if r.abi != 1 or r.structBytes != c.sizeof(ArcPortReport) or r.reserved or \
+       r.patProgrammed or r.lrcSubmitted:
+        raise ValueError('Arc port report ABI mismatch')
+    # The ported Lunar Lake plan: 32 index registers plus the ATS entry, the
+    # write-back index the GGTT planner encodes, and two context sizes.
+    if r.patEntryCount != 32 or r.patWriteCount != 33 or r.patIndexWriteBack != 2 or \
+       r.patMulticastRequired != 1 or r.patAtsValue != r.patWriteBackValue or \
+       r.lrcWriteCount != 10 or r.lrcImagePagesRender != 3 or r.lrcImagePagesCompute != 2 or \
+       r.lrcRenderTotalBytes <= r.lrcComputeTotalBytes or \
+       r.lrcRingControl != (r.lrcRingBytes - 4096) | 1:
+        raise ValueError('Arc port report content mismatch')
+    return {'pat_entry_count': int(r.patEntryCount), 'pat_write_count': int(r.patWriteCount),
+            'pat_multicast_required': bool(r.patMulticastRequired),
+            'pat_ats_offset': int(r.patAtsOffset), 'pat_ats_value': int(r.patAtsValue),
+            'pat_write_back_value': int(r.patWriteBackValue),
+            'pat_indices': {'write_back': int(r.patIndexWriteBack), 'none': int(r.patIndexNone),
+                            'write_through': int(r.patIndexWriteThrough),
+                            'none_compression': int(r.patIndexNoneCompression)},
+            'lrc_ring_bytes': int(r.lrcRingBytes),
+            'lrc_context_control': int(r.lrcContextControl),
+            'lrc_ring_control': int(r.lrcRingControl),
+            'lrc_render_total_bytes': int(r.lrcRenderTotalBytes),
+            'lrc_compute_total_bytes': int(r.lrcComputeTotalBytes),
+            'lrc_image_pages': {'render': int(r.lrcImagePagesRender),
+                                'compute': int(r.lrcImagePagesCompute)},
+            'lrc_write_count': int(r.lrcWriteCount),
+            'lrc_descriptor_template': int(r.lrcDescriptorTemplate),
+            'required_qualifications': int(r.requiredQualifications),
+            'pat_programmed_on_hardware': False, 'lrc_submitted': False,
+            'gpu_execution_implemented': False}
 
 def decode_arc_decision(data):
     if len(data) != c.sizeof(ArcDecision): raise ValueError('Arc decision length mismatch')

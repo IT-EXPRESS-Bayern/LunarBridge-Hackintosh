@@ -35,6 +35,8 @@ REPORT_BYTES = 48 + OPS * DESCRIPTOR_BYTES
 VARIABLE_SIZE = 0xFFFFFFFF
 SELECTOR_DESCRIBE = 7
 SELECTOR_CHECK = 8
+SELECTOR_PORT = 9
+PORT_REPORT_BYTES = 112
 WB_PAT = 2
 WB_PAT_VALUE = 0x0F
 GSM_OFFSET = 8 * 1024 * 1024
@@ -101,6 +103,18 @@ class Report(c.Structure):
         ('ops', Descriptor * OPS)]
 
 
+class PortReport(c.Structure):
+    _fields_ = [(name, c.c_uint32) for name in (
+        'abi', 'structBytes', 'patEntryCount', 'patWriteCount', 'patMulticastRequired',
+        'patAtsOffset', 'patAtsValue', 'patWriteBackValue', 'patIndexWriteBack',
+        'patIndexNone', 'patIndexWriteThrough', 'patIndexNoneCompression', 'lrcRingBytes',
+        'lrcContextControl', 'lrcRingControl', 'lrcImagePagesRender', 'lrcImagePagesCompute',
+        'lrcWriteCount', 'patProgrammed', 'lrcSubmitted')] + [
+        (name, c.c_uint64) for name in ('lrcRenderTotalBytes', 'lrcComputeTotalBytes',
+                                        'lrcDescriptorTemplate')] + [
+        ('requiredQualifications', c.c_uint32), ('reserved', c.c_uint32)]
+
+
 class Request(c.Structure):
     _fields_ = [(name, c.c_uint32) for name in (
         'abi', 'structBytes', 'op', 'owner', 'flags', 'patIndex', 'segmentCount',
@@ -150,6 +164,8 @@ def bind_library(path):
     DLL.lb_arc_interface_queue_registration.argtypes = [c.POINTER(Request), c.c_uint32,
                                                         c.c_void_p, c.c_uint32]
     DLL.lb_arc_interface_queue_registration.restype = c.c_uint32
+    DLL.lb_arc_interface_port_report.argtypes = [c.POINTER(PortReport), c.c_uint32]
+    DLL.lb_arc_interface_port_report.restype = c.c_uint32
 
 
 def window(reserved_low=RESERVED_LOW, bar=64 * 1024 * 1024):
@@ -365,7 +381,8 @@ class CallShape(ArcInterfaceCase):
                          (UNSUPPORTED, R_ASYNC))
 
     def test_other_selectors_belong_to_the_older_abi(self):
-        for selector in (0, 4, 6, 9, 0xFFFF):
+        # Selector 9 has no request body: it is not part of the check contract.
+        for selector in (0, 4, 6, SELECTOR_PORT, 0xFFFF):
             self.assertEqual(self.check(selector, 0, 0, 0, 0), (UNKNOWN_OP, R_UNMAPPED))
 
     def test_reason_pointer_is_optional(self):
@@ -702,6 +719,69 @@ class GuCRegistrationBridge(ArcInterfaceCase):
         self.assertEqual((status, fields), (INPUT, (0, 0, 0)))
 
 
+class PortedModuleReport(ArcInterfaceCase):
+    """Selector 9 reports what the ported PAT and LRC modules hold."""
+
+    def setUp(self):
+        self.report = PortReport()
+        self.assertEqual(DLL.lb_arc_interface_port_report(c.byref(self.report),
+                                                          PORT_REPORT_BYTES), OK)
+
+    def test_report_carries_the_ported_pat_plan(self):
+        self.assertEqual((self.report.abi, self.report.structBytes), (ABI, PORT_REPORT_BYTES))
+        self.assertEqual((self.report.patEntryCount, self.report.patWriteCount), (32, 33))
+        self.assertEqual(self.report.patMulticastRequired, 1)
+        self.assertEqual(self.report.patAtsOffset, 0x47FC)
+        self.assertEqual(self.report.patWriteBackValue, WB_PAT_VALUE)
+        self.assertEqual(self.report.patAtsValue, WB_PAT_VALUE)
+        self.assertEqual((self.report.patIndexWriteBack, self.report.patIndexNone,
+                          self.report.patIndexWriteThrough,
+                          self.report.patIndexNoneCompression), (2, 3, 15, 12))
+
+    def test_report_carries_the_ported_lrc_layout(self):
+        self.assertEqual(self.report.lrcRingBytes, 16 * 1024)
+        self.assertEqual(self.report.lrcContextControl, 0x00090009)
+        self.assertEqual(self.report.lrcRingControl, (16 * 1024 - PAGE) | 1)
+        self.assertEqual((self.report.lrcImagePagesRender,
+                          self.report.lrcImagePagesCompute), (3, 2))
+        self.assertEqual(self.report.lrcRenderTotalBytes, 16 * 1024 + PAGE + 3 * PAGE + PAGE)
+        self.assertEqual(self.report.lrcComputeTotalBytes, 16 * 1024 + PAGE + 2 * PAGE + PAGE)
+        self.assertEqual(self.report.lrcWriteCount, 10)
+        self.assertEqual(self.report.lrcDescriptorTemplate, 0x119)
+
+    def test_report_claims_no_hardware_state(self):
+        self.assertEqual((self.report.patProgrammed, self.report.lrcSubmitted,
+                          self.report.reserved), (0, 0, 0))
+        self.assertTrue(self.report.requiredQualifications)
+
+    def test_report_output_contract(self):
+        report = PortReport()
+        self.assertEqual(DLL.lb_arc_interface_port_report(c.byref(report),
+                                                          PORT_REPORT_BYTES - 4), INPUT)
+        self.assertEqual(report.abi, 0)
+        self.assertEqual(DLL.lb_arc_interface_port_report(None, PORT_REPORT_BYTES), INPUT)
+        storage = (c.c_uint64 * 64)()
+        misaligned = c.cast(c.byref(storage, 4), c.POINTER(PortReport))
+        self.assertEqual(DLL.lb_arc_interface_port_report(misaligned, PORT_REPORT_BYTES),
+                         ALIGNMENT)
+
+    def test_report_decodes_in_user_space(self):
+        decoded = lb_wire.decode_arc_port_report(bytes(self.report))
+        self.assertEqual(decoded['pat_write_count'], 33)
+        self.assertEqual(decoded['pat_indices']['write_back'], 2)
+        self.assertEqual(decoded['lrc_image_pages'], {'render': 3, 'compute': 2})
+        self.assertFalse(decoded['pat_programmed_on_hardware'])
+        self.assertFalse(decoded['lrc_submitted'])
+        forged = PortReport.from_buffer_copy(bytes(self.report))
+        forged.patProgrammed = 1
+        with self.assertRaises(ValueError):
+            lb_wire.decode_arc_port_report(bytes(forged))
+        forged = PortReport.from_buffer_copy(bytes(self.report))
+        forged.patIndexWriteBack = 3
+        with self.assertRaises(ValueError):
+            lb_wire.decode_arc_port_report(bytes(forged))
+
+
 class UserSpaceDecoder(ArcInterfaceCase):
     """The kernel module and tools/lb_wire.py must agree byte for byte."""
 
@@ -748,6 +828,7 @@ class UserSpaceDecoder(ArcInterfaceCase):
         self.assertEqual(lb_wire.EVENTS[60], 'arc_interface_queried')
         self.assertEqual(lb_wire.EVENTS[61], 'arc_request_accepted')
         self.assertEqual(lb_wire.EVENTS[62], 'arc_request_rejected')
+        self.assertEqual(lb_wire.EVENTS[63], 'arc_port_plan_queried')
 
 
 def main():
