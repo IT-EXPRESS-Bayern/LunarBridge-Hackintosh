@@ -102,10 +102,6 @@ def define_value(source: str, name: str) -> int:
     return int(match.group(1), 0)
 
 
-class Padding(c.Structure):
-    _fields_ = [('value', c.c_uint32)]
-
-
 class PatWrite(c.Structure):
     _fields_ = [('offset', c.c_uint32), ('value', c.c_uint32)]
 
@@ -322,9 +318,9 @@ class PortedPatPlan(unittest.TestCase):
         self.assertEqual(self.plan(discrete=1)[0], PAT_PLATFORM)
         self.assertEqual(self.plan(gt=2)[0], PAT_INPUT)
         # Wa_16023588340 is the reason 2001 is refused rather than planned.
-        self.assertIn('Wa_16023588340', self.source.xe2_branch)
-        self.assertIn('n_entries = 28', self.source.xe2_branch.replace('\t', ' ')
-                      .replace('  ', ' ').replace(' = ', ' = '))
+        normalised = re.sub(r'\s+', ' ', self.source.xe2_branch)
+        self.assertIn('Wa_16023588340', normalised)
+        self.assertIn('n_entries = 28', normalised)
 
     def test_bar_must_cover_the_highest_register(self):
         highest = max(self.source.offset(PAT_ENTRIES - 1), self.source.ats_offset)

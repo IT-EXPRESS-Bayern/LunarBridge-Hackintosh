@@ -120,13 +120,13 @@ extern "C" uint32_t lb_xe2_pat_plan(uint32_t graphicsVerX100, uint32_t gtKind,
 
     for (uint32_t index = 0; index < LB_PAT_ENTRIES; ++index)
         plan.writes[plan.writeCount++] = {index_offset(index), kTable[index]};
-    // xe->pat.pat_ats is set for every Xe2 device; pat_pta only for discrete.
+    // xe->pat.pat_ats is set for every Xe2 device; pat_pta only for discrete,
+    // which this port refuses above. ptaIncluded therefore stays 0 and the
+    // _PAT_PTA value remains available for a later discrete port.
     plan.writes[plan.writeCount++] = {LB_PAT_ATS_OFFSET, kAtsValue};
     plan.atsIncluded = 1;
-    if (discrete) {
-        plan.writes[plan.writeCount++] = {LB_PAT_PTA_OFFSET, kPtaValue};
-        plan.ptaIncluded = 1;
-    }
+    plan.ptaIncluded = 0;
+    (void)kPtaValue;
     *out = plan;
     return LBPatOK;
 }
