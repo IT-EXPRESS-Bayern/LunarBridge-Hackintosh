@@ -90,7 +90,7 @@ deshalb abgewiesen statt mit einem zusätzlichen Write bedient. Nur
 
 | Bereich | Größe | Herkunft |
 | --- | --- | --- |
-| Ring | Parameter, upstream 16 KiB | `xe_exec_queue.c`, `xe_execlist.c` |
+| Ring | Zweierpotenz, upstream 16 KiB | `xe_exec_queue.c`, `xe_execlist.c`, `xe_lrc_ring_space()` |
 | PPHWSP | 4 KiB | `LRC_PPHWSP_SIZE` |
 | Kontextimage | Render 3 × 4 KiB, Compute 2 × 4 KiB | `xe_gt_lrc_size()` für `GRAPHICS_VER >= 20` |
 | WA-BB | 4 KiB | `LRC_WA_BB_SIZE`, am Ende der Allokation |
@@ -121,11 +121,28 @@ Builder weist einen nicht 8-Byte-ausgerichteten Tail ab. Eine erste Version
 akzeptierte einen 4-Byte-Tail und hätte eine Spitze gesetzt, die das Register
 nicht ausdrücken kann.
 
+Die Ringgröße muss eine **Zweierpotenz** sein: `xe_lrc_ring_space()` rechnet
+`((head - tail - 1) & (size - 1)) + 1`, was nur dann stimmt. Ein 12-KiB-Ring
+wäre seitenausgerichtet und trotzdem falsch; der Builder weist ihn ab.
+
 Der Deskriptor ist `LRC_VALID | (LRC_LEGACY_64B_CONTEXT << 3) | LRC_PRIVILEGE`
-plus GGTT-Adresse des PPHWSP, also `Adresse | 0x119`. Engine-Klasse und
+plus GGTT-Adresse des PPHWSP, also `Adresse | 0x119`. Das ist der
+**GuC-Pfad-Deskriptor**: `xe_guc_submit.c` registriert genau diese Bits,
+zerlegt in `hwlrca_lo`/`hwlrca_hi`. Ein Execlist-Pfad würde zusätzlich eine
+Software-Kontextkennung in `XEHP_SW_CTX_ID` (Bits 54:39, Kennung 0 ist dem
+Kernelkontext vorbehalten) einfügen — ein Fenster, das die Engine-Instanz-Bits
+der Pre-1250-Generationen überdeckt. Die oberen Deskriptorbits sind also nicht
+frei; `lb_lrc_descriptor()` hält dieses Fenster leer und weist eine Adresse ab,
+die hineinreichen würde. Engine-Klasse und
 -Instanz gehören **nicht** hinein: Upstream setzt sie nur unter
 `GRAPHICS_VERx100 < 1250`, Lunar Lake ist 2004. Die erste Ringinstruktion ist
 `MI_ARB_ON_OFF | MI_ARB_ENABLE` = `0x04000001`.
+
+Ebenfalls noch offen, von der Gegenprüfung benannt: die Execlist-Submitfolge
+(`RCU_MODE` mit `RCU_MODE_CCS_ENABLE` für Compute, `wmb()` vor den
+MMIO-Schreibzugriffen, `RING_HWS_PGA`), der Parallel-Scratch-Bereich im PPHWSP
+samt GuC-Workqueue, und die Laufzeit-Ringzugriffe (`ring_space`, `ring_head`,
+`ring_is_idle`), die ein Dispatcher spiegeln muss.
 
 **Nicht portiert, mit Begründung:** Indirect Ring State (kein Graphics-Descriptor
 setzt `has_indirect_ring_state` an diesem Pin — der Port weist die Variante
@@ -138,7 +155,7 @@ sowie PXP, Run-Alone, OA und Parallel-Submission.
 
 | Nachweis | Umfang |
 | --- | --- |
-| `tests/test_arc_port.py` | 28 Tests: **jeder** erwartete Wert wird aus den gepinnten Intel-Quellen geparst und gegen das kompilierte Modul geprüft — alle 32 Tabellenwerte, alle 32 Registeroffsets, die Cache-Indizes, Layout, Dword-Offsets, Steuerworte, Deskriptor, PDE und Ringinstruktion; dazu die Bundle-Form des Apple-Vorbilds |
+| `tests/test_arc_port.py` | 29 Tests: **jeder** erwartete Wert wird aus den gepinnten Intel-Quellen geparst und gegen das kompilierte Modul geprüft — alle 32 Tabellenwerte, alle 32 Registeroffsets, die Cache-Indizes, Layout, Dword-Offsets, Steuerworte, Deskriptor, PDE und Ringinstruktion; dazu die Bundle-Form des Apple-Vorbilds |
 | `tests/test_arc_interface.py` | 52 Tests, einschließlich der vom LRC-Port zusammengesetzten GuC-Registrierung und des Portberichts von Selector 9 |
 | `tests/test_interface_diff.py` | 13 Tests des Schnittstellenvergleichs gegen dieselben Pins |
 | `tests/test_kernel_build_contract.py` | Kernelflags und Quellenzahl des Kextbuilds, jetzt 16 Kernelquellen |

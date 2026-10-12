@@ -477,6 +477,11 @@ class PinnedLrcSource:
         self.compute_pages = int(re.search(r'XE_ENGINE_CLASS_COMPUTE:.*?size \+= (\d+) \* SZ_4K',
                                            size, re.S).group(1))
         self.bo_size_formula = re.search(r'u32 bo_size = ([^;]+);', self.lrc).group(1)
+        self.execlist = TOOL.read_reference(
+            'linux-v6.17/drivers/gpu/drm/xe/xe_execlist.c')
+        self.guc_submit = TOOL.read_reference(
+            'linux-v6.17/drivers/gpu/drm/xe/xe_guc_submit.c')
+        self.ring_space = re.search(r'u32 xe_lrc_ring_space\(.*?\n\}', self.lrc, re.S).group(0)
         self.ring_create_size = sz_value(
             TOOL.read_reference('linux-v6.17/drivers/gpu/drm/xe/xe_exec_queue.c'),
             r'xe_lrc_create\(q->hwe, q->vm, (SZ_\w+)')
@@ -532,6 +537,13 @@ class PortedLrcLayout(unittest.TestCase):
         self.assertEqual(self.layout(ring=8192 + 8)[0], LRC_RANGE)
         self.assertEqual(self.layout(ring=512 * 4096)[0], LRC_OK)
         self.assertEqual(self.layout(ring=513 * 4096)[0], LRC_RANGE)
+        # xe_lrc_ring_space() masks with (size - 1), so the size must be a
+        # power of two; a 12 KiB ring is page-aligned but still wrong.
+        self.assertIn('& (size - 1)', self.source.ring_space)
+        for ring in (3 * 4096, 5 * 4096, 24 * 1024):
+            self.assertEqual(self.layout(ring=ring)[0], LRC_RANGE)
+        for ring in (8 * 1024, 32 * 1024, 64 * 1024):
+            self.assertEqual(self.layout(ring=ring)[0], LRC_OK)
         # Upstream creates its contexts with a 16 KiB ring.
         self.assertEqual(self.source.ring_create_size, RING_BYTES)
 
@@ -619,6 +631,24 @@ class PortedLrcImage(unittest.TestCase):
         self.assertEqual(standalone.value, expected)
         self.assertEqual(DLL.lb_lrc_descriptor(pphwsp, 0, c.byref(standalone)), LRC_OK)
         self.assertEqual(standalone.value, expected & ~self.source.lrc_privilege)
+
+    def test_descriptor_leaves_the_software_context_window_clear(self):
+        _, image = self.build()
+        shift = int(re.search(r'#define XEHP_SW_CTX_ID_SHIFT\s+(\d+)',
+                              self.source.execlist).group(1))
+        width = int(re.search(r'#define XEHP_SW_CTX_ID_WIDTH\s+(\d+)',
+                              self.source.execlist).group(1))
+        mask = ((1 << width) - 1) << shift
+        self.assertEqual((shift, width), (39, 16))
+        # An execlist submission ORs a context id into this window; the GuC
+        # path registers the descriptor as-is, split into hwlrca_lo/hi.
+        self.assertIn('lrc_desc |= FIELD_PREP(XEHP_SW_CTX_ID, ctx_id);', self.source.execlist)
+        self.assertIn('info->hwlrca_lo', self.source.guc_submit)
+        self.assertEqual(image.descriptor & mask, 0)
+        standalone = c.c_uint64()
+        self.assertEqual(DLL.lb_lrc_descriptor(self.base + self.layout.pphwspOffset, 1,
+                                               c.byref(standalone)), LRC_OK)
+        self.assertEqual(standalone.value & mask, 0)
 
     def test_page_directory_entry_uses_the_write_back_pat_index(self):
         _, image = self.build()

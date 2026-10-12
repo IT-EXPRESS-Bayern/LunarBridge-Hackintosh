@@ -30,6 +30,8 @@ constexpr uint64_t LB_LRC_DEFAULT_RING_BYTES = 16 * 1024;
 // RING_CTL_SIZE(size) encodes (size - PAGE_SIZE). A single-page ring would
 // encode as zero, which this port refuses rather than interpret; the upper
 // bound is this project's own conservative cap, not an upstream limit.
+// The size must also be a power of two: xe_lrc_ring_space() computes
+// ((head - tail - 1) & (size - 1)) + 1, which is only correct for one.
 constexpr uint64_t LB_LRC_MIN_RING_BYTES = 2 * LB_GPU_PAGE;
 constexpr uint64_t LB_LRC_MAX_RING_BYTES = 512 * LB_GPU_PAGE;
 constexpr uint32_t LB_LRC_MAX_WRITES = 12;
@@ -74,6 +76,13 @@ constexpr uint32_t LB_RING_VALID = 0x00000001;
 // Context descriptor bits from xe_lrc.c. LRC_ENGINE_CLASS / LRC_ENGINE_INSTANCE
 // are deliberately absent: upstream sets them only below GRAPHICS_VERx100 1250,
 // and Lunar Lake is 2004.
+// This is the GuC-path descriptor. xe_guc_submit.c registers exactly these
+// bits, split into hwlrca_lo/hi. An execlist path would additionally OR a
+// software context id into XEHP_SW_CTX_ID (bits 54:39 on Xe2, id 0 reserved
+// for the kernel context), which overlaps the pre-1250 engine-instance bits —
+// so those upper bits are not free, and this port leaves them clear.
+constexpr uint64_t LB_LRC_SW_CTX_ID_SHIFT = 39;
+constexpr uint64_t LB_LRC_SW_CTX_ID_WIDTH = 16;
 constexpr uint64_t LB_LRC_VALID = 1ull << 0;
 constexpr uint64_t LB_LRC_PRIVILEGE = 1ull << 8;
 constexpr uint64_t LB_LRC_ADDRESSING_MODE_SHIFT = 3;

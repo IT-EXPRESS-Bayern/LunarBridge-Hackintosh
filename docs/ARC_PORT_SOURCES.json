@@ -20,14 +20,18 @@
     "set_offsets() register lists for context save/restore state.",
     "Memory-based interrupt (MSI-X) context fields.",
     "PXP, run-alone, OA and parallel-submission context features.",
-    "Every actual MMIO write, GGTT binding, firmware load and submission."
+    "Every actual MMIO write, GGTT binding, firmware load and submission.",
+    "Execlist submission (RCU_MODE with RCU_MODE_CCS_ENABLE for compute, the write barrier before the MMIO writes, RING_HWS_PGA) and the software context id it ORs into the descriptor.",
+    "Parallel scratch and GuC work-queue area inside the PPHWSP page.",
+    "Runtime ring accessors: ring_space, ring_head, ring_is_idle and tail publication."
   ],
   "verification": {
     "tests": "tests/test_arc_port.py parses these files and compares the parsed values against the compiled module; expectations are not written into the test.",
     "hardware_tested": false,
     "pat_programmed_on_hardware": false,
     "lrc_submitted": false,
-    "gpu_execution_implemented": false
+    "gpu_execution_implemented": false,
+    "adversarial_review": "A verification pass re-read every claimed constant against these files. It corrected the forcewake scope of the PAT programming path, added the per-address-space PAT index limits, and surfaced the power-of-two ring requirement and the XEHP_SW_CTX_ID descriptor window."
   },
   "files": [
     {

@@ -55,6 +55,9 @@ extern "C" uint32_t lb_lrc_layout(uint32_t engineClass, uint64_t ringBytes,
     if (!pages) return LBLrcEngine;
     if (!page_aligned(ringBytes) || ringBytes < LB_LRC_MIN_RING_BYTES ||
         ringBytes > LB_LRC_MAX_RING_BYTES) return LBLrcRange;
+    // xe_lrc_ring_space() masks with (size - 1), so a ring whose size is not a
+    // power of two would compute wrong free space for every submission.
+    if (ringBytes & (ringBytes - 1)) return LBLrcRange;
 
     LBLrcLayout layout{};
     layout.abi = LB_LRC_ABI;
@@ -85,10 +88,16 @@ extern "C" uint32_t lb_lrc_descriptor(uint64_t pphwspGpuAddress, uint32_t privil
     if (pphwspGpuAddress >= LB_GGTT_GUC_TOP) return LBLrcRange;
     uint64_t descriptor = LB_LRC_VALID |
         (LB_LRC_LEGACY_64B_CONTEXT << LB_LRC_ADDRESSING_MODE_SHIFT);
+    // The software-context-id window must stay clear: an execlist submission
+    // fills it, and the GuC path expects exactly these bits and no others.
+    const uint64_t softwareContextIdMask =
+        ((uint64_t(1) << LB_LRC_SW_CTX_ID_WIDTH) - 1) << LB_LRC_SW_CTX_ID_SHIFT;
     // Upstream sets LRC_PRIVILEGE whenever the context has a VM, which for
     // this port is always: there is no global-GTT-only context here.
     if (privileged) descriptor |= LB_LRC_PRIVILEGE;
-    *out = descriptor | pphwspGpuAddress;
+    descriptor |= pphwspGpuAddress;
+    if (descriptor & softwareContextIdMask) return LBLrcPolicy;
+    *out = descriptor;
     return LBLrcOK;
 }
 
