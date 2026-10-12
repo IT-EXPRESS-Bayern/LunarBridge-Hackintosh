@@ -64,7 +64,7 @@ Die Linux-Aufrufreihenfolge allein bestätigt keinen sicheren XNU-Energiepfad.
 | 6 | keine | ForceWakeInfo, 80 Byte | IP-/ACK-/Get-/Put-Status und gehaltene Ressourcen; GPU/Metal=false |
 | 7 | keine | ArcInterfaceReport, 576 Byte | Arc-Operationstabelle mit ioctl-Bezug, Unterschieden und fehlenden Qualifikationen; GPU/Metal=0 |
 | 8 | ArcRequest, 480 Byte | ArcDecision, 80 Byte | Prüft **eine** Arc-Anfrageform und liefert ihr Urteil; submittiert nichts |
-| 9 | keine | ArcPortReport, 112 Byte | Was die portierten Xe2-Module programmieren würden: PAT-Plan, LRC-Layout und Deskriptorvorlage; `patProgrammed` und `lrcSubmitted` bleiben 0 |
+| 9 | keine | ArcPortReport, 112 Byte | Was die portierten Xe2-Module programmieren würden: PAT-Plan, LRC-Layout (elf Kontextschreibvorgänge) und Deskriptorvorlage; `patProgrammed` und `lrcSubmitted` bleiben 0 |
 
 Selector 0 bis 6 behalten ihre ABI-1-Formen unverändert; 7 bis 9 sind additiv.
 Beide neuen Selektoren sind reine CPU-Prüfpfade: Selector 4 bleibt der einzige

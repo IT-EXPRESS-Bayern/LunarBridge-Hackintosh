@@ -35,6 +35,7 @@ constexpr uint64_t LB_LRC_DEFAULT_RING_BYTES = 16 * 1024;
 constexpr uint64_t LB_LRC_MIN_RING_BYTES = 2 * LB_GPU_PAGE;
 constexpr uint64_t LB_LRC_MAX_RING_BYTES = 512 * LB_GPU_PAGE;
 constexpr uint32_t LB_LRC_MAX_WRITES = 12;
+constexpr uint32_t LB_LRC_WRITE_COUNT = 11;
 constexpr uint32_t LB_LRC_MAX_PROLOGUE = 4;
 // RING_TAIL carries the tail in TAIL_ADDR = bits 20:3, so the tail is
 // 8-byte granular and anything in bits 2:0 is lost. RING_HEAD is 4-byte
@@ -58,6 +59,13 @@ constexpr uint32_t LB_CTX_INDIRECT_RING_STATE = 0x26 + 1;
 constexpr uint32_t LB_CTX_ASID = 0x2e + 1;
 constexpr uint32_t LB_CTX_PDP0_UDW = 0x30 + 1;
 constexpr uint32_t LB_CTX_PDP0_LDW = 0x32 + 1;
+// lrc_ring_mi_mode() returns 0x70 for GRAPHICS_VERx100 >= 1250, and
+// reset_stop_ring() clears STOP_RING in the dword after it. A context built
+// from scratch — which is what this port builds — must carry that clear, or
+// it could be restored with its ring stopped.
+constexpr uint32_t LB_LRC_RING_MI_MODE_XE2 = 0x70;
+constexpr uint32_t LB_CTX_RING_MI_MODE = LB_LRC_RING_MI_MODE_XE2 + 1;
+constexpr uint32_t LB_RING_STOP_RING = 1u << 8;
 
 // Driver-defined offsets inside the PPHWSP page (xe_lrc.c).
 constexpr uint32_t LB_LRC_SEQNO_OFFSET = 512;

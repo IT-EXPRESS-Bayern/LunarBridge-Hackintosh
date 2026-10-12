@@ -19,6 +19,8 @@ bool page_aligned(uint64_t value) { return (value & (LB_GPU_PAGE - 1)) == 0; }
 
 // _MASKED_BIT_ENABLE(bits): the mask goes into the upper half of the dword.
 constexpr uint32_t masked_enable(uint32_t bits) { return (bits << 16) | bits; }
+// _MASKED_BIT_DISABLE(bits): same mask, data bits cleared.
+constexpr uint32_t masked_disable(uint32_t bits) { return bits << 16; }
 
 // Engine context image pages beyond the PPHWSP page, from xe_gt_lrc_size()
 // for GRAPHICS_VER >= 20.
@@ -34,7 +36,8 @@ uint32_t highest_write_index() {
     uint32_t highest = LB_CTX_CONTEXT_CONTROL;
     const uint32_t indices[] = {LB_CTX_RING_HEAD, LB_CTX_RING_TAIL, LB_CTX_RING_START,
                                 LB_CTX_RING_CTL, LB_CTX_TIMESTAMP, LB_CTX_TIMESTAMP_UDW,
-                                LB_CTX_ASID, LB_CTX_PDP0_UDW, LB_CTX_PDP0_LDW};
+                                LB_CTX_ASID, LB_CTX_PDP0_UDW, LB_CTX_PDP0_LDW,
+                                LB_CTX_RING_MI_MODE};
     for (uint32_t index : indices)
         if (index > highest) highest = index;
     return highest;
@@ -184,6 +187,12 @@ extern "C" uint32_t lb_lrc_build(const LBLrcLayout *layout, uint64_t ggttAddress
     image.writes[image.writeCount++] = {LB_CTX_PDP0_LDW,
                                         uint32_t(pageDirectoryEntry & 0xFFFFFFFFu)};
     image.writes[image.writeCount++] = {LB_CTX_ASID, asid};
+    // A from-scratch image goes through empty_lrc_data() upstream, which calls
+    // reset_stop_ring(): the ring must not be restored in the stopped state.
+    // This port emits no save/restore LRI stream, so the dword carries only
+    // this masked clear.
+    image.writes[image.writeCount++] = {LB_CTX_RING_MI_MODE,
+                                        masked_disable(LB_RING_STOP_RING)};
     // The first ring instruction upstream writes is arbitration enable. It is
     // a single dword, so a NOOP follows: xe_lrc_write_ring() pads to 8 bytes
     // and the tail must land on an 8-byte boundary to be encodable.
@@ -218,7 +227,7 @@ extern "C" uint32_t lb_lrc_apply(const LBLrcImage *image, uint32_t *imageDwords,
                 image, sizeof(*image))) return LBLrcAliasing;
     if (image->abi != LB_LRC_ABI || image->structBytes != sizeof(LBLrcImage) ||
         image->reserved || image->hardwareBound || image->gpuExecuted ||
-        !image->writeCount || image->writeCount > LB_LRC_MAX_WRITES ||
+        image->writeCount != LB_LRC_WRITE_COUNT ||
         image->prologueDwords > LB_LRC_MAX_PROLOGUE) return LBLrcAbi;
     // Every write must land inside the caller's buffer; a short buffer is a
     // capacity error, never a partially patched context.

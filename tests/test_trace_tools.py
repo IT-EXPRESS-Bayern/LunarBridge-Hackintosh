@@ -56,7 +56,7 @@ def arc_port_report_bytes():
     report.lrcImagePagesRender, report.lrcImagePagesCompute = 3, 2
     report.lrcRenderTotalBytes = 16 * 1024 + 4 * 4096
     report.lrcComputeTotalBytes = 16 * 1024 + 3 * 4096
-    report.lrcWriteCount = 10
+    report.lrcWriteCount = 11
     report.lrcDescriptorTemplate = 0x119
     report.requiredQualifications = 0x1F1F
     report.patGgttMaxIndex = 3

@@ -746,7 +746,7 @@ class PortedModuleReport(ArcInterfaceCase):
                           self.report.lrcImagePagesCompute), (3, 2))
         self.assertEqual(self.report.lrcRenderTotalBytes, 16 * 1024 + PAGE + 3 * PAGE + PAGE)
         self.assertEqual(self.report.lrcComputeTotalBytes, 16 * 1024 + PAGE + 2 * PAGE + PAGE)
-        self.assertEqual(self.report.lrcWriteCount, 10)
+        self.assertEqual(self.report.lrcWriteCount, 11)
         self.assertEqual(self.report.lrcDescriptorTemplate, 0x119)
 
     def test_report_claims_no_hardware_state(self):

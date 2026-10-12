@@ -255,7 +255,7 @@ extern "C" uint32_t lb_arc_interface_port_report(LBArcPortReport *out, uint32_t 
     report.lrcImagePagesCompute = compute.imagePages;
     report.lrcRenderTotalBytes = render.totalBytes;
     report.lrcComputeTotalBytes = compute.totalBytes;
-    report.lrcWriteCount = 10;
+    report.lrcWriteCount = LB_LRC_WRITE_COUNT;
     // Descriptor bits without an address: valid, legacy 64-bit mode, privilege.
     report.lrcDescriptorTemplate = LB_LRC_VALID |
         (LB_LRC_LEGACY_64B_CONTEXT << LB_LRC_ADDRESSING_MODE_SHIFT) | LB_LRC_PRIVILEGE;

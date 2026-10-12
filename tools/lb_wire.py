@@ -212,7 +212,7 @@ def decode_arc_port_report(data):
     # write-back index the GGTT planner encodes, and two context sizes.
     if r.patEntryCount != 32 or r.patWriteCount != 33 or r.patIndexWriteBack != 2 or \
        r.patMulticastRequired != 1 or r.patAtsValue != r.patWriteBackValue or \
-       r.lrcWriteCount != 10 or r.lrcImagePagesRender != 3 or r.lrcImagePagesCompute != 2 or \
+       r.lrcWriteCount != 11 or r.lrcImagePagesRender != 3 or r.lrcImagePagesCompute != 2 or \
        r.lrcRenderTotalBytes <= r.lrcComputeTotalBytes or \
        r.lrcRingControl != (r.lrcRingBytes - 4096) | 1:
         raise ValueError('Arc port report content mismatch')

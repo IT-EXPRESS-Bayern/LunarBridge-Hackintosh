@@ -99,7 +99,7 @@ Gesamtgröße ist `ring + lrc_size + LRC_WA_BB_SIZE`; der PPHWSP folgt dem Ring,
 weil `xe_lrc_pphwsp_offset()` genau die Ringgröße zurückgibt. Für Render mit
 16-KiB-Ring ergibt das 36.864 Byte, für Compute 32.768 Byte.
 
-Geschrieben werden zehn Dwords im Kontextimage, an den Indizes aus
+Geschrieben werden elf Dwords im Kontextimage, an den Indizes aus
 `xe_lrc_layout.h` (jeweils „Registeroffset + 1"):
 
 | Index | Feld | Wert |
@@ -111,6 +111,7 @@ Geschrieben werden zehn Dwords im Kontextimage, an den Indizes aus
 | 35 / 37 | `CTX_TIMESTAMP` / `_UDW` | 0 (Xe2 hat 64-Bit-Timestamps) |
 | 49 / 51 | `CTX_PDP0_UDW` / `_LDW` | PPGTT-Wurzel, Verzeichniskodierung mit PAT 2 |
 | 47 | `CTX_ASID` | Adressraumkennung, Xe2 setzt `has_asid` |
+| 113 | `RING_MI_MODE` + 1 | Maskiertes Löschen von `STOP_RING`: `lrc_ring_mi_mode()` liefert für Xe2 `0x70`, `reset_stop_ring()` löscht im Dword danach |
 
 Die Ringspitze ist 8-Byte-granular: `RING_TAIL` kodiert sie in `TAIL_ADDR` =
 Bits 20:3, Bits 2:0 gehen verloren (`RING_HEAD` ist mit `HEAD_ADDR` = Bits 20:2
@@ -143,6 +144,12 @@ Ebenfalls noch offen, von der Gegenprüfung benannt: die Execlist-Submitfolge
 MMIO-Schreibzugriffen, `RING_HWS_PGA`), der Parallel-Scratch-Bereich im PPHWSP
 samt GuC-Workqueue, und die Laufzeit-Ringzugriffe (`ring_space`, `ring_head`,
 `ring_is_idle`), die ein Dispatcher spiegeln muss.
+
+Der `STOP_RING`-Eintrag kam aus der Gegenprüfung: `empty_lrc_data()` ruft
+`reset_stop_ring()`, und genau diesen „von Null gebauten" Pfad modelliert
+dieser Port — ohne das Löschen könnte ein Kontext mit gestopptem Ring
+restauriert werden. Da hier kein Save/Restore-LRI-Strom emittiert wird, trägt
+das Dword ausschließlich dieses maskierte Löschen.
 
 **Nicht portiert, mit Begründung:** Indirect Ring State (kein Graphics-Descriptor
 setzt `has_indirect_ring_state` an diesem Pin — der Port weist die Variante

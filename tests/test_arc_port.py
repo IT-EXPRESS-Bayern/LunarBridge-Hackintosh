@@ -579,7 +579,7 @@ class PortedLrcImage(unittest.TestCase):
         writes = {image.writes[i].dwordIndex: image.writes[i].value
                   for i in range(image.writeCount)}
         ctx = self.source.ctx
-        self.assertEqual(image.writeCount, 10)
+        self.assertEqual(image.writeCount, 11)
         self.assertEqual(writes[ctx['CTX_CONTEXT_CONTROL']], image.contextControl)
         self.assertEqual(writes[ctx['CTX_RING_START']], self.base & 0xFFFFFFFF)
         self.assertEqual(writes[ctx['CTX_RING_HEAD']], 0)
@@ -592,6 +592,14 @@ class PortedLrcImage(unittest.TestCase):
         self.assertEqual(writes[ctx['CTX_PDP0_LDW']], image.pageDirectoryEntry & 0xFFFFFFFF)
         # No write touches the indirect ring-state register of the unported path.
         self.assertNotIn(ctx['CTX_INDIRECT_RING_STATE'], writes)
+        # A from-scratch image must clear STOP_RING after the MI mode slot.
+        mi_mode = re.search(r'static int lrc_ring_mi_mode\(.*?\n\}', self.source.lrc,
+                            re.S).group(0)
+        self.assertIn('GRAPHICS_VERx100(xe) >= 1250', mi_mode)
+        xe2_slot = int(re.search(r'>= 1250\)\s*\n\s*return (0x[0-9a-f]+);', mi_mode).group(1), 16)
+        stop_ring = reg_bit(TOOL.read_reference(ENGINE_REGS), 'STOP_RING')
+        self.assertEqual(writes[xe2_slot + 1], stop_ring << 16)
+        self.assertIn('reset_stop_ring(regs, hwe);', self.source.lrc)
 
     def test_control_words_match_the_pinned_encodings(self):
         _, image = self.build()
