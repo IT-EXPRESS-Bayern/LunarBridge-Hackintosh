@@ -4,6 +4,7 @@
 // pinned in ../docs/ARC_INTERFACE_SOURCES.json; no foreign driver code is used.
 #include "lb_arc_interface.h"
 #include "lb_diagnostics.h"
+#include "lb_lrc.h"
 
 static_assert(LBGetArcInterface == LB_ARC_SELECTOR_DESCRIBE, "Arc describe selector drifted");
 static_assert(LBCheckArcRequest == LB_ARC_SELECTOR_CHECK, "Arc check selector drifted");
@@ -125,7 +126,7 @@ uint32_t unused_fields_clear(const LBArcRequest *request, uint32_t allowed) {
         {FMemoryType, request->memoryType}, {FVmToken, request->vmToken},
         {FResourceToken, request->resourceToken}, {FQueueToken, request->queueToken},
         {FGpuAddress, request->gpuAddress}, {FBytes, request->bytes},
-        {FLrc, request->lrcDescriptor}, {FBatch, request->batchAddress},
+        {FLrc, request->lrcGpuAddress}, {FBatch, request->batchAddress},
         {FTimeout, request->timeoutNs}
     };
     for (const auto &check : checks)
@@ -459,10 +460,13 @@ extern "C" uint32_t lb_arc_interface_evaluate(const LBArcRequest *request, uint3
                 verdict = refuse(LBArcRange, LBArcReasonEngineClass);
             } else if (!request->vmToken) {
                 verdict = refuse(LBArcInput, LBArcReasonMissingToken);
-            } else if (!request->lrcDescriptor || !page_aligned(request->lrcDescriptor) ||
-                       request->lrcDescriptor >= LB_GGTT_GUC_TOP) {
-                // The LRC lives in a GGTT page below the GuC top boundary.
+            } else if (!request->lrcGpuAddress || !page_aligned(request->lrcGpuAddress) ||
+                       request->lrcGpuAddress >= LB_GGTT_GUC_TOP) {
+                // The context lives in a GGTT page below the GuC top boundary.
                 verdict = refuse(LBArcRange, LBArcReasonPageAlignment);
+            } else if (request->lrcGpuAddress < LB_GGTT_RESERVED_LOW) {
+                // Same reserved low window the GGTT planner and the LRC port keep.
+                verdict = refuse(LBArcPolicy, LBArcReasonWindow);
             }
             break;
         case LBArcOpQueueDestroy:
@@ -566,8 +570,14 @@ extern "C" uint32_t lb_arc_interface_queue_registration(const LBArcRequest *requ
     const uint32_t status = lb_arc_interface_evaluate(request, owner, nullptr, &decision,
                                                       uint32_t(sizeof(decision)));
     if (status) return status;
+    // The descriptor is composed from the checked GGTT address by the LRC
+    // port: a client-supplied descriptor could set the privilege and
+    // addressing-mode bits itself.
+    uint64_t descriptor = 0;
+    if (lb_lrc_descriptor(request->lrcGpuAddress, 1, &descriptor) != LBLrcOK)
+        return LBArcRange;
     LBGuCSchedulerRegistration registration{};
-    registration.lrcDescriptor = request->lrcDescriptor;
+    registration.lrcDescriptor = descriptor;
     registration.engineClass = request->engineClass;
     registration.engineSubmitMask = request->engineSubmitMask;
     *out = registration;

@@ -172,7 +172,7 @@
     "native_hardware_tested": false,
     "parallel_kernel_lifetime_tested": false
   },
-  "pinned_reference_files_sha256_verified": 34,
+  "pinned_reference_files_sha256_verified": 44,
   "total_host_tests_passed": 444,
   "macos_object_count": 14,
   "native_diagnostic_source_compiled": true,
@@ -870,5 +870,26 @@
     "record": "docs/ARC_INTERFACE_DIFF.json"
   },
   "arc_interface_ci_runs_recorded": false,
-  "native_arc_interface_selectors_hardware_tested": false
+  "native_arc_interface_selectors_hardware_tested": false,
+  "ported_xe2_contract_tests": {
+    "test_type": "Executed the compiled lb_xe2_pat and lb_lrc C++ through ctypes while parsing every expected value out of the hash-pinned Intel MIT sources",
+    "environment": "Linux x86_64 container, clang 18.1.3, Python 3.13",
+    "tests_run": 23,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "successful": true,
+    "pat_entries_checked": 32,
+    "pat_register_offsets_checked": 32,
+    "pat_plan_writes": 33,
+    "lrc_context_image_writes_checked": 10,
+    "values_hardcoded_in_tests": false,
+    "mmio_performed": false,
+    "pat_programmed_on_hardware": false,
+    "ggtt_binding_performed": false,
+    "lrc_submitted": false,
+    "gpu_execution_implemented": false,
+    "provenance": "docs/ARC_PORT_SOURCES.json"
+  },
+  "arc_port_ci_runs_recorded": false
 }

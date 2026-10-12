@@ -108,7 +108,7 @@ class Request(c.Structure):
         'memoryType')] + [('reservedWords', c.c_uint32 * 3)] + [
         (name, c.c_uint64) for name in (
             'vmToken', 'resourceToken', 'queueToken', 'gpuAddress', 'bytes',
-            'lrcDescriptor', 'batchAddress', 'timeoutNs')] + [
+            'lrcGpuAddress', 'batchAddress', 'timeoutNs')] + [
         ('segments', Segment * MAX_SEGMENTS), ('syncs', SyncPoint * MAX_SYNCS)]
 
 
@@ -197,7 +197,7 @@ def accepted_request(op):
                        syncs=[(SYNC_USER_FENCE, F_SIGNAL, 0x500000, 1)])
     if op == QUEUE_CREATE:
         return request(op, engineClass=0, engineSubmitMask=1, vmToken=5,
-                       lrcDescriptor=RESERVED_LOW + 2 * PAGE)
+                       lrcGpuAddress=RESERVED_LOW + 2 * PAGE)
     if op == QUEUE_DESTROY:
         return request(op, queueToken=11)
     if op == QUEUE_PROPERTY:
@@ -401,7 +401,7 @@ class RequestEnvelope(ArcInterfaceCase):
 
     def test_fields_outside_the_operation_must_be_zero(self):
         cases = {'vmToken': 1, 'batchAddress': 64, 'timeoutNs': 10, 'engineSubmitMask': 1,
-                 'memoryType': 1, 'lrcDescriptor': PAGE, 'queueToken': 3}
+                 'memoryType': 1, 'lrcGpuAddress': PAGE, 'queueToken': 3}
         for name, field in cases.items():
             with self.subTest(field=name):
                 value = accepted_request(DEVICE_QUERY)
@@ -606,8 +606,12 @@ class QueueAndExecution(ArcInterfaceCase):
         self.expect(value, INPUT, R_TOKEN)
         for lrc in (0, PAGE + 8, GUC_TOP):
             value = accepted_request(QUEUE_CREATE)
-            value.lrcDescriptor = lrc
+            value.lrcGpuAddress = lrc
             self.expect(value, RANGE, R_PAGE_ALIGNMENT)
+        # A context page below the reserved low window is refused by policy.
+        value = accepted_request(QUEUE_CREATE)
+        value.lrcGpuAddress = PAGE * 2
+        self.expect(value, POLICY, R_WINDOW)
 
     def test_exec_needs_an_aligned_batch_and_a_signalling_fence(self):
         decision = self.accept(accepted_request(EXEC))
@@ -679,7 +683,10 @@ class GuCRegistrationBridge(ArcInterfaceCase):
         value.engineSubmitMask = 3
         status, (lrc, engine_class, mask) = self.registration(value)
         self.assertEqual(status, OK)
-        self.assertEqual((lrc, engine_class, mask), (RESERVED_LOW + 2 * PAGE, 4, 3))
+        # The registration carries the composed descriptor, not the raw
+        # address: valid | legacy 64-bit addressing mode | privilege.
+        self.assertEqual((lrc, engine_class, mask),
+                         (RESERVED_LOW + 2 * PAGE + 0x119, 4, 3))
 
     def test_registration_refuses_other_operations_and_bad_requests(self):
         status, fields = self.registration(accepted_request(EXEC))

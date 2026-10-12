@@ -25,6 +25,7 @@ commands = [common + ['-target', 'x86_64-windows-gnu', '-shared', '-nostdlib',
                      '-Wl,--entry,DllMain', str(root / 'lnl_platform.cpp'),
                      str(root / 'lb_diagnostics.cpp'),
                      str(root / 'lb_gpu_memory.cpp'), str(root / 'lb_ggtt_plan.cpp'),
+                     str(root / 'lb_xe2_pat.cpp'), str(root / 'lb_lrc.cpp'),
                      str(root / 'lb_arc_interface.cpp'),
                      str(root / 'lb_guc_transport.cpp'), str(root / 'lb_guc_scheduler.cpp'),
                      str(root / 'lb_guc_firmware.cpp'),
@@ -38,7 +39,7 @@ commands = [common + ['-target', 'x86_64-windows-gnu', '-shared', '-nostdlib',
 sources = [(name, root / (name + '.cpp')) for name in
            ['lnl_platform', 'LunarLakePCIProbe', 'lb_diagnostics', 'lb_gpu_memory',
             'lb_ggtt_plan', 'lb_guc_transport', 'lb_guc_scheduler', 'lb_guc_firmware',
-            'lb_arc_interface', 'lb_forcewake']]
+            'lb_xe2_pat', 'lb_lrc', 'lb_arc_interface', 'lb_forcewake']]
 sources += [(name, root.parent / 'native' / (name + '.cpp')) for name in
             ['LBDMAContext', 'LBDMAQuarantine', 'LBForceWakeAdapter', 'LunarBridgeDriver', 'KmodInfo']]
 for name, source in sources:

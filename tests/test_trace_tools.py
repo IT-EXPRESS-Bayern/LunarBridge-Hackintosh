@@ -390,6 +390,7 @@ class TraceToolTests(unittest.TestCase):
             'lnl_platform.o', 'LunarLakePCIProbe.o', 'lb_diagnostics.o',
             'lb_gpu_memory.o', 'lb_ggtt_plan.o', 'lb_guc_transport.o',
             'lb_guc_scheduler.o', 'lb_guc_firmware.o', 'lb_arc_interface.o',
+            'lb_xe2_pat.o', 'lb_lrc.o',
             'LBDMAContext.o', 'LBDMAQuarantine.o', 'LunarBridgeDriver.o', 'KmodInfo.o',
             'lb_forcewake.o', 'LBForceWakeAdapter.o'})
         for path in objects:

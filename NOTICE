@@ -2,7 +2,12 @@
 LunarBridge is independent research. Intel, Apple, Samsung, OpenCore, Lilu and
 their contributors do not sponsor or endorse this project.
 
-GPU platform metadata is adapted from MIT-licensed Intel Linux Xe source.
+GPU platform metadata, and now the Xe2 PAT and LRC hardware contracts, are
+adapted from MIT-licensed Intel Linux Xe source. The ported modules
+(gpu-prototype/lb_xe2_pat.*, gpu-prototype/lb_lrc.*) list their exact source
+files, hashes and line citations in docs/ARC_PORT_SOURCES.json.
+Apple's newest Intel graphics driver is Ice Lake / Gen11; no Apple driver for
+Xe or Xe2 exists, and no Apple driver code or binary is used here.
 The VoodooI2C source patch and its independent build now live in the separate
 IT-EXPRESS-Bayern/LunarBridge-I2C repository with their original upstream terms.
 The exact upstream commits, notices and source hashes are documented here.

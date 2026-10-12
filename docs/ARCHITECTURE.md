@@ -59,12 +59,18 @@ Stufen. Auch eine erfolgreiche MSL-Übersetzung registriert kein Metalgerät.
 | `gpu-prototype/lb_gpu_memory.*` | Reservierungen, PTE-Formate und Prüfung segmentierter DMA-Seiten | CPU-Planung mit expliziten Eingaben |
 | `gpu-prototype/lb_ggtt_plan.*` | Getrennte PPGTT-/GGTT-Reservierungen zu BAR-Offset/PTE-Schreibplan verbinden | Keine BAR-Schreibvorgänge, globale Hardwarebelegung oder TLB-Freigabe |
 | `gpu-prototype/lb_guc_scheduler.*` | Geprüfter serieller Register-/Mode-/Submit-/Deregister-Nachrichtencodec mit Revision und begrenztem Fence-Verlauf | CPU-Protokoll; keine laufende Firmware, ADS/LRC oder echte Submission |
+| `gpu-prototype/lb_xe2_pat.*` | Portierte Lunar-Lake-PAT-Tabelle, Registeroffsets, geordneter Schreibplan und Lesekontrolle | Kein MMIO; Forcewake, BAR-Besitz und Readback bleiben Aufgabe des Aufrufers |
+| `gpu-prototype/lb_lrc.*` | Portiertes Xe2-LRC-Layout, Kontextimage-Schreibvorgänge, Ringsteuerwort, PPGTT-Wurzel, Ringprolog und Kontextdeskriptor | CPU-Speicher; keine GGTT-Bindung, keine Registrierung, kein Submit |
 | `gpu-prototype/lb_arc_interface.*` | macOS-geformte Arc-Operationstabelle aus der Xe-uAPI, Prüfung der Externalmethod-Aufrufform und Validierung/Übersetzung einer flachen Anfrage | CPU-Vertrag; akzeptierte Form ist keine Submission, keine Hardwarebindung |
 | `gpu-prototype/lb_guc_firmware.*` und `lb_guc_transport.*` | CSS-Metadatenprüfung, HXG und CT-Ringschatten | Keine authentifizierte laufende Firmware oder echte CT-Queue |
 | `gpu-toolchain/own_kernel_payload.py` | Eigenes unverändertes Zebin prüfen und 64/32/32-Byte-Payload vorbereiten | Beide GPU-Adressen unaufgelöst; kein WALKER oder Dispatch |
 | `tools/metal_shader_ci.py` | Eigene MSL/AIR/SPIR-V-Ausgaben und Reflection des externen Konverters qualifizieren | Compilererfolg ist vom nativen GPU-/Metalbetrieb getrennt |
 | `tools/collect_macos.py` und `analyze_trace.py` | Snapshots und begrenzte Traces sammeln und Fehler einordnen | Kein erfundener Hardwareerfolg aus fehlenden oder alten Daten |
 | `installer/install_opencore.py` | Gewähltes Grafik-Kext planen, sichern, installieren und zurücknehmen | Installer-Tests liefen an künstlichen EFIs; Boot und Kext-Akzeptanz offen |
+
+Der [Linux-Port](ARC_PORT_FROM_LINUX.md) beschreibt die erste portierte Etappe:
+PAT-Programmierplan und LRC-Kontextaufbau für Arc 130V, mit Zeilennachweis je
+Wert in [ARC_PORT_SOURCES.json](ARC_PORT_SOURCES.json).
 
 Die [Schnittstellenanalyse](ARC_INTERFACE_DIFF.md) vergleicht die 12 ioctls des
 Linux-Arc-130V-Treibers mit dem macOS-26-Kernelkontrakt und belegt, dass Apples

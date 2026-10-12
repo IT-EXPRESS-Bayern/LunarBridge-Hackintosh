@@ -182,7 +182,7 @@ struct LBArcRequest {
     uint32_t engineClass, engineSubmitMask, bindMode, queryKind;
     uint32_t memoryType, reservedWords[3];
     uint64_t vmToken, resourceToken, queueToken, gpuAddress;
-    uint64_t bytes, lrcDescriptor, batchAddress, timeoutNs;
+    uint64_t bytes, lrcGpuAddress, batchAddress, timeoutNs;
     LBDmaSegment segments[LB_ARC_MAX_SEGMENTS];
     LBArcSyncPoint syncs[LB_ARC_MAX_SYNCS];
 };
@@ -227,8 +227,9 @@ LNL_API uint32_t lb_arc_interface_check_call(uint32_t selector, uint32_t scalarI
 LNL_API uint32_t lb_arc_interface_evaluate(const LBArcRequest *request, uint32_t owner,
                                           const LBGgttWindow *window, LBArcDecision *out,
                                           uint32_t outputBytes);
-// Derive the GuC registration input of an accepted queue-create request. This
-// only re-expresses checked request fields; it registers nothing.
+// Derive the GuC registration input of an accepted queue-create request: the
+// request carries the GGTT address of the context, and the descriptor is
+// composed by the LRC port, not taken from the client. This registers nothing.
 LNL_API uint32_t lb_arc_interface_queue_registration(const LBArcRequest *request, uint32_t owner,
                                                     LBGuCSchedulerRegistration *out,
                                                     uint32_t outputBytes);

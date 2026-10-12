@@ -1,21 +1,27 @@
-name: Arc interface comparison
+name: Arc interface and port checks
 
 on:
   push:
     paths:
       - gpu-prototype/lb_arc_interface.*
+      - gpu-prototype/lb_xe2_pat.*
+      - gpu-prototype/lb_lrc.*
       - tools/compare_interfaces.py
       - tests/test_arc_interface.py
       - tests/test_interface_diff.py
+      - tests/test_arc_port.py
       - tests/reference-manifest.json
       - docs/ARC_INTERFACE_DIFF.json
       - .github/workflows/interface-diff.yml
   pull_request:
     paths:
       - gpu-prototype/lb_arc_interface.*
+      - gpu-prototype/lb_xe2_pat.*
+      - gpu-prototype/lb_lrc.*
       - tools/compare_interfaces.py
       - tests/test_arc_interface.py
       - tests/test_interface_diff.py
+      - tests/test_arc_port.py
       - tests/reference-manifest.json
       - docs/ARC_INTERFACE_DIFF.json
       - .github/workflows/interface-diff.yml
@@ -26,7 +32,7 @@ permissions:
 
 jobs:
   compare:
-    name: Check the Arc interface table against the pinned sources
+    name: Check the Arc interface and the ported Xe2 modules against the pinned sources
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -44,12 +50,15 @@ jobs:
           clang++ -std=c++17 -O2 -Wall -Wextra -Werror -fno-exceptions -fno-rtti -fPIC -shared \
             gpu-prototype/lb_gpu_memory.cpp gpu-prototype/lb_ggtt_plan.cpp \
             gpu-prototype/lb_guc_transport.cpp gpu-prototype/lb_guc_scheduler.cpp \
-            gpu-prototype/lb_arc_interface.cpp -o build/interface/libarcinterface.so
+            gpu-prototype/lb_arc_interface.cpp gpu-prototype/lb_xe2_pat.cpp \
+            gpu-prototype/lb_lrc.cpp -o build/interface/libarcinterface.so
       - name: Run the interface contract tests
         run: |
           python3 -B tests/test_arc_interface.py build/interface/libarcinterface.so \
             --report build/interface/arc-interface-test-report.json
           python3 -B tests/test_interface_diff.py build/interface/libarcinterface.so
+          python3 -B tests/test_arc_port.py build/interface/libarcinterface.so \
+            --report build/interface/arc-port-test-report.json
       - name: Verify the compiled table and the committed comparison record
         run: |
           python3 -B tools/compare_interfaces.py --library build/interface/libarcinterface.so \
@@ -64,5 +73,6 @@ jobs:
           path: |
             build/interface/ARC_INTERFACE_VERIFICATION.json
             build/interface/arc-interface-test-report.json
+            build/interface/arc-port-test-report.json
           if-no-files-found: error
           retention-days: 14

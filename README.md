@@ -68,6 +68,7 @@ flowchart TD
 | MSL → AIR → Shader SPIR-V | **In progress — compiler qualification** | 64 offline tests passed; real MSL and LLVM commands succeeded, then private AIR metadata was refused. A bounded classifier and real compiler help diagnose that field; translation remains unverified. [Compiler bridge](docs/METAL_SHADER_BRIDGE.md) |
 | Mesa CPU parser | **In progress — provenance qualification** | 29 offline tests passed; pinned `spirv2nir` built on real CI. Streaming hashes now handle its large generated NIR source; binary/help/source qualification remains open. [Backend seams](docs/METAL_BACKEND_SEAMS.md) |
 | Arc interface contract | **Complete — CPU contract** | 46 tests against the compiled table plus 13 against the pinned sources; the 12 Linux Arc ioctls mapped onto the macOS 26 external-method shape, verified with no mismatch. Apple's newest Intel driver is Gen11, so no Xe2 driver exists to reuse. [Interface diff](docs/ARC_INTERFACE_DIFF.md) |
+| Ported Xe2 PAT and LRC contracts | **Complete — CPU port** | 23 tests whose expected values are parsed out of the pinned Intel MIT sources: the 32-entry PAT table with its register plan, and the render/compute LRC layout, context image, descriptor and ring prologue. Nothing is programmed or submitted. [Linux port](docs/ARC_PORT_FROM_LINUX.md) |
 | Native memory + execution | **Blocked — implementation missing** | GPU-VA binding, programmed PAT2, global GGTT ownership, GuC startup and queue submission remain missing. [Architecture](docs/GPU_DESIGN.md) |
 | Metal provider + display | **Blocked — implementation missing** | No LunarBridge system Metal provider, accelerated display or WindowServer integration. [Hardware scope](docs/HARDWARE_SUPPORT.md) |
 
@@ -161,6 +162,9 @@ LunarBridge is intended as a shared foundation for building and modifying native
 drivers. The [Arc interface comparison](docs/ARC_INTERFACE_DIFF.md) sets the Linux
 Arc 130V driver interface against the macOS 26 kernel contract, operation by
 operation, and documents what the macOS-shaped operation table changed and why.
+The [Linux port](docs/ARC_PORT_FROM_LINUX.md) carries that further: the Xe2 PAT
+and LRC hardware contracts are ported into this driver, shaped by the last
+Apple-compatible driver generation, with every value cited back to its source.
 The [architecture and module contracts](docs/ARCHITECTURE.md) explain
 component boundaries; the [porting guide](docs/PORTING_GUIDE.md) describes reuse,
 generation-specific work, tests and licensing. After the initial native Arc

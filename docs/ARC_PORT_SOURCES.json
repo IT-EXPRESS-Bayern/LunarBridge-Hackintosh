@@ -1,0 +1,536 @@
+{
+  "schema": "LunarBridge.ArcPortSources.v1",
+  "own_code_license": "GPL-3.0-only",
+  "upstream_license": "MIT (Intel); license text in ../LICENSES/MIT-Intel.txt",
+  "collected_on": "2026-10-12",
+  "linux_pin": {
+    "repository": "torvalds/linux",
+    "release": "v6.17",
+    "commit": "e5f0a698b34ed76002dc5cff3804a61c80233a7a"
+  },
+  "scope": "Hardware contracts of the Linux Arc 130V driver re-expressed as CPU-side plans for a macOS kernel extension. No Linux source file is vendored, no kernel module is loaded, and no Apple driver binary is read or redistributed.",
+  "ported_modules": {
+    "gpu-prototype/lb_xe2_pat.cpp": "Lunar Lake PAT entry table, register offsets, ordered write plan and readback check, re-expressed as CPU data instead of MMIO calls.",
+    "gpu-prototype/lb_lrc.cpp": "Xe2 render/compute LRC allocation layout, context-image dword writes, ring control word, PPGTT root entry, first ring instruction and context descriptor, built into caller-owned memory."
+  },
+  "not_ported": [
+    "Indirect ring state: no graphics descriptor at this pin enables it.",
+    "Indirect context page: gt_engine_needs_indirect_ctx() returns false at this pin.",
+    "Per-context workaround batch contents; the page is reserved, nothing is emitted.",
+    "set_offsets() register lists for context save/restore state.",
+    "Memory-based interrupt (MSI-X) context fields.",
+    "PXP, run-alone, OA and parallel-submission context features.",
+    "Every actual MMIO write, GGTT binding, firmware load and submission."
+  ],
+  "verification": {
+    "tests": "tests/test_arc_port.py parses these files and compares the parsed values against the compiled module; expectations are not written into the test.",
+    "hardware_tested": false,
+    "pat_programmed_on_hardware": false,
+    "lrc_submitted": false,
+    "gpu_execution_implemented": false
+  },
+  "files": [
+    {
+      "path": "linux-v6.17/drivers/gpu/drm/xe/xe_pat.c",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/drivers/gpu/drm/xe/xe_pat.c",
+      "bytes": 14566,
+      "sha256": "3016c9b974f579926b8d23191ebb65f8e6ebca3fd8907d19a40b4216de5709bd",
+      "license": "MIT",
+      "copyright": "Copyright 2013-2024 Intel Corporation",
+      "citations": [
+        {
+          "pattern": "#define _PAT_ATS",
+          "lines": [
+            22
+          ],
+          "role": "ATS register offset"
+        },
+        {
+          "pattern": "#define _PAT_INDEX\\(index\\)",
+          "lines": [
+            23
+          ],
+          "role": "index register offsets as two evenly spaced ranges"
+        },
+        {
+          "pattern": "#define _PAT_PTA",
+          "lines": [
+            26
+          ],
+          "role": "PTA register offset"
+        },
+        {
+          "pattern": "#define XE2_NO_PROMOTE",
+          "lines": [
+            28
+          ],
+          "role": "bit 10 of a Xe2 PAT entry"
+        },
+        {
+          "pattern": "#define XE2_COH_MODE",
+          "lines": [
+            33
+          ],
+          "role": "bits 1:0 of a Xe2 PAT entry"
+        },
+        {
+          "pattern": "#define XE2_PAT\\(no_promote",
+          "lines": [
+            109
+          ],
+          "role": "entry encoding macro"
+        },
+        {
+          "pattern": "static const struct xe_pat_table_entry xe2_pat_table",
+          "lines": [
+            121
+          ],
+          "role": "the 28 defined entries and the reserved gap"
+        },
+        {
+          "pattern": "xe2_pat_ats = XE2_PAT",
+          "lines": [
+            154
+          ],
+          "role": "ATS entry value"
+        },
+        {
+          "pattern": "xe2_pat_pta = XE2_PAT",
+          "lines": [
+            155
+          ],
+          "role": "PTA entry value, discrete only"
+        },
+        {
+          "pattern": "static void program_pat\\(",
+          "lines": [
+            163
+          ],
+          "role": "plain MMIO programming order: indices, ATS, PTA"
+        },
+        {
+          "pattern": "static void program_pat_mcr\\(",
+          "lines": [
+            180
+          ],
+          "role": "multicast programming order for a graphics GT"
+        },
+        {
+          "pattern": "xe2_pat_ops = \\{",
+          "lines": [
+            372
+          ],
+          "role": "graphics GT multicast, media GT plain MMIO"
+        },
+        {
+          "pattern": "if \\(GRAPHICS_VER\\(xe\\) == 30 \\|\\| GRAPHICS_VER\\(xe\\) == 20\\)",
+          "lines": [
+            380
+          ],
+          "role": "Xe2 selection, including Lunar Lake"
+        },
+        {
+          "pattern": "xe->pat\\.idx\\[XE_CACHE_WB\\]",
+          "lines": [
+            395,
+            403,
+            410,
+            421,
+            429
+          ],
+          "role": "write-back index 2"
+        },
+        {
+          "pattern": "Wa_16023588340",
+          "lines": [
+            387
+          ],
+          "role": "why Xe2_HPG 2001 needs a different entry count"
+        }
+      ]
+    },
+    {
+      "path": "linux-v6.17/drivers/gpu/drm/xe/xe_lrc.c",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/drivers/gpu/drm/xe/xe_lrc.c",
+      "bytes": 58521,
+      "sha256": "a5fdf737ee4e6517b7a3448c48955f9b8ea15298f9bdd60dc8821c8d384238e9",
+      "license": "MIT",
+      "copyright": "Copyright 2013-2024 Intel Corporation",
+      "citations": [
+        {
+          "pattern": "#define LRC_PPHWSP_SIZE",
+          "lines": [
+            41
+          ],
+          "role": "PPHWSP page size"
+        },
+        {
+          "pattern": "#define LRC_WA_BB_SIZE",
+          "lines": [
+            44
+          ],
+          "role": "per-context workaround batch size"
+        },
+        {
+          "pattern": "#define LRC_INDIRECT_RING_STATE_SIZE",
+          "lines": [
+            43
+          ],
+          "role": "indirect ring state page size"
+        },
+        {
+          "pattern": "Layout of the LRC and associated data",
+          "lines": [
+            47
+          ],
+          "role": "allocation layout comment"
+        },
+        {
+          "pattern": "size_t xe_gt_lrc_size\\(",
+          "lines": [
+            82
+          ],
+          "role": "context image pages per engine class on Xe2"
+        },
+        {
+          "pattern": "u32 bo_size = ring_size \\+ lrc_size \\+ LRC_WA_BB_SIZE",
+          "lines": [
+            1178
+          ],
+          "role": "total allocation formula"
+        },
+        {
+          "pattern": "u32 xe_lrc_pphwsp_offset\\(",
+          "lines": [
+            675
+          ],
+          "role": "the PPHWSP follows the ring"
+        },
+        {
+          "pattern": "u32 xe_lrc_ggtt_addr\\(",
+          "lines": [
+            867
+          ],
+          "role": "the descriptor address is the PPHWSP GGTT address"
+        },
+        {
+          "pattern": "static void set_context_control\\(",
+          "lines": [
+            608
+          ],
+          "role": "context control bits as a masked write"
+        },
+        {
+          "pattern": "static void xe_lrc_set_ppgtt\\(",
+          "lines": [
+            946
+          ],
+          "role": "PPGTT root into CTX_PDP0_UDW / _LDW"
+        },
+        {
+          "pattern": "xe_lrc_write_ctx_reg\\(lrc, CTX_RING_CTL",
+          "lines": [
+            1269
+          ],
+          "role": "ring control value"
+        },
+        {
+          "pattern": "lrc->desc = LRC_VALID",
+          "lines": [
+            1291
+          ],
+          "role": "descriptor composition"
+        },
+        {
+          "pattern": "if \\(GRAPHICS_VERx100\\(xe\\) < 1250\\)",
+          "lines": [
+            1301
+          ],
+          "role": "engine class/instance only below 1250"
+        },
+        {
+          "pattern": "arb_enable = MI_ARB_ON_OFF \\| MI_ARB_ENABLE",
+          "lines": [
+            1306
+          ],
+          "role": "first ring instruction"
+        },
+        {
+          "pattern": "#define LRC_SEQNO_PPHWSP_OFFSET",
+          "lines": [
+            684
+          ],
+          "role": "driver-defined PPHWSP offsets"
+        },
+        {
+          "pattern": "#define LRC_VALID",
+          "lines": [
+            33
+          ],
+          "role": "descriptor valid bit"
+        },
+        {
+          "pattern": "#define LRC_PRIVILEGE",
+          "lines": [
+            34
+          ],
+          "role": "descriptor privilege bit"
+        },
+        {
+          "pattern": "#define LRC_ADDRESSING_MODE",
+          "lines": [
+            35
+          ],
+          "role": "descriptor addressing-mode field"
+        }
+      ]
+    },
+    {
+      "path": "linux-v6.17/drivers/gpu/drm/xe/regs/xe_lrc_layout.h",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/drivers/gpu/drm/xe/regs/xe_lrc_layout.h",
+      "bytes": 1606,
+      "sha256": "c3b269456d7175ef161d64768a36d5f1325e99f0ab0109f8b79f815bf280e43b",
+      "license": "MIT",
+      "copyright": "Copyright 2013-2024 Intel Corporation",
+      "citations": [
+        {
+          "pattern": "#define CTX_CONTEXT_CONTROL",
+          "lines": [
+            9
+          ],
+          "role": "context image dword indices"
+        }
+      ]
+    },
+    {
+      "path": "linux-v6.17/drivers/gpu/drm/xe/regs/xe_engine_regs.h",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/drivers/gpu/drm/xe/regs/xe_engine_regs.h",
+      "bytes": 8798,
+      "sha256": "dc5277632bbcaa2b557e7b897efe03d3b9929aaeaa424dcb3f31a683f62f0f5b",
+      "license": "MIT",
+      "copyright": "Copyright 2013-2024 Intel Corporation",
+      "citations": [
+        {
+          "pattern": "#define   RING_CTL_SIZE",
+          "lines": [
+            59
+          ],
+          "role": "ring control size encoding"
+        },
+        {
+          "pattern": "#define   RING_VALID\\b",
+          "lines": [
+            157
+          ],
+          "role": "ring valid bit"
+        },
+        {
+          "pattern": "CTX_CTRL_INHIBIT_SYN_CTX_SWITCH",
+          "lines": [
+            146
+          ],
+          "role": "context control bits"
+        }
+      ]
+    },
+    {
+      "path": "linux-v6.17/drivers/gpu/drm/xe/instructions/xe_mi_commands.h",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/drivers/gpu/drm/xe/instructions/xe_mi_commands.h",
+      "bytes": 2970,
+      "sha256": "2a7f33f51711b6ccf43bde807fd9b982418eba9520cf65c0e96955342e90e16a",
+      "license": "MIT",
+      "copyright": "Copyright 2013-2024 Intel Corporation",
+      "citations": [
+        {
+          "pattern": "#define MI_OPCODE",
+          "lines": [
+            18
+          ],
+          "role": "MI opcode field position"
+        },
+        {
+          "pattern": "#define MI_ARB_ON_OFF",
+          "lines": [
+            28
+          ],
+          "role": "arbitration instruction opcode"
+        },
+        {
+          "pattern": "#define   MI_ARB_ENABLE",
+          "lines": [
+            29
+          ],
+          "role": "arbitration enable bit"
+        },
+        {
+          "pattern": "#define MI_BATCH_BUFFER_END",
+          "lines": [
+            32
+          ],
+          "role": "batch end opcode kept for the next stage"
+        }
+      ]
+    },
+    {
+      "path": "linux-v6.17/drivers/gpu/drm/xe/instructions/xe_instr_defs.h",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/drivers/gpu/drm/xe/instructions/xe_instr_defs.h",
+      "bytes": 1250,
+      "sha256": "d34573ea85ba26e0d3ccc7fe4f9e1b4431f9acdc9afb53a2fa7d3ace6534f7aa",
+      "license": "MIT",
+      "copyright": "Copyright 2013-2024 Intel Corporation",
+      "citations": [
+        {
+          "pattern": "#define   XE_INSTR_MI",
+          "lines": [
+            17
+          ],
+          "role": "MI command type"
+        }
+      ]
+    },
+    {
+      "path": "linux-v6.17/drivers/gpu/drm/xe/regs/xe_gtt_defs.h",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/drivers/gpu/drm/xe/regs/xe_gtt_defs.h",
+      "bytes": 928,
+      "sha256": "55afcbf691c4063cb28ee48dad071f313a0bdb44054ea20ac84c7400788cec88",
+      "license": "MIT",
+      "copyright": "Copyright 2013-2024 Intel Corporation",
+      "citations": [
+        {
+          "pattern": "#define XE_PAGE_PRESENT",
+          "lines": [
+            34
+          ],
+          "role": "page-entry present and write bits"
+        }
+      ]
+    },
+    {
+      "path": "linux-v6.17/drivers/gpu/drm/xe/xe_vm.c",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/drivers/gpu/drm/xe/xe_vm.c",
+      "bytes": 102405,
+      "sha256": "fc07305e53c2d68e3eddbd104701797ab1f1dcb8764e268c7a2c42ddbfcc5b9f",
+      "license": "MIT",
+      "copyright": "Copyright 2013-2024 Intel Corporation",
+      "citations": [
+        {
+          "pattern": "static u64 pde_encode_pat_index",
+          "lines": [
+            1499
+          ],
+          "role": "directory entries carry only PAT bits 1:0"
+        },
+        {
+          "pattern": "static u64 xelp_pde_encode_bo",
+          "lines": [
+            1550
+          ],
+          "role": "directory entry composition"
+        },
+        {
+          "pattern": "u64 xe_vm_pdp4_descriptor",
+          "lines": [
+            2086
+          ],
+          "role": "the root uses the write-back PAT index"
+        }
+      ]
+    },
+    {
+      "path": "linux-v6.17/drivers/gpu/drm/xe/xe_pci.c",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/drivers/gpu/drm/xe/xe_pci.c",
+      "bytes": 27633,
+      "sha256": "1563c7f2b3d11aa5917bfc2660e6d5e05ad8b3c2086e6ffa4b6752a898040740",
+      "license": "MIT",
+      "copyright": "Copyright 2013-2024 Intel Corporation",
+      "citations": [
+        {
+          "pattern": "#define XE2_GFX_FEATURES",
+          "lines": [
+            102
+          ],
+          "role": "Xe2 feature set, including has_asid and va_bits 48"
+        },
+        {
+          "pattern": "graphics_xe2 = \\{",
+          "lines": [
+            116
+          ],
+          "role": "the Xe2 descriptor sets no indirect ring state"
+        },
+        {
+          "pattern": "\\{ 2004, \"Xe2_LPG\"",
+          "lines": [
+            146
+          ],
+          "role": "Lunar Lake graphics version"
+        },
+        {
+          "pattern": "has_indirect_ring_state = graphics_desc",
+          "lines": [
+            693
+          ],
+          "role": "where the unset feature would be read"
+        }
+      ]
+    },
+    {
+      "path": "linux-v6.17/drivers/gpu/drm/xe/xe_exec_queue.c",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/drivers/gpu/drm/xe/xe_exec_queue.c",
+      "bytes": 27189,
+      "sha256": "50f634c051261d36a3fd0b0c37fe0c3fb37c277dbe061b09bfd4d47c880317b1",
+      "license": "MIT",
+      "copyright": "Copyright 2013-2024 Intel Corporation",
+      "citations": [
+        {
+          "pattern": "xe_lrc_create\\(q->hwe, q->vm, SZ_16K",
+          "lines": [
+            135
+          ],
+          "role": "upstream ring size"
+        }
+      ]
+    },
+    {
+      "path": "linux-v6.17/drivers/gpu/drm/xe/xe_execlist.c",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/drivers/gpu/drm/xe/xe_execlist.c",
+      "bytes": 12482,
+      "sha256": "c3a6c239d78cb3e3a4e841ca97d92ce8bb51e717d94e4acefafc506f40a0a871",
+      "license": "MIT",
+      "copyright": "Copyright 2013-2024 Intel Corporation",
+      "citations": [
+        {
+          "pattern": "xe_lrc_create\\(hwe, NULL, SZ_16K",
+          "lines": [
+            272
+          ],
+          "role": "execlist port ring size"
+        }
+      ]
+    },
+    {
+      "path": "linux-v6.17/drivers/gpu/drm/i915/i915_reg_defs.h",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/drivers/gpu/drm/i915/i915_reg_defs.h",
+      "bytes": 8108,
+      "sha256": "b10204c67efc2299f2bd635cbef66442f3795b1370d3f9e139b02eb7f7913405",
+      "license": "MIT",
+      "copyright": "Copyright 2013-2024 Intel Corporation",
+      "citations": [
+        {
+          "pattern": "#define _MASKED_BIT_ENABLE",
+          "lines": [
+            118
+          ],
+          "role": "masked write encoding"
+        },
+        {
+          "pattern": "#define _PICK_EVEN_2RANGES",
+          "lines": [
+            153
+          ],
+          "role": "two-range register offset helper"
+        }
+      ]
+    }
+  ]
+}

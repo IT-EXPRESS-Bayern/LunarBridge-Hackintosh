@@ -169,6 +169,76 @@
       "path": "apple-driver-surface/WhateverGreen-093e76f/WhateverGreen/kern_igfx_kexts.hpp",
       "url": "https://raw.githubusercontent.com/acidanthera/WhateverGreen/093e76fec5655001f38b367dd22459c756ee89fa/WhateverGreen/kern_igfx_kexts.hpp",
       "sha256": "e25ab43bacbdbae53173fe6a508e7e7496a290c2946ce6ba995e510b1f7899ae"
+    },
+    {
+      "path": "linux-v6.17/drivers/gpu/drm/xe/xe_lrc.c",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/drivers/gpu/drm/xe/xe_lrc.c",
+      "sha256": "a5fdf737ee4e6517b7a3448c48955f9b8ea15298f9bdd60dc8821c8d384238e9"
+    },
+    {
+      "path": "linux-v6.17/drivers/gpu/drm/xe/regs/xe_lrc_layout.h",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/drivers/gpu/drm/xe/regs/xe_lrc_layout.h",
+      "sha256": "c3b269456d7175ef161d64768a36d5f1325e99f0ab0109f8b79f815bf280e43b"
+    },
+    {
+      "path": "linux-v6.17/drivers/gpu/drm/xe/regs/xe_engine_regs.h",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/drivers/gpu/drm/xe/regs/xe_engine_regs.h",
+      "sha256": "dc5277632bbcaa2b557e7b897efe03d3b9929aaeaa424dcb3f31a683f62f0f5b"
+    },
+    {
+      "path": "linux-v6.17/drivers/gpu/drm/xe/xe_guc_submit.c",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/drivers/gpu/drm/xe/xe_guc_submit.c",
+      "sha256": "d8fd4db56f6e5174cfbe1aceb3bc5a021e01827861d06840ffb241bde9df594a"
+    },
+    {
+      "path": "linux-v6.17/drivers/gpu/drm/xe/xe_execlist.c",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/drivers/gpu/drm/xe/xe_execlist.c",
+      "sha256": "c3a6c239d78cb3e3a4e841ca97d92ce8bb51e717d94e4acefafc506f40a0a871"
+    },
+    {
+      "path": "linux-v6.17/drivers/gpu/drm/xe/instructions/xe_mi_commands.h",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/drivers/gpu/drm/xe/instructions/xe_mi_commands.h",
+      "sha256": "2a7f33f51711b6ccf43bde807fd9b982418eba9520cf65c0e96955342e90e16a"
+    },
+    {
+      "path": "linux-v6.17/drivers/gpu/drm/xe/xe_hw_engine.c",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/drivers/gpu/drm/xe/xe_hw_engine.c",
+      "sha256": "d952a547c126ec45da4d1970e8dba74a6ed0a83a56d33f440a112ca6498e980c"
+    },
+    {
+      "path": "linux-v6.17/drivers/gpu/drm/xe/regs/xe_guc_regs.h",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/drivers/gpu/drm/xe/regs/xe_guc_regs.h",
+      "sha256": "518b2eb33f3f2a2fed764d3dd8ece7700d44142388363fe0d08e96adf95e3fa8"
+    },
+    {
+      "path": "linux-v6.17/drivers/gpu/drm/xe/xe_guc.c",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/drivers/gpu/drm/xe/xe_guc.c",
+      "sha256": "c82bc90889e36b9df1072fce3410f1437afc7c50804fca4e7360dddbb16a970e"
+    },
+    {
+      "path": "linux-v6.17/drivers/gpu/drm/xe/xe_guc_pc.c",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/drivers/gpu/drm/xe/xe_guc_pc.c",
+      "sha256": "3a3f0ca6d1db0a2c82526e9f2f8984687006097befca4fad45b16ebfecd6191a"
+    },
+    {
+      "path": "linux-v6.17/drivers/gpu/drm/xe/regs/xe_reg_defs.h",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/drivers/gpu/drm/xe/regs/xe_reg_defs.h",
+      "sha256": "704c5ffd8992507bd6e6cf84505180a71f2075d020e290cf21653c192bfac5d6"
+    },
+    {
+      "path": "linux-v6.17/include/linux/bits.h",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/include/linux/bits.h",
+      "sha256": "fec9de74956535b6664b36ef4e1b0399af0cdc63e50002dbe83c09e1c066825f"
+    },
+    {
+      "path": "linux-v6.17/drivers/gpu/drm/i915/i915_reg_defs.h",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/drivers/gpu/drm/i915/i915_reg_defs.h",
+      "sha256": "b10204c67efc2299f2bd635cbef66442f3795b1370d3f9e139b02eb7f7913405"
+    },
+    {
+      "path": "linux-v6.17/drivers/gpu/drm/xe/instructions/xe_instr_defs.h",
+      "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/drivers/gpu/drm/xe/instructions/xe_instr_defs.h",
+      "sha256": "d34573ea85ba26e0d3ccc7fe4f9e1b4431f9acdc9afb53a2fa7d3ace6534f7aa"
     }
   ]
 }
