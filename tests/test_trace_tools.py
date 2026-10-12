@@ -11,7 +11,7 @@ from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT/'tools'))
-from lb_wire import Snapshot, TraceRecord, TraceBatch, BufferInfo, DMAInfo, ForceWakeInfo, decode_snapshot, decode_batch, decode_dma_info, decode_forcewake_info, parse_kernel_messages
+from lb_wire import Snapshot, TraceRecord, TraceBatch, BufferInfo, DMAInfo, ForceWakeInfo, ArcInterfaceReport, ArcPortReport, decode_snapshot, decode_batch, decode_dma_info, decode_forcewake_info, parse_kernel_messages
 from analyze_trace import findings, markdown
 import collect_macos as collector
 from macho import inspect_macho
@@ -22,6 +22,45 @@ def snapshot_bytes(capabilities=7, flags=0):
     value.vendor, value.device, value.subvendor, value.subdevice = 0x8086, 0x64a0, 0x144d, 0xc1dd
     value.flags = flags
     return bytes(value)
+
+def arc_interface_bytes():
+    """Synthetic but ABI-valid interface table; byte agreement with the real
+    module is checked in tests/test_arc_interface.py against the compiled code."""
+    report = ArcInterfaceReport()
+    report.abi, report.structBytes, report.opCount = 1, c.sizeof(report), 11
+    report.linuxUapiVersion, report.darwinKernelMajor = (6 << 16) | 17, 26
+    report.scalarLimit, report.maxSegments, report.maxSyncs = 16, 16, 4
+    report.unmappedLinuxIoctls = 1
+    base = (1 << 0) | (1 << 1) | (1 << 6) | (1 << 10) | (1 << 11)
+    report.differences = base
+    for index in range(report.opCount):
+        row = report.ops[index]
+        row.op, row.selector, row.differences = index + 1, 8, base
+        row.structInputBytes, row.structOutputBytes = 480, 80
+        row.linuxIoctlNr, row.linuxDirection = 0x40 + index, 3
+    return bytes(report)
+
+def arc_port_report_bytes():
+    """Synthetic but ABI-valid port plan; the real values are checked against
+    the compiled modules in tests/test_arc_interface.py and test_arc_port.py."""
+    report = ArcPortReport()
+    report.abi, report.structBytes = 1, c.sizeof(report)
+    report.patEntryCount, report.patWriteCount, report.patMulticastRequired = 32, 33, 1
+    report.patAtsOffset = 0x47FC
+    report.patWriteBackValue = report.patAtsValue = 0x0F
+    report.patIndexWriteBack, report.patIndexNone = 2, 3
+    report.patIndexWriteThrough, report.patIndexNoneCompression = 15, 12
+    report.lrcRingBytes = 16 * 1024
+    report.lrcContextControl = 0x00090009
+    report.lrcRingControl = (report.lrcRingBytes - 4096) | 1
+    report.lrcImagePagesRender, report.lrcImagePagesCompute = 3, 2
+    report.lrcRenderTotalBytes = 16 * 1024 + 4 * 4096
+    report.lrcComputeTotalBytes = 16 * 1024 + 3 * 4096
+    report.lrcWriteCount = 11
+    report.lrcDescriptorTemplate = 0x119
+    report.requiredQualifications = 0x1F1F
+    report.patGgttMaxIndex = 3
+    return bytes(report)
 
 class Function:
     def __init__(self, fn): self.fn = fn
@@ -38,6 +77,8 @@ class FakeKit:
         wake.abi, wake.structBytes, wake.enabled = 1, 80, 1
         wake.primaryStatus = wake.cleanupStatus = 8
         self.wake_info, self.wake_status = bytes(wake), 0
+        self.arc_interface, self.arc_status = arc_interface_bytes(), 0
+        self.arc_port, self.arc_port_status = arc_port_report_bytes(), 0
         self.IOServiceMatching = Function(lambda name: 1)
         self.IOServiceGetMatchingServices = Function(lambda port, match, out: self.put(out, 10))
         self.IOIteratorNext = Function(lambda iterator: 11)
@@ -66,6 +107,12 @@ class FakeKit:
         elif selector == 6:
             if self.wake_status: return self.wake_status
             data = self.wake_info
+        elif selector == 7:
+            if self.arc_status: return self.arc_status
+            data = self.arc_interface
+        elif selector == 9:
+            if self.arc_port_status: return self.arc_port_status
+            data = self.arc_port
         elif selector == 3:
             if self.trace_status: return self.trace_status
             batch = TraceBatch()
@@ -150,8 +197,37 @@ class TraceToolTests(unittest.TestCase):
                 mock.patch.object(collector.c.c_uint32, 'in_dll', return_value=c.c_uint32(1)):
             report = collector.collect_iokit()
         self.assertTrue(report['forcewake']['completed'])
-        self.assertEqual(kit.calls, [0, 6, 3, 3])
+        # The interface table is read next; it claims no execution or Metal.
+        self.assertEqual(report['arc_interface']['operation_count'], 11)
+        self.assertFalse(report['arc_interface']['gpu_execution_implemented'])
+        # The ported plan is reported next, and programs nothing.
+        self.assertEqual(report['arc_port_plan']['pat_write_count'], 33)
+        self.assertFalse(report['arc_port_plan']['pat_programmed_on_hardware'])
+        self.assertEqual(kit.calls, [0, 6, 7, 9, 3, 3])
         self.assertEqual(kit.closed, [12])
+
+    def test_collector_keeps_its_snapshot_when_the_interface_table_fails(self):
+        kit = FakeKit()
+        kit.arc_status = 0xe00002c2
+        with mock.patch.object(collector.c, 'CDLL', side_effect=[kit, object()]), \
+                mock.patch.object(collector.c.c_uint32, 'in_dll', return_value=c.c_uint32(1)):
+            report = collector.collect_iokit()
+        self.assertIn('0xe00002c2', report['arc_interface_error'])
+        self.assertNotIn('arc_interface', report)
+        self.assertIn('snapshot', report)
+        self.assertIn('arc_port_plan', report)
+        self.assertEqual([row['event'] for row in report['trace']], [1, 7])
+
+    def test_collector_keeps_its_snapshot_when_the_port_plan_fails(self):
+        kit = FakeKit()
+        kit.arc_port_status = 0xe00002c2
+        with mock.patch.object(collector.c, 'CDLL', side_effect=[kit, object()]), \
+                mock.patch.object(collector.c.c_uint32, 'in_dll', return_value=c.c_uint32(1)):
+            report = collector.collect_iokit()
+        self.assertIn('0xe00002c2', report['arc_port_plan_error'])
+        self.assertNotIn('arc_port_plan', report)
+        self.assertIn('arc_interface', report)
+        self.assertEqual([row['event'] for row in report['trace']], [1, 7])
 
     def test_collector_preserves_snapshot_and_trace_after_forcewake_call_failure(self):
         kit = FakeKit()
@@ -353,7 +429,9 @@ class TraceToolTests(unittest.TestCase):
         objects = sorted((ROOT/'build/macos').glob('*.o'))
         self.assertEqual({p.name for p in objects}, {
             'lnl_platform.o', 'LunarLakePCIProbe.o', 'lb_diagnostics.o',
-            'lb_gpu_memory.o', 'lb_guc_transport.o', 'lb_guc_firmware.o',
+            'lb_gpu_memory.o', 'lb_ggtt_plan.o', 'lb_guc_transport.o',
+            'lb_guc_scheduler.o', 'lb_guc_firmware.o', 'lb_arc_interface.o',
+            'lb_xe2_pat.o', 'lb_lrc.o',
             'LBDMAContext.o', 'LBDMAQuarantine.o', 'LunarBridgeDriver.o', 'KmodInfo.o',
             'lb_forcewake.o', 'LBForceWakeAdapter.o'})
         for path in objects:

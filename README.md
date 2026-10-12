@@ -67,6 +67,10 @@ flowchart TD
 | GuC scheduler codec | **Complete — CPU protocol** | 25 tests at the production C++ codec; register/mode/submit/deregister messages, no live firmware or queue. [Scheduler contract](docs/GUC_SCHEDULER.md) |
 | MSL → AIR → Shader SPIR-V | **In progress — compiler qualification** | 64 offline tests passed; real MSL and LLVM commands succeeded, then private AIR metadata was refused. A bounded classifier and real compiler help diagnose that field; translation remains unverified. [Compiler bridge](docs/METAL_SHADER_BRIDGE.md) |
 | Mesa CPU parser | **In progress — provenance qualification** | 29 offline tests passed; pinned `spirv2nir` built on real CI. Streaming hashes now handle its large generated NIR source; binary/help/source qualification remains open. [Backend seams](docs/METAL_BACKEND_SEAMS.md) |
+| Arc interface contract | **Complete — CPU contract** | 46 tests against the compiled table plus 13 against the pinned sources; the 12 Linux Arc ioctls mapped onto the macOS 26 external-method shape, verified with no mismatch. Apple's newest Intel driver is Gen11, so no Xe2 driver exists to reuse. [Interface diff](docs/ARC_INTERFACE_DIFF.md) |
+| Ported Xe2 PAT and LRC contracts | **Complete — CPU port** | 31 tests whose expected values are parsed out of the pinned Intel MIT sources: the 32-entry PAT table with its register plan, and the render/compute LRC layout, context image, descriptor and ring prologue. Nothing is programmed or submitted. [Linux port](docs/ARC_PORT_FROM_LINUX.md) |
+| macOS ABI recovery | **Complete — tooling, unused** | The published validation contract parsed from pinned xnu source and certified by clang; a dispatch-table scanner proven against compiler-emitted, stripped, legacy, relocatable and kernel-collection images; platform and graphics-stack collectors. 123 tests. No Apple binary read yet. [Runbook](docs/ABI_RECOVERY.md) |
+| Recon audit | **Complete — one command** | One run builds both libraries with `-Werror`, runs all 23 suites (561 tests), verifies the 58 pinned sources, re-derives 73 upstream facts with line citations and ranks what is still open; 27 tests hold its own guarantees. [Recon](docs/RECON.md) |
 | Native memory + execution | **Blocked — implementation missing** | GPU-VA binding, programmed PAT2, global GGTT ownership, GuC startup and queue submission remain missing. [Architecture](docs/GPU_DESIGN.md) |
 | Metal provider + display | **Blocked — implementation missing** | No LunarBridge system Metal provider, accelerated display or WindowServer integration. [Hardware scope](docs/HARDWARE_SUPPORT.md) |
 
@@ -157,7 +161,21 @@ boundaries are documented in [driver modules](docs/DRIVER_MODULES.md).
 ## Community development and future GPU ports
 
 LunarBridge is intended as a shared foundation for building and modifying native
-drivers. The [architecture and module contracts](docs/ARCHITECTURE.md) explain
+drivers. The [Arc interface comparison](docs/ARC_INTERFACE_DIFF.md) sets the Linux
+Arc 130V driver interface against the macOS 26 kernel contract, operation by
+operation, and documents what the macOS-shaped operation table changed and why.
+The [Linux port](docs/ARC_PORT_FROM_LINUX.md) carries that further: the Xe2 PAT
+and LRC hardware contracts are ported into this driver, shaped by the last
+Apple-compatible driver generation, with every value cited back to its source.
+For the macOS half that no published source covers, the
+[Apple driver analysis](docs/APPLE_DRIVER_ANALYSIS.md) describes how to map the
+interface of a locally installed Gen11 driver — names, counts and hashes only,
+with the binary staying where it is. [`tools/recon.py`](tools/recon.py) runs all
+of that in one command and writes a ranked findings report; see
+[Recon](docs/RECON.md). What is still missing for acceleration is the private
+macOS interface, and [ABI recovery](docs/ABI_RECOVERY.md) is the runbook for
+collecting it on the target machine — interface facts only, no Apple code.
+The [architecture and module contracts](docs/ARCHITECTURE.md) explain
 component boundaries; the [porting guide](docs/PORTING_GUIDE.md) describes reuse,
 generation-specific work, tests and licensing. After the initial native Arc
 130V path is completed and qualified, other graphics units are intended follow-up

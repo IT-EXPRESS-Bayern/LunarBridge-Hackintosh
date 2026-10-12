@@ -10,6 +10,8 @@ on:
       - 'gpu-toolchain/**'
       - 'tests/test_forcewake*.py'
       - 'tests/test_kernel_build_contract.py'
+      - 'tests/test_arc_interface.py'
+      - 'tests/test_arc_port.py'
       - 'tests/forcewake_adapter_fake.*'
       - 'installer/**'
       - 'tools/build_native.py'
@@ -58,9 +60,10 @@ jobs:
       - name: Check actual GGTT planner and GuC scheduler codec on the host
         run: |
           mkdir -p build/queue
-          xcrun clang++ -std=c++17 -O2 -Wall -Wextra -Werror -fno-exceptions -fno-rtti -dynamiclib gpu-prototype/lb_gpu_memory.cpp gpu-prototype/lb_ggtt_plan.cpp gpu-prototype/lb_guc_transport.cpp gpu-prototype/lb_guc_scheduler.cpp -o build/queue/libgpuqueue.dylib
+          xcrun clang++ -std=c++17 -O2 -Wall -Wextra -Werror -fno-exceptions -fno-rtti -dynamiclib gpu-prototype/lb_gpu_memory.cpp gpu-prototype/lb_ggtt_plan.cpp gpu-prototype/lb_guc_transport.cpp gpu-prototype/lb_guc_scheduler.cpp gpu-prototype/lb_arc_interface.cpp gpu-prototype/lb_xe2_pat.cpp gpu-prototype/lb_lrc.cpp -o build/queue/libgpuqueue.dylib
           python3 tests/test_ggtt_plan.py --library build/queue/libgpuqueue.dylib --report tests/ggtt-plan-test-report.json
           python3 tests/test_guc_scheduler.py build/queue/libgpuqueue.dylib
+          python3 tests/test_arc_interface.py build/queue/libgpuqueue.dylib --report build/queue/arc-interface-test-report.json
       - name: Build real kernel bundle and installer archive
         run: python3 tools/build_native.py --sdk build/dependencies/MacKernelSDK --out build/native ${{ matrix.options }}
       - name: Check actual kernel binary for Darwin userspace stack probes

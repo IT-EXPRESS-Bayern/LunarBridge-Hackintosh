@@ -14,7 +14,7 @@ x86_64 macOS Mach-O object files; these are local build outputs excluded from Gi
 | DMA ownership quarantine | 10 tests passed | Actual eight-slot table, owner identity, atomic transfer, exclusive retry, retained accounting and commit only after successful adapter cleanup; no native kernel concurrency |
 | Forcewake protocol | 29 tests passed | Actual production C++ with register callbacks; masked paired writes, foreign request refusal, post-read deadlines, all-ones, partial writes, timeout, reference integrity and retained failed cleanup |
 | Native Forcewake adapter | 43 tests / 52 scenarios passed | Actual adapter with explicit IOKit doubles; GMD/IP/BAR/D0 guards, four root flush writes per read, held map/open/PCI until confirmed cleanup; no native hardware |
-| Trace/collector tools | 27 tests passed | ABI/length/order checks, forcewake status and retained cleanup, privacy, DMA double opt-in, error triage, simulated IOKit failures and real object-format checks |
+| Trace/collector tools | 29 tests passed | ABI/length/order checks, forcewake status and retained cleanup, privacy, DMA double opt-in, error triage, simulated IOKit failures and real object-format checks |
 | GPU OpenCore installer | 23 tests passed | Isolated EFI transactions and failures, concurrent edits, policy/Vault refusal, DMA/forcewake flag types, effective MMIO/flush exposure and module boundaries |
 | Own shader toolchain | 37 offline tests passed | Actual recorded own Windows GPU result bytes; device qualification, bounded ELF/Zebin and relocation validation; no GPU initialized by tests |
 | Own Xe2 CPU payload | 37 offline tests passed | Authenticated own Zebin, 64/32/32-byte layout, unresolved pointer holes, original zero ImplicitArgs relocations and bounded planned group dimensions; no GPU job |
@@ -23,18 +23,31 @@ x86_64 macOS Mach-O object files; these are local build outputs excluded from Gi
 | GuC scheduler codec | 25 tests passed | Actual 12-DW serial registration, FastRequest/event/error parsing, revision/owner/epoch and bounded fence ledger; CPU messages only |
 | Kernel build contract | 8 tests passed | Kernel-only stack-check flags and real Mach-O import boundaries; target load and stack budget remain open |
 | Mesa CPU build harness | 29 tests passed | Host guards, source and wheel provenance, actual process timeout and parser format boundaries; real Intel CI parser build pending |
-| Pinned GPU test references | 16 SHA256 values verified | Exact external inputs including forcewake, MMIO and LNL workaround association; no vendored Linux driver |
+| Arc interface contract | 52 tests passed | Actual compiled `lb_arc_interface` C++ through ctypes on Linux/clang 18.1.3: wire sizes, operation table, external-method call shapes, per-operation accept/reject matrix, owner binding, buffer aliasing and user-space decoding; no MMIO, DMA, firmware or GPU |
+| Arc interface source comparison | 13 tests passed, 0 mismatches | Pinned Linux v6.17 Xe uAPI (12 ioctls, 11 mapped) against the published Apple xnu / IOGraphics / IOPCIFamily contracts; the compiled table verified against those sources; the public Apple Intel inventory ends at Gen11 |
+| Ported Xe2 PAT and LRC contracts | 31 tests passed | Compiled `lb_xe2_pat` and `lb_lrc` C++ against values parsed live from the pinned Intel MIT sources: 32 PAT entries, 32 register offsets, the 33-write plan with readback check, LRC layout, 10 context-image writes, descriptor, PPGTT root and ring prologue, which PAT indices each address space can carry, plus the Apple ICL bundle shape this kext mirrors; no MMIO, GGTT write, firmware or submission |
+| Apple driver interface mapper | 8 tests passed | Synthetic bundles only: the map carries names, counts and hashes, nested plist values are reduced to their type, a missing binary is reported rather than guessed, and no Apple binary is used or required |
+| Pinned GPU test references | 48 SHA256 values verified | Exact external inputs including forcewake, MMIO and LNL workaround association; no vendored Linux driver |
 | macOS object format | Fourteen Mach-O objects verified | Actual x86_64 object compilation and parser inspection; these objects are rejected by the installer |
 | Native macOS link workflow | Real diagnostic Kext linked | Pinned external SDK and macOS linker; source commit, hashes and unsigned status in VALIDATION.json; no target-hardware loading |
 | Native bundle installer integration | Passed in a synthetic EFI under Windows | Actual CI bundle planned/installed/rolled back; config bytes restored; no real EFI modified |
 | Packaged CLI and corresponding source | Passed for the exact recorded build | Packaged plan/install/rollback CLI executed in a synthetic EFI; corresponding-source hash count, binary hash and archive CRC recorded in VALIDATION.json |
+
+The Arc interface and Arc port suites were executed in a Linux x86_64 container, not on
+the Windows host, and are therefore counted separately from the Windows total
+below. They are wired into the Intel macOS CI profile and the new Linux
+interface workflow; no CI run of them is recorded yet. They establish a CPU
+interface contract only: an accepted request shape is neither a submission nor
+GPU execution, and the new selectors have not been called on target hardware.
 
 The public hardware fixture is a documented device-ID fixture, not a captured
 machine inventory or a native device test. I2C source and build qualification
 now belong to the independent LunarBridge-I2C repository and are not counted
 as graphics-repository tests.
 
-All **444 graphics-repository core Windows tests passed** without skips. The installer fixtures contain
+All **444 graphics-repository core Windows tests passed** without skips in the
+recorded run of 2026-10-11; the suites added later are listed above with their
+own environments and counts rather than folded into that figure. The installer fixtures contain
 no runnable macOS/EFI code. Simulated IOKit calls are marked as simulated and
 cannot establish native device access. No real EFI or external SSD was changed.
 
@@ -92,3 +105,28 @@ machine paths and generated binaries are excluded from the public repository.
 The GGTT planner and GuC scheduler codec are now included in the host DLL, macOS object compilation and native build recipe. Their production code passed its tests in that integrated DLL. The reviewed native binary above includes these two helpers; its exact source commit remains explicit. Native global GGTT ownership, PAT programming, GuC firmware startup, ADS/LRC/queues and hardware submission remain unimplemented.
 
 Fourteen fresh kernel objects were cross-compiled after adding the upstream kernel build flag `-fno-stack-check`. Every header was verified against the pinned SDK tree, and those objects contain no Darwin userspace stack-probe symbol. The historical 755ba093 CI binary had that import. The actual 3b7550d Apple-clang build now proves its removal from both imports and definitions; native kernel admission and stack budget remain unqualified.
+
+One command now establishes all of that in a single run. `tools/recon.py`
+builds the CPU modules and the host-test library with `-Werror`, runs all twenty-two
+suites, verifies the SHA-256 of all 58 pinned sources, re-derives 54 upstream
+facts with `file:line` citations, and ranks what is still open. Its own 27 tests
+check that every extraction rule still matches its pinned source, that each
+stage records why it was skipped rather than guessing, that a run writes nothing
+outside its output directory, and that the report never claims hardware state.
+The macOS-only stages — installed Apple driver, live graphics stack, target
+device — are skipped on this host and say so. Nothing in that run touches
+hardware.
+
+A second line of recovery tooling now stands beside the collectors, for the
+macOS half of the driver that no published source covers. The published
+validation contract — the dispatch structures' layout, the sentinels, the order
+of checks and the exact return codes — is parsed out of pinned xnu source rather
+than assumed, and clang certifies that computation: a generated fixture asserts
+every computed size and offset through static assertions and is compiled for
+Mach-O, so a wrong offset fails the build. The dispatch-table scanner is then
+proven against Mach-O images built in the test, including one emitted by that
+compiler, a stripped image, the legacy structure, a relocatable object whose
+pointers are relocations, and a kernel-collection fileset. 72 tests cover the
+policy gate, the recovery, the platform collector and the graphics inventory.
+No Apple binary was read, and no run has yet been made against one: these are
+tools for the target machine, not results from it. Nothing here touches hardware.

@@ -62,9 +62,25 @@ Die Linux-Aufrufreihenfolge allein bestätigt keinen sicheren XNU-Energiepfad.
 | 4 | keine | keine | GPU-Submit gibt ausdrücklich Unsupported zurück |
 | 5 | keine | DMAInfo, 32 Byte | Vorbereitete Bytezahl/Seiten/PTEs und Mapperstatus; keine Adressen |
 | 6 | keine | ForceWakeInfo, 80 Byte | IP-/ACK-/Get-/Put-Status und gehaltene Ressourcen; GPU/Metal=false |
+| 7 | keine | ArcInterfaceReport, 576 Byte | Arc-Operationstabelle mit ioctl-Bezug, Unterschieden und fehlenden Qualifikationen; GPU/Metal=0 |
+| 8 | ArcRequest, 480 Byte | ArcDecision, 80 Byte | Prüft **eine** Arc-Anfrageform und liefert ihr Urteil; submittiert nichts |
+| 9 | keine | ArcPortReport, 112 Byte | Was die portierten Xe2-Module programmieren würden: PAT-Plan, LRC-Layout (elf Kontextschreibvorgänge) und Deskriptorvorlage; `patProgrammed` und `lrcSubmitted` bleiben 0 |
+
+Selector 0 bis 6 behalten ihre ABI-1-Formen unverändert; 7 bis 9 sind additiv.
+Beide neuen Selektoren sind reine CPU-Prüfpfade: Selector 4 bleibt der einzige
+Submitpfad und bleibt `kIOReturnUnsupported`. Alle Längen prüft der native
+Dispatch über `IOExternalMethodDispatch`; Skalare, variable Strukturlängen und
+asynchrone Referenzen werden abgelehnt. Little-Endian-x86_64-Felder mit festen
+Breiten, keine Pointer in der Nutzlast. Bei Selector 8 muss `owner` null sein:
+Die Kext stempelt die eigene Clientkennung ein, damit kein Client eine fremde
+Kennung angeben kann. Ein abgelehntes Urteil trägt seinen Grund und niemals
+übersetzte Werte. Die [Schnittstellenanalyse](ARC_INTERFACE_DIFF.md) begründet
+Tabelle, Felder und Ablehnungen aus den gepinnten Quellen.
 
 Ein Trace-Eintrag hat 48 Byte. Längen werden durch den nativen Dispatch geprüft.
 Indirekte Strukturdeskriptoren und asynchrone Aufrufe sind nicht unterstützt.
+Trace-Ereignisse 60 bis 63 halten Tabellenabfrage, Annahme, Ablehnung und die
+Abfrage des [portierten Plans](ARC_PORT_FROM_LINUX.md) fest.
 Reserved-Felder und unbenutzte Trace-Ausgaben werden auf null gesetzt.
 
 ## Puffer und Lebenszyklus

@@ -3,6 +3,7 @@
 """Execute the actual DMA adapter with explicit IOKit doubles; no hardware."""
 import ctypes as c
 import json
+import os
 from pathlib import Path
 import unittest
 
@@ -18,7 +19,10 @@ class Report(c.Structure):
 class DMAAdapterTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.dll = c.CDLL(str(ROOT/'build/host/lnl_host.dll'))
+        # Same override as tests/test_forcewake.py, so a host library built
+        # elsewhere (tools/recon.py) can be tested in place.
+        cls.dll = c.CDLL(os.environ.get('LB_HOST_LIBRARY',
+                                        str(ROOT/'build/host/lnl_host.dll')))
         cls.dll.lb_dma_test_run.argtypes = [c.c_uint32, c.c_uint64, c.c_uint32, c.c_uint64, c.POINTER(Report)]
         cls.dll.lb_dma_test_run.restype = c.c_int
 

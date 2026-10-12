@@ -3,12 +3,15 @@
 """Execute the real DMA ownership table with fake IOKit; no hardware claims."""
 import ctypes as c
 import json
+import os
 from pathlib import Path
 import sys
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
-LIB = c.CDLL(str(ROOT/'build/host/lnl_host.dll'))
+# Same override as tests/test_forcewake.py, so a host library built elsewhere
+# (tools/recon.py) can be tested without overwriting the Windows build output.
+LIB = c.CDLL(os.environ.get('LB_HOST_LIBRARY', str(ROOT/'build/host/lnl_host.dll')))
 LIB.lb_dma_quarantine_test_run.argtypes = [c.c_uint32, c.POINTER(c.c_uint32)]
 LIB.lb_dma_quarantine_test_run.restype = c.c_int
 

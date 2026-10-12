@@ -132,7 +132,7 @@
   },
   "trace_tool_tests": {
     "test_type": "Python ABI, privacy, triage and simulated IOKit failure tests; actual Mach-O object format checks",
-    "tests_run": 27,
+    "tests_run": 29,
     "failures": 0,
     "errors": 0,
     "skipped": 0,
@@ -172,7 +172,7 @@
     "native_hardware_tested": false,
     "parallel_kernel_lifetime_tested": false
   },
-  "pinned_reference_files_sha256_verified": 16,
+  "pinned_reference_files_sha256_verified": 58,
   "total_host_tests_passed": 444,
   "macos_object_count": 14,
   "native_diagnostic_source_compiled": true,
@@ -835,5 +835,184 @@
     "verified_native_binary_sha256": "83bfacd88b86f97f9e7d5547c64caf2c6c1975b4b8fe19d68d157af08ddfa098",
     "verified_native_ci_run_id": 38132276514
   },
-  "mesa_cpu_native_build_verified": false
+  "mesa_cpu_native_build_verified": false,
+  "arc_interface_contract_tests": {
+    "test_type": "Executed the actual compiled lb_arc_interface C++ through ctypes: wire sizes, operation table, external-method call shapes, per-operation accept/reject matrix, owner binding, buffer aliasing and user-space decoding",
+    "environment": "Linux x86_64 container, clang 18.1.3, -O2 -Wall -Wextra -Werror",
+    "tests_run": 52,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "successful": true,
+    "actual_production_cpp_executed": true,
+    "mmio_dma_firmware_or_gpu_used": false,
+    "accepted_request_is_a_submission": false,
+    "native_macos_hardware_tests": 0,
+    "selectors_covered": [
+      7,
+      8,
+      9
+    ]
+  },
+  "arc_interface_source_comparison": {
+    "test_type": "Extracted the pinned Linux v6.17 Xe uAPI and the published Apple xnu / IOGraphics / IOPCIFamily contracts, then verified the compiled operation table against them",
+    "environment": "Linux x86_64 container, Python 3.13",
+    "tests_run": 13,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "successful": true,
+    "linux_arc_ioctls_extracted": 12,
+    "operations_mapped": 11,
+    "unmapped_linux_ioctls": [
+      "DRM_XE_OBSERVATION"
+    ],
+    "driver_table_mismatches": 0,
+    "apple_intel_graphics_kexts_in_public_inventory": 20,
+    "newest_apple_intel_graphics_driver": "com.apple.driver.AppleIntelICLGraphics (Ice Lake, Gen11)",
+    "apple_xe_or_xe2_driver_present": false,
+    "apple_driver_code_or_binary_used": false,
+    "record": "docs/ARC_INTERFACE_DIFF.json"
+  },
+  "arc_interface_ci_runs_recorded": false,
+  "native_arc_interface_selectors_hardware_tested": false,
+  "ported_xe2_contract_tests": {
+    "test_type": "Executed the compiled lb_xe2_pat and lb_lrc C++ through ctypes while parsing every expected value out of the hash-pinned Intel MIT sources",
+    "environment": "Linux x86_64 container, clang 18.1.3, Python 3.13",
+    "tests_run": 31,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "successful": true,
+    "pat_entries_checked": 32,
+    "pat_register_offsets_checked": 32,
+    "pat_plan_writes": 33,
+    "lrc_context_image_writes_checked": 10,
+    "values_hardcoded_in_tests": false,
+    "mmio_performed": false,
+    "pat_programmed_on_hardware": false,
+    "ggtt_binding_performed": false,
+    "lrc_submitted": false,
+    "gpu_execution_implemented": false,
+    "provenance": "docs/ARC_PORT_SOURCES.json",
+    "observable_through_user_client_selector": 9,
+    "apple_bundle_shape_checks": 5,
+    "framebuffer_half_implemented": false,
+    "pat_index_reachability_checked": true
+  },
+  "arc_port_ci_runs_recorded": false,
+  "apple_driver_mapper_tests": {
+    "test_type": "Synthetic kext bundles through the Apple driver interface mapper; no Apple binary is used, downloaded or required",
+    "tests_run": 8,
+    "failures": 0,
+    "errors": 0,
+    "successful": true,
+    "apple_binary_present_in_repository": false,
+    "bundle_content_in_output": false,
+    "symbols_read_without_the_bundle": false
+  },
+  "recon_audit_tests": {
+    "test_type": "Executed the recon orchestrator and its own suite: every extraction rule matched its hash-pinned source, stage degradation, write discipline and report wording",
+    "environment": "Linux x86_64 container, clang 18.1.3, Python 3.13",
+    "tests_run": 27,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "successful": true,
+    "extraction_rules": 31,
+    "facts_extracted": 73,
+    "extraction_drift": 0,
+    "suites_orchestrated": 23,
+    "suites_passed": 23,
+    "libraries_built_with_werror": [
+      "modules (7 sources)",
+      "host test (16 sources)"
+    ],
+    "macos_only_stages_skipped_here": [
+      "appledriver",
+      "system",
+      "device"
+    ],
+    "system_state_changed": false,
+    "registers_written": false,
+    "apple_binary_read_or_copied": false,
+    "hardware_acceleration_established": false,
+    "tests_in_orchestrated_suites": 561
+  },
+  "recon_audit_ci_runs_recorded": false,
+  "abi_recovery_tests": {
+    "test_type": "Recovered external-method dispatch tables from Mach-O images built in the test, including a compiler-emitted table whose layout clang itself certified through static assertions on every computed size and offset",
+    "environment": "Linux x86_64 container, clang 18.1.3 targeting x86_64-apple-macos12",
+    "tests_run": 123,
+    "failures": 0,
+    "errors": 0,
+    "successful": true,
+    "suites": {
+      "abi_policy": 27,
+      "abi_dispatch": 34,
+      "abi_layout_against_clang": 10,
+      "abi_callsite": 12,
+      "abi_correlation": 9,
+      "collect_platform": 20,
+      "macos_graphics_inventory": 12,
+      "abi_collection": 14
+    },
+    "dispatch_entry_bytes_confirmed_by_compiler": {
+      "IOExternalMethodDispatch2022": 40,
+      "IOExternalMethodDispatch": 24
+    },
+    "apple_binary_read_or_copied": false,
+    "instruction_bytes_in_any_output": false,
+    "ran_on_an_apple_graphics_binary": false,
+    "hardware_acceleration_established": false,
+    "adversarial_review": {
+      "verdict": "usable_with_corrections",
+      "defects_found_in_shipped_code": 3,
+      "fixed": [
+        "the recovered number was published as a selector when it is an array index; the wire selector may be shifted by a base only the call site shows",
+        "non-zero interior padding discarded a table although zero padding is a compiler habit and not an ABI guarantee",
+        "counts outside the documented bounds discarded entries although the fields are exact requirements rather than maxima"
+      ],
+      "bounded_afterwards": "the entitlement identifier is the one literal string kept, and only in reverse-DNS shape up to 128 characters",
+      "rounds": 5,
+      "verdicts": [
+        "usable_with_corrections",
+        "usable_with_corrections",
+        "usable_with_corrections",
+        "usable_with_corrections",
+        "usable_with_corrections"
+      ],
+      "guardrail_violations_raised": 19,
+      "acted_on": [
+        "the recovered number is an array index, not a wire selector",
+        "non-zero padding no longer discards a table",
+        "check fields are exact requirements, not maxima",
+        "the scalar maxima are documentary per the header, not a wire limit",
+        "kIOAccelNumSurfaceMethods is the count, so there are 18 surface methods, not 19",
+        "the five dispatch-path methods were missing from the override list, and the decisive signal is an imported symbol rather than a defined one",
+        "byte-emitting tool flags are refused at the invocation, not filtered from the output",
+        "no live sweep: only entitlement-gated selectors can be confirmed without running a handler",
+        "IOServiceOpen already runs newUserClient in the kernel and counts as an intervention",
+        "relaxing SIP writes NVRAM persistently and is needed only for kernel probes"
+      ]
+    },
+    "call_site_reading": {
+      "facts_recovered": [
+        "entry count from the bounds immediate and the count argument independently",
+        "selector base from the adjustment and the reject-if-below check independently",
+        "the array symbol the override loads",
+        "which dispatch entry point is called"
+      ],
+      "decided_by_agreement_not_by_mnemonic": true,
+      "instruction_text_in_output": false
+    },
+    "live_probe_script_shipped": false,
+    "kernel_collection_handling": {
+      "mapped_not_buffered": true,
+      "hashed_in_blocks": true,
+      "extraction_required": false,
+      "reason": "a collection is an MH_FILESET whose LC_FILESET_ENTRY records name each bundle and its offset, and nm walks them itself, so no image is ever unpacked",
+      "nm_fileset_support_probed_not_assumed": true
+    }
+  }
 }

@@ -36,6 +36,22 @@ read and, only with explicit forcewake opt-in, paired request/release writes.
 Hardware MMIO and wake acknowledgements remain untested on native macOS.
 No GGTT/PAT/firmware/engine programming or Metal implementation is added.
 
+lb_xe2_pat.cpp and lb_lrc.cpp are the first modules whose hardware contracts
+are ported, not merely referenced. Their values come from MIT-licensed Intel
+sources at the same pin: xe_pat.c (PAT entry encoding, table, register offsets
+and programming order, Copyright 2023 Intel), xe_lrc.c with
+regs/xe_lrc_layout.h and regs/xe_engine_regs.h (context allocation layout,
+image dword offsets, ring and context-control encodings, descriptor bits,
+Copyright 2021-2024 Intel), instructions/xe_mi_commands.h and
+instructions/xe_instr_defs.h (the arbitration instruction), regs/xe_gtt_defs.h
+with xe_vm.c (page-directory encoding) and xe_pci.c (the Xe2 feature set).
+drivers/gpu/drm/i915/i915_reg_defs.h supplies the masked-write and
+two-range offset helpers. Every value is re-expressed as own C++ data and
+checked back against those files by tests/test_arc_port.py; no upstream file
+is vendored, and the full citation list is in ../docs/ARC_PORT_SOURCES.json.
+These modules write no register, bind no GGTT page, upload no firmware and
+submit nothing: they produce plans and context images in CPU memory.
+
 LunarLakePCIProbe.cpp uses separately licensed MacKernelSDK IOKit headers.
 The SDK is an external build dependency. Its headers retain their own licenses.
 Compiled object files are not executable or installable kexts.

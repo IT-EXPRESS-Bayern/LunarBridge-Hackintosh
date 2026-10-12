@@ -11,7 +11,7 @@ import subprocess
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from lb_wire import Snapshot, TraceBatch, BufferInfo, DMAInfo, ForceWakeInfo, decode_snapshot, decode_batch, decode_dma_info, decode_forcewake_info, parse_kernel_messages
+from lb_wire import Snapshot, TraceBatch, BufferInfo, DMAInfo, ForceWakeInfo, ArcInterfaceReport, ArcPortReport, decode_snapshot, decode_batch, decode_dma_info, decode_forcewake_info, decode_arc_interface, decode_arc_port_report, parse_kernel_messages
 from analyze_trace import markdown
 
 def command(args):
@@ -116,6 +116,12 @@ def collect_iokit(memory_test=False, dma_test=False):
         if report['snapshot']['forcewake_probe_enabled']:
             try: report['forcewake'] = decode_forcewake_info(call(6, ForceWakeInfo()))
             except (OSError, RuntimeError, ValueError) as exc: report['forcewake_error'] = str(exc)
+        # Interface table of the loaded driver; reading it submits no GPU work.
+        try: report['arc_interface'] = decode_arc_interface(call(7, ArcInterfaceReport()))
+        except (OSError, RuntimeError, ValueError) as exc: report['arc_interface_error'] = str(exc)
+        # What the ported Xe2 modules would program; reading it programs nothing.
+        try: report['arc_port_plan'] = decode_arc_port_report(call(9, ArcPortReport()))
+        except (OSError, RuntimeError, ValueError) as exc: report['arc_port_plan_error'] = str(exc)
         if dma_test and not dma_enabled:
             report['dma_preparation_test'] = {'state': 'blocked', 'reason': 'driver_dma_opt_in_disabled'}
         elif memory_test and dma_enabled and not dma_test:
