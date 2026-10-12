@@ -145,6 +145,37 @@ Scanner. Belegt ist das Verfahren durch
 gestripptem Binary, Legacy-Struktur und Kernel-Collection. Ein Apple-Binary
 beweist das nicht, weil dort die erwartete Antwort unbekannt ist.
 
+### 3a. Die Collection aufschlüsseln — auch ohne Binary auf der Platte
+
+Auf aktuellem macOS kann ein Kext-Bundle nur noch die `Info.plist` enthalten;
+das Executable liegt in einer Kernel Collection. Das ist kein Hindernis:
+
+```sh
+# Welche Bundles trägt die Collection, an welcher Adresse?
+python3 tools/abi_collection.py \
+    --collection /System/Library/KernelCollections/BootKernelExtensions.kc --list
+
+# Symbole eines Bundles, ohne irgendetwas zu entpacken
+python3 tools/abi_collection.py \
+    --collection /System/Library/KernelCollections/BootKernelExtensions.kc \
+    --bundle com.apple.driver.AppleIntelICLGraphics \
+    --out build/recon/collection-icl.json
+```
+
+Die Collection wird **gemappt, nicht gelesen** (eine System-Collection ist
+mehrere hundert Megabyte) und blockweise gehasht. Apples `nm` versteht Filesets
+selbst: es läuft die Einträge durch und schreibt vor jeden eine Zeile
+`Symbols for <bundle id>:`. Genau daran wird die Fähigkeit **geprüft** statt
+angenommen — und wenn das `nm` dieser Maschine das nicht kann, sagt der
+Datensatz es und verweist auf `abi_dispatch.py --bundle`, das den Eintrag direkt
+parst.
+
+Wichtig für das Verständnis der Offsets: im Fileset liegen nur Mach-O-Header und
+Load-Commands am `fileoff` des Eintrags; **jeder Dateioffset darin zählt vom
+Anfang der Collection**, weil die Einträge deren `__LINKEDIT` teilen. Unser
+Leser prüft beide Deutungen gegen das Puffer-Layout und schreibt die geltende in
+den Datensatz.
+
 ### 3b. Die Call-Site lesen — Eintragszahl und Selektor-Basis
 
 ```sh

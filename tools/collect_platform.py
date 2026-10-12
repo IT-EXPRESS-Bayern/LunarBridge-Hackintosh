@@ -55,6 +55,10 @@ GRAPHICS_CLASSES = ('IOAccelerator', 'IOGPU', 'IOFramebuffer', 'IOSurfaceRoot',
                     'IOAccelerationUserClient', 'IOGraphicsDevice')
 GRAPHICS_KEYWORDS = ('Graphics', 'IOGPU', 'IOAccelerator', 'IOSurface', 'AGX', 'AGDC',
                      'AppleGPU', 'GPUWrangler', 'MTL', 'Metal', 'LunarBridge')
+# kmutil names a collection by flag rather than by path.
+COLLECTION_FLAGS = {'BootKernelExtensions.kc': '-B',
+                    'SystemKernelExtensions.kc': '-S',
+                    'AuxiliaryKernelExtensions.kc': '-A'}
 KERNEL_COLLECTIONS = ('/System/Library/KernelCollections/BootKernelExtensions.kc',
                       '/System/Library/KernelCollections/SystemKernelExtensions.kc',
                       '/System/Library/KernelCollections/AuxiliaryKernelExtensions.kc',
@@ -387,19 +391,33 @@ def stage_collections() -> dict:
                                            'reason': 'unreadable: ' + str(error)[:80]}
             continue
         entry = {'present': True, 'bytes': size, 'sha256': digest.hexdigest()}
-        listing = run(['kmutil', 'inspect', '--collection-path', path, '--no-header'], 300)
-        if listing.get('performed') and not listing['exit_code']:
-            bundles = []
-            for line in text_of(listing, 400000).splitlines():
-                if any(keyword in line for keyword in GRAPHICS_KEYWORDS):
-                    bundles.append(' '.join(line.split())[:120])
-            entry['graphics_bundles'] = bundles[:128]
-            entry['graphics_bundle_count'] = len(bundles)
-        else:
-            entry['listing'] = {'performed': False,
-                                'reason': listing.get('reason')
-                                or ('kmutil inspect exited '
-                                    + str(listing.get('exit_code')))}
+        # kmutil selects a collection by flag, not by path: -B boot, -S system,
+        # -A auxiliary. Which invocation this build accepts is recorded rather
+        # than assumed, and the fileset parser below works either way.
+        flag = COLLECTION_FLAGS.get(Path(path).name)
+        attempts = []
+        if flag:
+            attempts.append(['kmutil', 'inspect', '-a', 'x86_64', flag])
+        attempts.append(['kmutil', 'inspect', '--collection-path', path])
+        for command in attempts:
+            listing = run(command, 300)
+            if listing.get('performed') and not listing['exit_code']:
+                bundles = [' '.join(line.split())[:120]
+                           for line in text_of(listing, 400000).splitlines()
+                           if any(keyword in line for keyword in GRAPHICS_KEYWORDS)]
+                entry['listing_command'] = command
+                entry['graphics_bundles'] = bundles[:128]
+                entry['graphics_bundle_count'] = len(bundles)
+                break
+            entry.setdefault('listing_attempts', []).append(
+                {'command': command,
+                 'reason': listing.get('reason')
+                 or ('exited ' + str(listing.get('exit_code')))})
+        if 'graphics_bundles' not in entry:
+            entry['listing'] = {
+                'performed': False,
+                'reason': 'no kmutil invocation listed this collection; read it directly '
+                          'with tools/abi_collection.py --collection ' + path + ' --list'}
         record['collections'][path] = entry
     return record
 

@@ -462,11 +462,10 @@ def recover(path: Path, bundle: str | None, minimum_entries: int = MINIMUM_ENTRI
     for table in tables:
         table['confidence'] = confidence(table)
         table['probe_plan'] = probe_plan(table, contract)
-    import hashlib
     return {
         'generated_by': 'tools/abi_dispatch.py',
         'binary': {'path': str(path), 'bundle': bundle,
-                   'sha256': hashlib.sha256(Path(path).read_bytes()).hexdigest()},
+                   'sha256': macho.digest(path)},
         'image': image.describe(),
         'contract_pins': contract['pins'],
         'entry_sizes': {style: spec['size'] for style, spec in scanner.styles.items()},
@@ -504,7 +503,8 @@ def main() -> int:
 
     macho = load('abi_macho', 'tools/abi_macho.py')
     if arguments.list_bundles:
-        image = macho.open_image(arguments.binary.read_bytes(), str(arguments.binary))
+        data, _handle = macho.map_file(arguments.binary)
+        image = macho.open_image(data, str(arguments.binary))
         for entry in image.fileset_entries:
             print(entry['identifier'])
         print(str(len(image.fileset_entries)) + ' bundles in ' + str(arguments.binary))

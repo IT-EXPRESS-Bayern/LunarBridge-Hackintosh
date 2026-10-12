@@ -922,8 +922,8 @@
     "extraction_rules": 31,
     "facts_extracted": 73,
     "extraction_drift": 0,
-    "suites_orchestrated": 22,
-    "suites_passed": 22,
+    "suites_orchestrated": 23,
+    "suites_passed": 23,
     "libraries_built_with_werror": [
       "modules (7 sources)",
       "host test (16 sources)"
@@ -937,13 +937,13 @@
     "registers_written": false,
     "apple_binary_read_or_copied": false,
     "hardware_acceleration_established": false,
-    "tests_in_orchestrated_suites": 547
+    "tests_in_orchestrated_suites": 561
   },
   "recon_audit_ci_runs_recorded": false,
   "abi_recovery_tests": {
     "test_type": "Recovered external-method dispatch tables from Mach-O images built in the test, including a compiler-emitted table whose layout clang itself certified through static assertions on every computed size and offset",
     "environment": "Linux x86_64 container, clang 18.1.3 targeting x86_64-apple-macos12",
-    "tests_run": 109,
+    "tests_run": 123,
     "failures": 0,
     "errors": 0,
     "successful": true,
@@ -954,7 +954,8 @@
       "abi_callsite": 12,
       "abi_correlation": 9,
       "collect_platform": 20,
-      "macos_graphics_inventory": 12
+      "macos_graphics_inventory": 12,
+      "abi_collection": 14
     },
     "dispatch_entry_bytes_confirmed_by_compiler": {
       "IOExternalMethodDispatch2022": 40,
@@ -1005,6 +1006,13 @@
       "decided_by_agreement_not_by_mnemonic": true,
       "instruction_text_in_output": false
     },
-    "live_probe_script_shipped": false
+    "live_probe_script_shipped": false,
+    "kernel_collection_handling": {
+      "mapped_not_buffered": true,
+      "hashed_in_blocks": true,
+      "extraction_required": false,
+      "reason": "a collection is an MH_FILESET whose LC_FILESET_ENTRY records name each bundle and its offset, and nm walks them itself, so no image is ever unpacked",
+      "nm_fileset_support_probed_not_assumed": true
+    }
   }
 }

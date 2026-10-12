@@ -294,11 +294,10 @@ def read(binary: Path, bundle: str | None, symbol: str | None) -> dict:
             continue
         function['conclusions'] = conclude(function)
         functions.append(function)
-    import hashlib
     return {
         'generated_by': 'tools/abi_callsite.py',
         'binary': {'path': str(binary), 'bundle': bundle,
-                   'sha256': hashlib.sha256(binary.read_bytes()).hexdigest()},
+                   'sha256': macho.digest(binary)},
         'image': image.describe(),
         'candidate_symbols': symbols[:64],
         'functions': functions,

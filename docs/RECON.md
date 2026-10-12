@@ -60,7 +60,7 @@ und das LRC-Layout.
 
 ## Was der Lauf beweist — und was nicht
 
-Er beweist: die Module bauen mit `-Werror`, alle 22 Suiten (547 Tests) laufen
+Er beweist: die Module bauen mit `-Werror`, alle 23 Suiten (561 Tests) laufen
 durch, die kompilierte Tabelle deckt sich mit den gepinnten Quellen, und jeder
 Zahlenwert im Port lässt sich auf eine Zeile Upstream zurückführen.
 

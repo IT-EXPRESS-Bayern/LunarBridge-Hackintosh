@@ -18,6 +18,8 @@ and it hands out facts and small reads, never the image.
 """
 from __future__ import annotations
 
+import hashlib
+import mmap
 import struct
 
 MH_MAGIC_64 = 0xFEEDFACF
@@ -68,7 +70,12 @@ class MachOImage:
         self._symbol_list: list | None = None
         self._symtab: tuple | None = None
         self.offset_base = 0
+        # Apple's collections record offsets from the start of the collection
+        # file, because the entries share its __LINKEDIT; an image embedded
+        # verbatim keeps its own. Which one holds is measured, not assumed.
         self.offset_interpretation = 'absolute'
+        self._mapping = None
+        self._handle = None
         position = offset + 32
         for _ in range(count):
             if position + 8 > len(data):
@@ -329,7 +336,7 @@ class MachOImage:
         }
 
 
-def open_image(data: bytes, label: str = '') -> MachOImage:
+def open_image(data, label: str = '') -> MachOImage:
     return MachOImage(data, 0, label)
 
 
@@ -351,12 +358,45 @@ def fileset_images(image: MachOImage) -> dict:
     return images
 
 
+def digest(path, block: int = 1 << 20) -> str:
+    """SHA-256 of a file read in blocks; a kernel collection is far too large
+    to hash through a single bytes object."""
+    from pathlib import Path
+
+    value = hashlib.sha256()
+    with open(Path(path), 'rb') as handle:
+        for chunk in iter(lambda: handle.read(block), b''):
+            value.update(chunk)
+    return value.hexdigest()
+
+
+def map_file(path):
+    """A read-only memory map of the file, and the handle that owns it.
+
+    A System kernel collection is several hundred megabytes, so it is mapped
+    rather than read. Everything in this module addresses the buffer through
+    len(), slicing, find() and struct.unpack_from, all of which a map supports.
+    """
+    from pathlib import Path
+
+    handle = open(Path(path), 'rb')
+    try:
+        mapping = mmap.mmap(handle.fileno(), 0, access=mmap.ACCESS_READ)
+    except (ValueError, OSError):
+        # An empty file cannot be mapped; fall back to its contents.
+        data = handle.read()
+        handle.close()
+        return data, None
+    return mapping, handle
+
+
 def load_image(path, bundle_identifier: str | None = None) -> MachOImage:
     """Open a binary, descending into a collection when one is given."""
     from pathlib import Path
 
-    data = Path(path).read_bytes()
+    data, handle = map_file(path)
     image = open_image(data, str(path))
+    image._mapping, image._handle = data, handle
     if image.filetype != MH_FILESET:
         if bundle_identifier:
             raise MachOError('a bundle identifier was given but this is not a collection')
@@ -365,6 +405,8 @@ def load_image(path, bundle_identifier: str | None = None) -> MachOImage:
         return image
     images = fileset_images(image)
     found = images.get(bundle_identifier)
+    if isinstance(found, MachOImage):
+        found._mapping, found._handle = data, handle
     if found is None:
         raise MachOError('no such bundle in this collection: ' + bundle_identifier)
     if isinstance(found, dict):

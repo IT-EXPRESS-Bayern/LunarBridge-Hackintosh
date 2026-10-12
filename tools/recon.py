@@ -93,6 +93,7 @@ TEST_SUITES = (
     ('abi_layout_vs_clang', 'tests/test_abi_layout_against_clang.py', None),
     ('abi_callsite', 'tests/test_abi_callsite.py', None),
     ('abi_correlation', 'tests/test_abi_correlation.py', None),
+    ('abi_collection', 'tests/test_abi_collection.py', None),
     ('platform_collector', 'tests/test_collect_platform.py', None),
     ('graphics_inventory', 'tests/test_macos_graphics_inventory.py', None),
     ('installer', 'tests/test_installer.py', None),
