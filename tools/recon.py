@@ -88,6 +88,11 @@ TEST_SUITES = (
     ('dma_adapter', 'tests/test_dma_adapter.py', 'host:environment'),
     ('dma_quarantine', 'tests/test_dma_quarantine.py', 'host:environment'),
     ('apple_driver_analysis', 'tests/test_apple_driver_analysis.py', None),
+    ('abi_policy', 'tests/test_abi_policy.py', None),
+    ('abi_dispatch', 'tests/test_abi_dispatch.py', None),
+    ('abi_layout_vs_clang', 'tests/test_abi_layout_against_clang.py', None),
+    ('platform_collector', 'tests/test_collect_platform.py', None),
+    ('graphics_inventory', 'tests/test_macos_graphics_inventory.py', None),
     ('installer', 'tests/test_installer.py', None),
     ('kernel_build_contract', 'tests/test_kernel_build_contract.py', None),
     ('mesa_cpu', 'tests/test_mesa_cpu.py', None),
@@ -113,6 +118,13 @@ PORT_COVERAGE = {
     'guc': (('gpu-prototype/lb_guc_transport.cpp', 'gpu-prototype/lb_guc_scheduler.cpp',
              'gpu-prototype/lb_guc_firmware.cpp'),
             'transport codec and scheduler state only; no firmware load sequence'),
+    'userclient': (('native/LunarBridgeDriver.cpp', 'gpu-prototype/lb_arc_interface.cpp',
+                    'tools/abi_dispatch.py'),
+                   'our own selector table satisfies the published validation contract; the '
+                   'recovered Apple tables are not yet compared against it'),
+    'metaclass': (('native/LunarBridgeDriver.cpp', 'tools/abi_macho.py'),
+                  'the class and vtable contract an accelerator must satisfy is readable but '
+                  'not yet implemented against'),
 }
 XE = 'linux-v6.17/drivers/gpu/drm/xe/'
 # The upstream facts this port stands on, each with the pattern that proves it.
@@ -432,6 +444,52 @@ def stage_extract(out: Path) -> dict:
             'citation': reference + ':' + str(source.count('\n', 0, match.start()) + 1),
             'source_text': ' '.join(match.group(0).split())[:160],
         }
+    # The macOS half of the ground truth: the validation contract every external
+    # method call goes through, parsed from the same pinned xnu source.
+    try:
+        contract_module = load('abi_contract', 'tools/abi_contract.py')
+        published = contract_module.contract(tool.read_reference)
+        dispatch = published['dispatch_structures']
+        facts['userclient'] = {
+            'dispatch_2022_entry_bytes': {
+                'value': dispatch['IOExternalMethodDispatch2022']['layout']['size'],
+                'citation': dispatch['IOExternalMethodDispatch2022']['citation']},
+            'dispatch_legacy_entry_bytes': {
+                'value': dispatch['IOExternalMethodDispatch']['layout']['size'],
+                'citation': dispatch['IOExternalMethodDispatch']['citation']},
+            'variable_structure_sentinel': {
+                'value': published['sentinels']['kIOUCVariableStructureSize']['value'],
+                'citation': published['sentinels']['kIOUCVariableStructureSize']['citation']},
+            'scalar_input_count_max': {
+                'value': published['sentinels']['kIOExternalMethodScalarInputCountMax']['value'],
+                'citation':
+                    published['sentinels']['kIOExternalMethodScalarInputCountMax']['citation']},
+            'validation_steps': {'value': len(published['validation']['steps']),
+                                 'citation': published['validation']['citation']},
+            'probe_oracle_rules': {'value': len(published['probe_oracle']),
+                                   'citation': published['validation']['citation']},
+            'entitlement_checked_after_shape': {
+                'value': True, 'citation': published['validation']['citation'],
+                'note': 'so a NotPrivileged answer confirms an argument shape with no '
+                        'side effect'},
+        }
+        for name, code in published['return_codes'].items():
+            facts['userclient']['return_' + name] = {'value': code['hex'],
+                                                     'citation': code['citation']}
+        metaclass = published['metaclass']
+        facts['metaclass'] = {
+            'record_bytes': {'value': metaclass['layout']['size'],
+                             'citation': metaclass['citation']},
+            'assumption': {'value': metaclass['assumed'], 'citation': metaclass['citation']},
+        }
+        for field in metaclass['layout']['fields']:
+            facts['metaclass']['offset_' + field['name']] = {
+                'value': field['offset'], 'citation': metaclass['citation']}
+    except Exception as error:
+        drift.append({'group': 'userclient', 'name': 'published_contract',
+                      'reference': 'tools/abi_contract.py',
+                      'reason': type(error).__name__ + ': ' + str(error)[:200]})
+
     # The PAT and LRC facts are parsed by the same code the port suite verifies
     # against, so the report and the test can never disagree about them.
     try:

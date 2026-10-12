@@ -27,7 +27,7 @@ Lauf grün.
 | Stufe | Was sie feststellt | Läuft |
 | --- | --- | --- |
 | `environment` | Toolchain, OS, SIP-Status, `boot-args` | überall; die macOS-Abfragen nur dort |
-| `repository` | Commit, Arbeitsbaum, SHA-256 aller 49 gepinnten Quellen, dazu beide Bibliotheken und 15 Testsuiten | überall |
+| `repository` | Commit, Arbeitsbaum, SHA-256 aller 58 gepinnten Quellen, dazu beide Bibliotheken und 15 Testsuiten | überall |
 | `interface` | Xe-uAPI gegen den macOS-Kontrakt, kompilierte Tabelle gegen die Quellen | überall |
 | `portplan` | was die portierten PAT- und LRC-Module programmieren **würden** | überall |
 | `extract` | die Hardwarefakten neu hergeleitet, jede mit Zeilenzitat | überall |
@@ -53,14 +53,14 @@ PAT und LRC werden nicht doppelt geparst, sondern von denselben Klassen
 getestet wird. Bericht und Test können über diese Werte also nicht
 auseinanderlaufen.
 
-Heutiger Stand: **31 Regeln, 52 Fakten, keine Drift** — PCI-IDs und
+Heutiger Stand: **31 Regeln, 73 Fakten, keine Drift** — PCI-IDs und
 `GRAPHICS_VERx100`, GGTT-/PPGTT-Seitenbits, Forcewake-Quittierung,
 GuC-Register samt Lunar-Lake-Firmwareversion, die vollständige Xe2-PAT-Tabelle
 und das LRC-Layout.
 
 ## Was der Lauf beweist — und was nicht
 
-Er beweist: die Module bauen mit `-Werror`, alle 15 Suiten (423 Tests) laufen
+Er beweist: die Module bauen mit `-Werror`, alle 20 Suiten (510 Tests) laufen
 durch, die kompilierte Tabelle deckt sich mit den gepinnten Quellen, und jeder
 Zahlenwert im Port lässt sich auf eine Zeile Upstream zurückführen.
 

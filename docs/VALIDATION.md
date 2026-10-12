@@ -107,8 +107,8 @@ The GGTT planner and GuC scheduler codec are now included in the host DLL, macOS
 Fourteen fresh kernel objects were cross-compiled after adding the upstream kernel build flag `-fno-stack-check`. Every header was verified against the pinned SDK tree, and those objects contain no Darwin userspace stack-probe symbol. The historical 755ba093 CI binary had that import. The actual 3b7550d Apple-clang build now proves its removal from both imports and definitions; native kernel admission and stack budget remain unqualified.
 
 One command now establishes all of that in a single run. `tools/recon.py`
-builds the CPU modules and the host-test library with `-Werror`, runs all fifteen
-suites, verifies the SHA-256 of all 49 pinned sources, re-derives 54 upstream
+builds the CPU modules and the host-test library with `-Werror`, runs all twenty
+suites, verifies the SHA-256 of all 58 pinned sources, re-derives 54 upstream
 facts with `file:line` citations, and ranks what is still open. Its own 27 tests
 check that every extraction rule still matches its pinned source, that each
 stage records why it was skipped rather than guessing, that a run writes nothing
@@ -116,3 +116,17 @@ outside its output directory, and that the report never claims hardware state.
 The macOS-only stages — installed Apple driver, live graphics stack, target
 device — are skipped on this host and say so. Nothing in that run touches
 hardware.
+
+A second line of recovery tooling now stands beside the collectors, for the
+macOS half of the driver that no published source covers. The published
+validation contract — the dispatch structures' layout, the sentinels, the order
+of checks and the exact return codes — is parsed out of pinned xnu source rather
+than assumed, and clang certifies that computation: a generated fixture asserts
+every computed size and offset through static assertions and is compiled for
+Mach-O, so a wrong offset fails the build. The dispatch-table scanner is then
+proven against Mach-O images built in the test, including one emitted by that
+compiler, a stripped image, the legacy structure, a relocatable object whose
+pointers are relocations, and a kernel-collection fileset. 72 tests cover the
+policy gate, the recovery, the platform collector and the graphics inventory.
+No Apple binary was read, and no run has yet been made against one: these are
+tools for the target machine, not results from it. Nothing here touches hardware.

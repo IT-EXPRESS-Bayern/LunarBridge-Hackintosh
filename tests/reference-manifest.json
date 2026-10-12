@@ -244,6 +244,51 @@
       "path": "apple-driver-surface/WhateverGreen-093e76f/WhateverGreen/kern_igfx.cpp",
       "url": "https://raw.githubusercontent.com/acidanthera/WhateverGreen/093e76fec5655001f38b367dd22459c756ee89fa/WhateverGreen/kern_igfx.cpp",
       "sha256": "a2586597162c8fe4e332161cfbcabe7dbfb446909632a332e2a2c016f8d1700a"
+    },
+    {
+      "path": "macos-tahoe/xnu-12377.121.6/iokit/Kernel/IOUserClient.cpp",
+      "url": "https://raw.githubusercontent.com/apple-oss-distributions/xnu/xnu-12377.121.6/iokit/Kernel/IOUserClient.cpp",
+      "sha256": "a09c525b144ecbf834bb2b69f0c78b93358601ee22045340609b30acc8e0a6e7"
+    },
+    {
+      "path": "macos-tahoe/xnu-12377.121.6/libkern/libkern/c++/OSMetaClass.h",
+      "url": "https://raw.githubusercontent.com/apple-oss-distributions/xnu/xnu-12377.121.6/libkern/libkern/c%2B%2B/OSMetaClass.h",
+      "sha256": "24930e8b98f4b49c7e1b9271f47c8fc9e8c6c0f56f6acb41a0ba6be3116da771"
+    },
+    {
+      "path": "macos-tahoe/xnu-12377.121.6/libkern/c++/OSMetaClass.cpp",
+      "url": "https://raw.githubusercontent.com/apple-oss-distributions/xnu/xnu-12377.121.6/libkern/c%2B%2B/OSMetaClass.cpp",
+      "sha256": "6a019c97676762721668b98c7400c61b8a61769b38e54cfd025c2984197be3ef"
+    },
+    {
+      "path": "macos-tahoe/xnu-12377.121.6/iokit/IOKit/IOService.h",
+      "url": "https://raw.githubusercontent.com/apple-oss-distributions/xnu/xnu-12377.121.6/iokit/IOKit/IOService.h",
+      "sha256": "620eec0e4e4cb7cb077c4f4d78770a0ca409dd8efcd8cbc2fa2dafc40014f71c"
+    },
+    {
+      "path": "macos-tahoe/IOKitUser-1726.140.1/IOKitLib.h",
+      "url": "https://raw.githubusercontent.com/apple-oss-distributions/IOKitUser/IOKitUser-1726.140.1/IOKitLib.h",
+      "sha256": "27fbf513c326f0e2934f0518e15a951270ab24997e4ec9c1043b43b83fdc94ce"
+    },
+    {
+      "path": "macos-tahoe/IOGraphics-600/IOGraphicsFamily/IOFramebufferUserClient.cpp",
+      "url": "https://raw.githubusercontent.com/apple-oss-distributions/IOGraphics/IOGraphics-600/IOGraphicsFamily/IOFramebufferUserClient.cpp",
+      "sha256": "f7bb286e5c2aadc695f72bff5d6e49cd169a454d3c04c8b361a93713d5e3e9ba"
+    },
+    {
+      "path": "macos-tahoe/xnu-12377.121.6/iokit/IOKit/IOReturn.h",
+      "url": "https://raw.githubusercontent.com/apple-oss-distributions/xnu/xnu-12377.121.6/iokit/IOKit/IOReturn.h",
+      "sha256": "4767dd8a847d4b7dcff0b74c7a67013f0462f3ea6313e5a483f49fe046f93ab1"
+    },
+    {
+      "path": "macos-tahoe/xnu-12377.121.6/osfmk/mach/error.h",
+      "url": "https://raw.githubusercontent.com/apple-oss-distributions/xnu/xnu-12377.121.6/osfmk/mach/error.h",
+      "sha256": "bd288ca8dab37bee91ab75cb3ed6238be9bbffae3c687f4cb54057bba6467d8d"
+    },
+    {
+      "path": "macos-tahoe/xnu-12377.121.6/bsd/sys/csr.h",
+      "url": "https://raw.githubusercontent.com/apple-oss-distributions/xnu/xnu-12377.121.6/bsd/sys/csr.h",
+      "sha256": "1787401f91a9d294b6ae18b49595c2d0a56ade74206707260dae42d0abf5d5a3"
     }
   ]
 }

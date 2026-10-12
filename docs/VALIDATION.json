@@ -172,7 +172,7 @@
     "native_hardware_tested": false,
     "parallel_kernel_lifetime_tested": false
   },
-  "pinned_reference_files_sha256_verified": 48,
+  "pinned_reference_files_sha256_verified": 58,
   "total_host_tests_passed": 444,
   "macos_object_count": 14,
   "native_diagnostic_source_compiled": true,
@@ -920,10 +920,10 @@
     "skipped": 0,
     "successful": true,
     "extraction_rules": 31,
-    "facts_extracted": 52,
+    "facts_extracted": 73,
     "extraction_drift": 0,
-    "suites_orchestrated": 15,
-    "suites_passed": 15,
+    "suites_orchestrated": 20,
+    "suites_passed": 20,
     "libraries_built_with_werror": [
       "modules (7 sources)",
       "host test (16 sources)"
@@ -937,7 +937,30 @@
     "registers_written": false,
     "apple_binary_read_or_copied": false,
     "hardware_acceleration_established": false,
-    "tests_in_orchestrated_suites": 423
+    "tests_in_orchestrated_suites": 510
   },
-  "recon_audit_ci_runs_recorded": false
+  "recon_audit_ci_runs_recorded": false,
+  "abi_recovery_tests": {
+    "test_type": "Recovered external-method dispatch tables from Mach-O images built in the test, including a compiler-emitted table whose layout clang itself certified through static assertions on every computed size and offset",
+    "environment": "Linux x86_64 container, clang 18.1.3 targeting x86_64-apple-macos12",
+    "tests_run": 72,
+    "failures": 0,
+    "errors": 0,
+    "successful": true,
+    "suites": {
+      "abi_policy": 21,
+      "abi_dispatch": 24,
+      "abi_layout_against_clang": 10,
+      "collect_platform": 20,
+      "macos_graphics_inventory": 12
+    },
+    "dispatch_entry_bytes_confirmed_by_compiler": {
+      "IOExternalMethodDispatch2022": 40,
+      "IOExternalMethodDispatch": 24
+    },
+    "apple_binary_read_or_copied": false,
+    "instruction_bytes_in_any_output": false,
+    "ran_on_an_apple_graphics_binary": false,
+    "hardware_acceleration_established": false
+  }
 }
