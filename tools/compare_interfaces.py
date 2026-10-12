@@ -244,13 +244,36 @@ def extract_macos() -> dict:
         'variable_structure_size': variable_size,
         'accelerator_client_types': [entry.strip().rstrip(',') for entry in
                                      client_types.strip().split('\n') if entry.strip()],
-        'accelerator_surface_method_count': len([entry for entry in surface_methods.split(',')
-                                                 if entry.strip()]),
+        'accelerator_surface_methods': surface_method_names(surface_methods),
+        'accelerator_surface_method_count': len(surface_method_names(surface_methods)),
+        'accelerator_surface_method_terminator': surface_method_terminator(surface_methods),
+        'highest_public_surface_selector': len(surface_method_names(surface_methods)) - 1,
         'public_accelerator_interface': 'IOAccelSurface locking, shaping and flushing only; '
                                         'no public command-submission or page-table interface',
         'dma_command_segment_api': 'gen64IOVMSegments' in dma_command,
         'pci_memory_mapping_api': 'mapDeviceMemoryWithRegister' in pci_device,
     }
+
+
+def surface_method_entries(body: str) -> list[str]:
+    cleaned = COMMENT.sub('', body)
+    return [entry.strip().rstrip(',').strip()
+            for entry in re.split(r'[,\n]', cleaned) if entry.strip()]
+
+
+def surface_method_terminator(body: str) -> str | None:
+    """The trailing `kIOAccelNum...` member, which is the count and not a method."""
+    entries = surface_method_entries(body)
+    last = entries[-1] if entries else ''
+    return last if re.match(r'kIOAccelNum\w+', last) else None
+
+
+def surface_method_names(body: str) -> list[str]:
+    """The methods themselves: every member except a trailing count terminator."""
+    entries = surface_method_entries(body)
+    if entries and surface_method_terminator(body):
+        return entries[:-1]
+    return entries
 
 
 def extract_apple_driver_surface() -> dict:

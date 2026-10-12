@@ -126,8 +126,58 @@ def check_record(record, path: str = '$') -> list[dict]:
     return violations
 
 
+# Flags that make an otherwise acceptable tool emit bytes, or write them to
+# disk. Relying on the output filter to catch them afterwards is the wrong
+# order: the invocation is refused instead.
+FORBIDDEN_TOOL_FLAGS = {
+    'dyld_info': ('-section_bytes', '-all_sections_bytes', '-disassemble'),
+    'otool': ('-d', '-s'),
+    'llvm-objdump': ('--full-contents', '-s', '--show-raw-insn'),
+    'objdump': ('--full-contents', '-s', '--show-raw-insn'),
+    'codesign': ('--extract-certificates',),
+    'dyld_shared_cache_util': ('-extract',),
+    'kmutil': ('splitkc',),
+    'dd': ('*',),
+    'xxd': ('*',),
+    'hexdump': ('*',),
+}
+
+
 class PolicyError(Exception):
     """Raised instead of writing a record that carries more than facts."""
+
+
+def assert_tool_invocation(command: list[str]) -> None:
+    """Refuse a command whose flags would emit or write binary content.
+
+    `otool -tV` disassembles, which this project uses as a means and discards;
+    `otool -t` alone dumps the bytes of a section, which it never does. That
+    distinction is the reason this inspects flags rather than tool names.
+    """
+    if not command:
+        raise PolicyError('empty tool invocation')
+    from pathlib import Path as _Path
+
+    name = _Path(command[0]).name
+    forbidden = FORBIDDEN_TOOL_FLAGS.get(name)
+    if not forbidden:
+        return
+    if forbidden == ('*',):
+        raise PolicyError(name + ' only emits raw bytes and is never used here')
+    arguments = command[1:]
+    for flag in forbidden:
+        for argument in arguments:
+            if argument == flag or argument.startswith(flag + '='):
+                raise PolicyError(name + ' ' + flag + ' emits or writes binary content; '
+                                  'it is refused by policy')
+    # otool's byte dumps are single letters that can be bundled: -t alone dumps
+    # the text section, while -tV disassembles it.
+    if name == 'otool':
+        for argument in arguments:
+            if argument.startswith('-') and not argument.startswith('--'):
+                letters = argument[1:]
+                if 't' in letters and 'V' not in letters:
+                    raise PolicyError('otool -t without V dumps section bytes; use -tV')
 
 
 def assert_clean(record, label: str = 'record') -> None:

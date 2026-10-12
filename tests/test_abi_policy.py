@@ -131,6 +131,48 @@ class RefusesContent(unittest.TestCase):
         self.assertEqual([entry['rule'] for entry in violations], ['unsupported_type'])
 
 
+class RefusesInvocations(unittest.TestCase):
+    """A byte-emitting flag is refused before it runs, not filtered afterwards."""
+
+    def test_disassembly_invocations_are_allowed(self):
+        for command in (['llvm-objdump', '-d', '--no-show-raw-insn', 'binary'],
+                        ['/usr/bin/otool', '-tV', 'binary'],
+                        ['nm', '-g', '-U', 'binary'],
+                        ['dyld_info', '-objc', '-imports', 'binary']):
+            with self.subTest(command=command):
+                POLICY.assert_tool_invocation(command)
+
+    def test_byte_dumping_flags_are_refused(self):
+        for command in (['llvm-objdump', '--full-contents', 'binary'],
+                        ['llvm-objdump', '-d', '--show-raw-insn', 'binary'],
+                        ['dyld_info', '-section_bytes', '__TEXT,__text', 'binary'],
+                        ['dyld_info', '-disassemble', 'binary'],
+                        ['codesign', '-dvvv', '--extract-certificates', 'bundle'],
+                        ['dyld_shared_cache_util', '-extract', 'out', 'cache'],
+                        ['kmutil', 'splitkc', 'collection']):
+            with self.subTest(command=command):
+                with self.assertRaises(POLICY.PolicyError):
+                    POLICY.assert_tool_invocation(command)
+
+    def test_otool_t_without_v_is_refused_but_tv_is_not(self):
+        with self.assertRaises(POLICY.PolicyError):
+            POLICY.assert_tool_invocation(['otool', '-t', 'binary'])
+        POLICY.assert_tool_invocation(['otool', '-tV', 'binary'])
+
+    def test_tools_that_only_emit_bytes_are_refused_outright(self):
+        for name in ('dd', 'xxd', 'hexdump'):
+            with self.subTest(tool=name):
+                with self.assertRaises(POLICY.PolicyError):
+                    POLICY.assert_tool_invocation([name, 'binary'])
+
+    def test_an_unknown_tool_is_not_blocked(self):
+        POLICY.assert_tool_invocation(['ioreg', '-l', '-w', '0'])
+
+    def test_an_empty_invocation_is_refused(self):
+        with self.assertRaises(POLICY.PolicyError):
+            POLICY.assert_tool_invocation([])
+
+
 class WritesOrRefuses(unittest.TestCase):
     def test_a_clean_record_is_written_with_its_scope_note(self):
         with tempfile.TemporaryDirectory() as directory:

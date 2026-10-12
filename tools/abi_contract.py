@@ -337,7 +337,12 @@ def contract(read_reference) -> dict:
         'kIOExternalMethodScalarInputCountMax': {
             'value': enum_value(header, 'kIOExternalMethodScalarInputCountMax'),
             'citation': cite(IOUSERCLIENT_H, header,
-                             'kIOExternalMethodScalarInputCountMax')},
+                             'kIOExternalMethodScalarInputCountMax'),
+            'documentary': True,
+            'note': 'the header states these constants are documentary, because the '
+                    'scalarInputCount and scalarOutputCount fields reflect the actual '
+                    'number passed; xnu enforces only the per-selector equality checks, '
+                    'so 16 is a scan heuristic and not a wire limit'},
         'kIOExternalMethodScalarOutputCountMax': {
             'value': enum_value(header, 'kIOExternalMethodScalarOutputCountMax'),
             'citation': cite(IOUSERCLIENT_H, header,

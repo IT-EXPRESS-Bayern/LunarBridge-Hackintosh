@@ -225,16 +225,68 @@ laufen.
   **niemals** unterhalb des Repository-Baums landen, auch nicht in `build/`.
   Unsere Werkzeuge lesen an Ort und Stelle und schreiben nur den Datensatz.
 
+## Laufzeitbeobachtung: was zulässig ist und was nicht
+
+Die adversariale Gegenprüfung der Laufzeit-Spezifikation hat 18 Korrekturen und
+sechs Guardrail-Verstöße gefunden. Deshalb gibt es hier **kein** Sweep-Skript,
+sondern erst die Regeln, die daraus folgen — und zwei davon sind im Code
+erzwungen.
+
+**Nur entitlement-geschützte Selektoren sind nebenwirkungsfrei bestätigbar.**
+Für jeden anderen Eintrag führt eine *korrekte* Argumentform den Handler
+**zwangsläufig** aus — das ist die Dispatch-Semantik, keine Wahrscheinlichkeit
+(`IOUserClient.cpp:6658`). Im laufenden Grafiktreiber ist das unbekannter
+Kernelcode: Panic, GPU-Hang oder stiller Zustandsschaden. Ein Sweep über
+„Selektoren, die nichts submittieren" ist unmöglich, weil man vor dem Sweep
+nicht weiß, welcher submittiert. Der Probe-Plan aus
+[`tools/abi_dispatch.py`](../tools/abi_dispatch.py) markiert daher je Eintrag
+`handler_runs`, und nur `handler_runs: false` wird probiert.
+
+**`IOServiceOpen` ist selbst kein Nulltarif.** Das Öffnen ruft
+`IOService::newUserClient` im Kernel; auf der Beschleunigerfamilie allokiert das
+ein Kontextobjekt, also echter Treibercode mit echtem Zustand — vor jedem
+Selektor. Das Öffnen zählt als Eingriff, nicht als Vorbereitung.
+
+**SIP zu lockern schreibt NVRAM.** `csrutil` aus recoveryOS setzt
+`csr-active-config` persistent und maschinenweit. Das ist eine dauerhafte
+Absenkung der Systemsicherheit, die die Messung überdauert — und sie ist **nur**
+für Kernel-Probes nötig. Userspace-`pid`-Probes, das Unified Log, `ioreg` und
+`system_profiler` brauchen sie nicht. `collect_platform.py` sagt dir, was dein
+aktuelles SIP-Wort erlaubt, bevor du irgendetwas änderst.
+
+**`fbt` auf einem geladenen Grafik-Kext ist Kernel-Instrumentierung**, keine
+Prozessbeobachtung. Das gehört in eine andere Risikoklasse als ein
+`pid$target`-Probe auf `IOConnectCallMethod` und wird hier nie in einem Satz mit
+ihm genannt.
+
+**Byte-ausgebende Flags sind im Code verboten**, nicht nur im Ausgabefilter:
+`tools/abi_policy.assert_tool_invocation()` weist die Invocation ab, bevor sie
+läuft.
+
+| Verboten | Warum |
+| --- | --- |
+| `dyld_info -section_bytes`, `-all_sections_bytes`, `-disassemble` | gibt Bytes aus |
+| `otool -t` ohne `V` | dumpt Sektionsbytes; `-tV` disassembliert und ist erlaubt |
+| `llvm-objdump --full-contents`, `-s`, `--show-raw-insn` | gibt Bytes aus |
+| `codesign --extract-certificates` | **schreibt** DER-Dateien ins Arbeitsverzeichnis |
+| `dyld_shared_cache_util -extract` | schreibt Apple-Binärinhalt auf die Platte |
+| `kmutil splitkc` | schreibt Kext-Binaries auf die Platte |
+| `dd`, `xxd`, `hexdump` | tun nichts anderes |
+
+Wird eine Kopie doch einmal unvermeidbar (etwa ein Slice aus dem dyld-Cache),
+dann **außerhalb** des Git-Baums, und sie wird danach gelöscht — `build/` ist
+kein zulässiger Ort, obwohl es ignoriert wird.
+
 ## Was damit noch nicht erhoben ist
 
 vtable-**Reihenfolge** und Strukturoffsets über `classSize` hinaus, die
 Semantik der Selektoren, das Layout des geteilten Submission-Speichers und das
-Metal-Treiber-ABI selbst. Dafür braucht es Laufzeitbeobachtung — dtrace auf
-`IOConnectCall*`, lldb an einem Metal-Prozess, bounded User-Client-Probing — und
-genau dafür nennt `platform.json` die SIP-Voraussetzungen. Diese Werkzeuge
-folgen als nächstes; der entscheidende Punkt ist, dass sie dann nicht mehr
-suchen müssen, sondern den Probe-Plan abarbeiten, der aus den rekonstruierten
-Tabellen schon folgt.
+Metal-Treiber-ABI selbst. Dafür braucht es Laufzeitbeobachtung unter den Regeln des vorigen Abschnitts:
+ein `pid`-Probe auf `IOConnectCallMethod` im Metal-Prozess (ohne SIP-Eingriff),
+das Unified Log, und Bestätigung ausschließlich der Einträge, die der Probe-Plan
+als `handler_runs: false` ausweist. Der entscheidende Punkt ist, dass dabei
+nicht mehr gesucht wird: die zu bestätigenden Formen stehen schon in den
+rekonstruierten Tabellen.
 
 Und unabhängig davon bleibt wahr: keiner dieser Läufe programmiert Hardware.
 `R99` steht in jedem Audit-Bericht.

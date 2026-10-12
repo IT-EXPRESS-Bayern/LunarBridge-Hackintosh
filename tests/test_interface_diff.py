@@ -104,7 +104,18 @@ class MacOSExtraction(unittest.TestCase):
     def test_public_accelerator_interface_is_a_surface_api(self):
         self.assertEqual(self.macos['accelerator_client_types'],
                          ['kIOAccelSurfaceClientType', 'kIOAccelNumClientTypes'])
-        self.assertEqual(self.macos['accelerator_surface_method_count'], 19)
+        # 18 methods at indices 0..17; the 19th enum member is the terminator
+        # kIOAccelNumSurfaceMethods, which is the count rather than a method.
+        self.assertEqual(self.macos['accelerator_surface_method_count'], 18)
+        self.assertEqual(self.macos['accelerator_surface_method_terminator'],
+                         'kIOAccelNumSurfaceMethods')
+        self.assertEqual(self.macos['highest_public_surface_selector'], 17)
+        self.assertNotIn('kIOAccelNumSurfaceMethods',
+                         self.macos['accelerator_surface_methods'])
+        self.assertEqual(self.macos['accelerator_surface_methods'][0],
+                         'kIOAccelSurfaceReadLockOptions')
+        self.assertEqual(self.macos['accelerator_surface_methods'][-1],
+                         'kIOAccelSurfaceSetShapeBackingAndLength')
         self.assertTrue(self.macos['dma_command_segment_api'])
         self.assertTrue(self.macos['pci_memory_mapping_api'])
 

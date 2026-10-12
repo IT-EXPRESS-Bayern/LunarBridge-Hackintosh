@@ -50,7 +50,7 @@ so, dass er die macOS-Form erfüllt statt die Linux-Form zu kopieren.
 Zusätzlich belegt die öffentliche Apple-Quelle, wie schmal die veröffentlichte
 Beschleunigerschnittstelle ist: `IOAccelerator` exportiert ausschließlich
 `createAccelID`/`retainAccelID`/`releaseAccelID`, es gibt genau einen
-öffentlichen Clienttyp (`kIOAccelSurfaceClientType`) und **19**
+öffentlichen Clienttyp (`kIOAccelSurfaceClientType`) und **18**
 Surface-Methoden für Locking, Shape und Flush. Eine veröffentlichte
 Kommando-Submission-, Page-Table- oder Queue-Schnittstelle existiert nicht. Was
 ein Metal-Treiber zusätzlich erfüllen muss, ist privat und bleibt eine offene

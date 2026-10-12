@@ -23,7 +23,7 @@ import struct
 MH_MAGIC_64 = 0xFEEDFACF
 CPU_TYPE_X86_64 = 0x01000007
 CPU_TYPE_ARM64 = 0x0100000C
-MH_OBJECT, MH_FILESET, MH_KEXT_BUNDLE = 0x1, 0xC, 0xB
+MH_OBJECT, MH_DYLIB, MH_BUNDLE, MH_KEXT_BUNDLE, MH_FILESET = 0x1, 0x6, 0x8, 0xB, 0xC
 LC_SYMTAB = 0x2
 LC_SEGMENT_64 = 0x19
 LC_UUID = 0x1B
@@ -314,9 +314,10 @@ class MachOImage:
             'label': self.label,
             'architecture': self.architecture,
             'filetype': self.filetype,
-            'filetype_name': {MH_OBJECT: 'MH_OBJECT', MH_FILESET: 'MH_FILESET',
-                              MH_KEXT_BUNDLE: 'MH_KEXT_BUNDLE'}.get(self.filetype,
-                                                                    hex(self.filetype)),
+            'filetype_name': {MH_OBJECT: 'MH_OBJECT', MH_DYLIB: 'MH_DYLIB',
+                              MH_BUNDLE: 'MH_BUNDLE', MH_KEXT_BUNDLE: 'MH_KEXT_BUNDLE',
+                              MH_FILESET: 'MH_FILESET'}.get(self.filetype,
+                                                            hex(self.filetype)),
             'uuid': self.uuid,
             'has_chained_fixups': self.has_chained_fixups,
             'segments': [{key: entry[key] for key in ('name', 'vmaddr', 'vmsize')}

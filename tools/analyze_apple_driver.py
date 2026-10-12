@@ -52,7 +52,18 @@ IOKIT_OVERRIDES = (
     'clientDied', 'getMetaClass', 'setPowerState', 'setProperties',
     'copyProperty', 'message', 'willTerminate', 'didTerminate',
     'registerService', 'matchPropertyTable', 'getWorkLoop',
+    # These five decide which dispatch path a user client is on, which is the
+    # first thing an independent driver has to match.
+    'getTargetAndMethodForIndex', 'getAsyncTargetAndMethodForIndex',
+    'getTargetAndTrapForIndex', 'getExternalTrapForIndex', 'dispatchExternalMethod',
 )
+# An imported (undefined) symbol is the decisive signal: a client on the 2022
+# path calls into the kernel's dispatchExternalMethod, which it cannot define.
+DISPATCH_PATH_IMPORTS = {
+    'dispatchExternalMethod': 'IOUserClient2022 dispatch array',
+    'getTargetAndMethodForIndex': 'legacy index-based dispatch',
+    'getAsyncTargetAndMethodForIndex': 'legacy asynchronous dispatch',
+}
 # Foreign class families worth separating in the report.
 FAMILIES = ('IOGPU', 'IOAccelerator', 'IOAccel', 'IOSurface', 'IOFramebuffer',
             'IOGraphics', 'IODisplay', 'IOPCIDevice', 'IOService', 'IOUserClient',
@@ -219,6 +230,19 @@ def analyze(bundle: Path, nm: str | None) -> dict:
         if hits:
             overrides[owner] = hits
     record['symbols']['iokit_overrides'] = overrides
+    # Which dispatch path this bundle is on, read from what it imports rather
+    # than from what it defines.
+    imported = set()
+    for name in undefined:
+        for marker in DISPATCH_PATH_IMPORTS:
+            if marker in name:
+                imported.add(marker)
+    record['symbols']['dispatch_path_imports'] = {
+        marker: DISPATCH_PATH_IMPORTS[marker] for marker in sorted(imported)}
+    record['symbols']['dispatch_path'] = (
+        'IOUserClient2022 dispatch array' if 'dispatchExternalMethod' in imported
+        else 'legacy index-based dispatch'
+        if imported else 'undetermined: neither dispatch entry point is imported')
     return record
 
 

@@ -937,18 +937,18 @@
     "registers_written": false,
     "apple_binary_read_or_copied": false,
     "hardware_acceleration_established": false,
-    "tests_in_orchestrated_suites": 541
+    "tests_in_orchestrated_suites": 547
   },
   "recon_audit_ci_runs_recorded": false,
   "abi_recovery_tests": {
     "test_type": "Recovered external-method dispatch tables from Mach-O images built in the test, including a compiler-emitted table whose layout clang itself certified through static assertions on every computed size and offset",
     "environment": "Linux x86_64 container, clang 18.1.3 targeting x86_64-apple-macos12",
-    "tests_run": 103,
+    "tests_run": 109,
     "failures": 0,
     "errors": 0,
     "successful": true,
     "suites": {
-      "abi_policy": 21,
+      "abi_policy": 27,
       "abi_dispatch": 34,
       "abi_layout_against_clang": 10,
       "abi_callsite": 12,
@@ -972,7 +972,28 @@
         "non-zero interior padding discarded a table although zero padding is a compiler habit and not an ABI guarantee",
         "counts outside the documented bounds discarded entries although the fields are exact requirements rather than maxima"
       ],
-      "bounded_afterwards": "the entitlement identifier is the one literal string kept, and only in reverse-DNS shape up to 128 characters"
+      "bounded_afterwards": "the entitlement identifier is the one literal string kept, and only in reverse-DNS shape up to 128 characters",
+      "rounds": 5,
+      "verdicts": [
+        "usable_with_corrections",
+        "usable_with_corrections",
+        "usable_with_corrections",
+        "usable_with_corrections",
+        "usable_with_corrections"
+      ],
+      "guardrail_violations_raised": 19,
+      "acted_on": [
+        "the recovered number is an array index, not a wire selector",
+        "non-zero padding no longer discards a table",
+        "check fields are exact requirements, not maxima",
+        "the scalar maxima are documentary per the header, not a wire limit",
+        "kIOAccelNumSurfaceMethods is the count, so there are 18 surface methods, not 19",
+        "the five dispatch-path methods were missing from the override list, and the decisive signal is an imported symbol rather than a defined one",
+        "byte-emitting tool flags are refused at the invocation, not filtered from the output",
+        "no live sweep: only entitlement-gated selectors can be confirmed without running a handler",
+        "IOServiceOpen already runs newUserClient in the kernel and counts as an intervention",
+        "relaxing SIP writes NVRAM persistently and is needed only for kernel probes"
+      ]
     },
     "call_site_reading": {
       "facts_recovered": [
@@ -983,6 +1004,7 @@
       ],
       "decided_by_agreement_not_by_mnemonic": true,
       "instruction_text_in_output": false
-    }
+    },
+    "live_probe_script_shipped": false
   }
 }

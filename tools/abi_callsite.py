@@ -89,6 +89,10 @@ def disassemble(binary: Path, symbol: str) -> list[tuple[int, str]]:
     else:
         command = [tool, '-d', '--no-show-raw-insn', '--x86-asm-syntax=att',
                    '--disassemble-symbols=' + symbol, str(binary)]
+    # The invocation itself goes through the policy, so a byte-emitting flag is
+    # refused before it runs rather than filtered out of the record afterwards.
+    policy = load('abi_policy', 'tools/abi_policy.py')
+    policy.assert_tool_invocation(command)
     result = subprocess.run(command, capture_output=True, text=True, timeout=600, check=False)
     if result.returncode:
         raise DisassemblyUnavailable(name + ' exited ' + str(result.returncode) + ': '
