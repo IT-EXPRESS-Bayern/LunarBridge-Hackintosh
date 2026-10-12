@@ -441,6 +441,10 @@ class PinnedLrcSource:
             raise AssertionError('MI_ARB_ON_OFF not found')
         self.mi_arb_opcode = int(arb.group(1), 16)
         self.mi_arb_enable = reg_bit(mi, 'MI_ARB_ENABLE')
+        self.mi_noop = 0
+        self.tail_addr, self.tail_shift = reg_genmask(engine, 'TAIL_ADDR')
+        self.head_addr, self.head_shift = reg_genmask(engine, 'HEAD_ADDR')
+        self.ring_write = re.search(r'void xe_lrc_write_ring\(.*?\n\}', self.lrc, re.S).group(0)
         instr_mi = re.search(r'#define\s+XE_INSTR_MI\s+REG_FIELD_PREP\(XE_INSTR_CMD_TYPE,\s*(0x\d)\)',
                              instr)
         cmd_mask, cmd_shift = reg_genmask(instr, 'XE_INSTR_CMD_TYPE')
@@ -544,7 +548,7 @@ class PortedLrcImage(unittest.TestCase):
         self.base = RESERVED_LOW + 0x10000
         self.root = 0x200000
         self.asid = 7
-        self.tail = 4
+        self.tail = 8
 
     def build(self, base=None, root=None, asid=None, tail=None, output_bytes=None):
         image = LrcImage()
@@ -589,8 +593,13 @@ class PortedLrcImage(unittest.TestCase):
         expected_prologue = (self.source.instr_mi |
                              ((self.source.mi_arb_opcode << self.source.mi_opcode_shift) &
                               self.source.mi_opcode_mask) | self.source.mi_arb_enable)
-        self.assertEqual(image.prologueDwords, 1)
+        # Two dwords: the arbitration enable plus the NOOP that upstream's
+        # xe_lrc_write_ring() appends to reach the 8-byte tail granularity.
+        self.assertEqual(image.prologueDwords, 2)
         self.assertEqual(image.prologue[0], expected_prologue)
+        self.assertEqual(image.prologue[1], self.source.mi_noop)
+        self.assertIn('ALIGN(size, 8)', self.source.ring_write)
+        self.assertIn('MI_NOOP', self.source.ring_write)
 
     def test_descriptor_and_addresses_match_the_pinned_composition(self):
         _, image = self.build()
@@ -638,6 +647,12 @@ class PortedLrcImage(unittest.TestCase):
         self.assertEqual(self.build(asid=0)[0], LRC_INPUT)
         self.assertEqual(self.build(tail=RING_BYTES)[0], LRC_RANGE)
         self.assertEqual(self.build(tail=5)[0], LRC_RANGE)
+        # RING_TAIL encodes bits 20:3, so a 4-byte tail cannot be expressed.
+        self.assertEqual(self.source.tail_shift, 3)
+        self.assertEqual(self.source.head_shift, 2)
+        self.assertEqual(self.build(tail=4)[0], LRC_RANGE)
+        self.assertEqual(self.build(tail=0)[0], LRC_OK)
+        self.assertEqual(self.build(tail=RING_BYTES - 8)[0], LRC_OK)
         self.assertEqual(self.build(output_bytes=c.sizeof(LrcImage) - 8)[0], LRC_INPUT)
 
     def test_a_tampered_layout_is_recomputed_and_refused(self):

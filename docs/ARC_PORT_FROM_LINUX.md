@@ -107,9 +107,19 @@ Geschrieben werden zehn Dwords im Kontextimage, an den Indizes aus
 | 3 | `CTX_CONTEXT_CONTROL` | `0x00090009` (maskiertes Enable von `INHIBIT_SYN_CTX_SWITCH` und `ENGINE_CTX_RESTORE_INHIBIT`) |
 | 9 / 5 / 7 | `CTX_RING_START` / `_HEAD` / `_TAIL` | GGTT-Adresse des Rings, 0, Tail |
 | 11 | `CTX_RING_CTL` | `(Ringgröße − 4096) \| RING_VALID` |
+| 7 | `CTX_RING_TAIL` | 8-Byte-ausgerichtete Spitze, nach dem Prolog 8 |
 | 35 / 37 | `CTX_TIMESTAMP` / `_UDW` | 0 (Xe2 hat 64-Bit-Timestamps) |
 | 49 / 51 | `CTX_PDP0_UDW` / `_LDW` | PPGTT-Wurzel, Verzeichniskodierung mit PAT 2 |
 | 47 | `CTX_ASID` | Adressraumkennung, Xe2 setzt `has_asid` |
+
+Die Ringspitze ist 8-Byte-granular: `RING_TAIL` kodiert sie in `TAIL_ADDR` =
+Bits 20:3, Bits 2:0 gehen verloren (`RING_HEAD` ist mit `HEAD_ADDR` = Bits 20:2
+dagegen 4-Byte-granular). Upstream löst das in `xe_lrc_write_ring()` mit
+`ALIGN(size, 8)` und einem angehängten `MI_NOOP`. Der Ringprolog dieses Ports
+besteht deshalb aus **zwei** Dwords — Arbitration-Enable plus NOOP — und der
+Builder weist einen nicht 8-Byte-ausgerichteten Tail ab. Eine erste Version
+akzeptierte einen 4-Byte-Tail und hätte eine Spitze gesetzt, die das Register
+nicht ausdrücken kann.
 
 Der Deskriptor ist `LRC_VALID | (LRC_LEGACY_64B_CONTEXT << 3) | LRC_PRIVILEGE`
 plus GGTT-Adresse des PPHWSP, also `Adresse | 0x119`. Engine-Klasse und

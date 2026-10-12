@@ -34,6 +34,13 @@ constexpr uint64_t LB_LRC_MIN_RING_BYTES = 2 * LB_GPU_PAGE;
 constexpr uint64_t LB_LRC_MAX_RING_BYTES = 512 * LB_GPU_PAGE;
 constexpr uint32_t LB_LRC_MAX_WRITES = 12;
 constexpr uint32_t LB_LRC_MAX_PROLOGUE = 4;
+// RING_TAIL carries the tail in TAIL_ADDR = bits 20:3, so the tail is
+// 8-byte granular and anything in bits 2:0 is lost. RING_HEAD is 4-byte
+// granular (HEAD_ADDR = bits 20:2). Upstream reconciles a 4-byte payload with
+// that granularity by appending MI_NOOP in xe_lrc_write_ring(), which is why
+// the ring prologue here is two dwords, not one.
+constexpr uint64_t LB_LRC_TAIL_ALIGNMENT = 8;
+constexpr uint64_t LB_LRC_TAIL_LIMIT = 0x1FFFF8;
 
 // Context-image dword indices from regs/xe_lrc_layout.h. Each one is the
 // documented "register offset + 1", because the image stores a register

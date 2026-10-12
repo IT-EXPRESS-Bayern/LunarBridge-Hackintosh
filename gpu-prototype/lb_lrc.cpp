@@ -127,8 +127,11 @@ extern "C" uint32_t lb_lrc_build(const LBLrcLayout *layout, uint64_t ggttAddress
     // has_asid is set for Xe2, and upstream writes CTX_ASID for every context
     // that has a VM; a zero id would silently share address-space state.
     if (!asid) return LBLrcInput;
-    // The tail is a byte offset inside the ring and advances in dwords.
-    if (ringTail >= layout->ringBytes || (ringTail & 3)) return LBLrcRange;
+    // The tail is a byte offset inside the ring, but RING_TAIL only encodes
+    // bits 20:3: a tail that is not 8-byte aligned would lose its low bits,
+    // and one beyond TAIL_ADDR could not be expressed at all.
+    if (ringTail >= layout->ringBytes || (ringTail & (LB_LRC_TAIL_ALIGNMENT - 1)) ||
+        ringTail > LB_LRC_TAIL_LIMIT) return LBLrcRange;
 
     const uint64_t pphwspAddress = ggttAddress + layout->pphwspOffset;
     const uint64_t ringAddress = ggttAddress + layout->ringOffset;
@@ -172,8 +175,11 @@ extern "C" uint32_t lb_lrc_build(const LBLrcLayout *layout, uint64_t ggttAddress
     image.writes[image.writeCount++] = {LB_CTX_PDP0_LDW,
                                         uint32_t(pageDirectoryEntry & 0xFFFFFFFFu)};
     image.writes[image.writeCount++] = {LB_CTX_ASID, asid};
-    // The first ring instruction upstream writes is arbitration enable.
+    // The first ring instruction upstream writes is arbitration enable. It is
+    // a single dword, so a NOOP follows: xe_lrc_write_ring() pads to 8 bytes
+    // and the tail must land on an 8-byte boundary to be encodable.
     image.prologue[image.prologueDwords++] = LB_MI_ARB_ON_OFF | LB_MI_ARB_ENABLE;
+    image.prologue[image.prologueDwords++] = LB_MI_NOOP;
     *out = image;
     return LBLrcOK;
 }
