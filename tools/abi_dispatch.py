@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import argparse
 import importlib.util
+import re
 import struct
 from pathlib import Path
 
@@ -36,8 +37,16 @@ CANDIDATE_SECTIONS = (('__DATA_CONST', '__const'), ('__DATA', '__const'),
                       ('__CONST', '__constdata'))
 # A structure size above this is not an argument check but a coincidence.
 STRUCTURE_SIZE_LIMIT = 1 << 24
+# An entitlement name is the one literal string from the analysed binary that
+# this project records, because an independent driver cannot interoperate
+# without declaring the same identifier. It is therefore bounded to that shape:
+# reverse-DNS, printable, short. Anything else is reported by length only.
+ENTITLEMENT_SHAPE = re.compile(r'^[A-Za-z][A-Za-z0-9]*(?:[.-][A-Za-z0-9]+){2,}$')
+ENTITLEMENT_MAX = 128
 MINIMUM_ENTRIES = 2
 MAX_TABLES = 64
+# How far past a strictly anchored run to keep reading, flagging as it goes.
+EXTENSION_LIMIT = 16
 
 
 def load(name: str, relative: str):
@@ -95,21 +104,40 @@ class Scanner:
             return False, 'chained_or_foreign'
         return False, 'not_executable'
 
-    def _entitlement(self, value: int) -> tuple[bool, str | None]:
+    def _entitlement(self, value: int) -> tuple[bool, str | None, dict]:
+        """The entitlement identifier, if it is shaped like one."""
         if value == 0:
-            return True, None
-        text = self.image.cstring_at(value)
+            return True, None, {}
+        # The field is valid when it points into string data at all. Whether the
+        # text is reproduced is a separate question, answered by its shape.
+        if not self.image.is_cstring_address(value):
+            return False, None, {}
+        text = self.image.cstring_at(value, ENTITLEMENT_MAX + 1)
         if text is None:
-            return False, None
-        return True, text
+            return True, None, {'entitlement_unreadable': True,
+                                'entitlement_bytes': None,
+                                'entitlement_reason': 'longer than '
+                                                      + str(ENTITLEMENT_MAX)
+                                                      + ' characters, or not printable'}
+        if not ENTITLEMENT_SHAPE.match(text):
+            return True, None, {'entitlement_unreadable': True,
+                                'entitlement_bytes': len(text),
+                                'entitlement_reason': 'not shaped like an identifier'}
+        return True, text, {}
 
     def entry(self, blob: bytes, base: int, style: str,
-              relocations: dict | None = None) -> dict | None:
+              relocations: dict | None = None, strict: bool = True) -> dict | None:
         """One candidate entry, or None when it cannot be a dispatch entry.
 
         A linked image holds addresses in its pointer fields. A relocatable
         object holds zero there and names the target in a relocation, so both
         are accepted and the record says which one was read.
+
+        Only structural facts can reject an entry: a pointer that resolves
+        nowhere, an entitlement that is not a string. Zero padding and bounded
+        counts are compiler habits, not ABI guarantees, so in strict mode they
+        anchor a run and outside it they are recorded as anomalies instead of
+        discarding a real table.
         """
         relocations = relocations or {}
         spec = self.styles[style]
@@ -117,24 +145,29 @@ class Scanner:
             return None
         offsets = spec['offsets']
         chunk = blob[base:base + spec['size']]
-        for offset, size in spec['padding']:
-            if any(chunk[offset:offset + size]):
-                return None
+        padding_nonzero = any(any(chunk[offset:offset + size])
+                              for offset, size in spec['padding'])
+        if padding_nonzero and strict:
+            return None
         function = struct.unpack_from('<Q', chunk, offsets['function'])[0]
-        checks = {}
+        checks, implausible = {}, []
         for name, limit in (('checkScalarInputCount', self.scalar_max),
                             ('checkStructureInputSize', STRUCTURE_SIZE_LIMIT),
                             ('checkScalarOutputCount', self.scalar_max),
                             ('checkStructureOutputSize', STRUCTURE_SIZE_LIMIT)):
             value = struct.unpack_from('<I', chunk, offsets[name])[0]
             if not self._count_ok(value, limit):
-                return None
+                if strict:
+                    return None
+                implausible.append(name)
             checks[name] = value
         allow_async = None
         if 'allowAsync' in offsets:
             allow_async = chunk[offsets['allowAsync']]
             if allow_async not in (0, 1):
-                return None
+                if strict:
+                    return None
+                implausible.append('allowAsync')
         entitlement_value = 0
         if 'checkEntitlement' in offsets:
             entitlement_value = struct.unpack_from('<Q', chunk, offsets['checkEntitlement'])[0]
@@ -148,13 +181,17 @@ class Scanner:
         entitlement_relocation = None
         if 'checkEntitlement' in offsets:
             entitlement_relocation = relocations.get(base + offsets['checkEntitlement'])
+        extra: dict = {}
         if entitlement_value == 0 and entitlement_relocation:
             entitlement_ok, entitlement = True, None
         else:
-            entitlement_ok, entitlement = self._entitlement(entitlement_value)
+            entitlement_ok, entitlement, extra = self._entitlement(entitlement_value)
         if not entitlement_ok:
             return None
         return {
+            'padding_nonzero': padding_nonzero,
+            'implausible_fields': implausible,
+            **extra,
             'checks': {
                 'scalar_input_count': self.describe_check(checks['checkScalarInputCount']),
                 'structure_input_size': self.describe_check(checks['checkStructureInputSize']),
@@ -171,10 +208,13 @@ class Scanner:
         }
 
     def describe_check(self, value: int) -> dict:
+        # xnu compares these fields for exact equality, so a value is a
+        # required count or size - not an upper bound.
         if value == self.sentinel:
             return {'variable': True, 'value': value,
                     'meaning': 'any count or size is accepted at this position'}
-        return {'variable': False, 'value': value}
+        return {'variable': False, 'value': value,
+                'meaning': 'exactly this count or size is required'}
 
     def run(self, minimum_entries: int = MINIMUM_ENTRIES) -> list[dict]:
         tables = []
@@ -204,16 +244,35 @@ class Scanner:
             entries = []
             cursor = position
             while True:
-                entry = self.entry(blob, cursor, style, relocations)
+                entry = self.entry(blob, cursor, style, relocations, strict=True)
                 if entry is None:
                     break
                 entries.append(entry)
                 cursor += size
+            if len(entries) >= minimum_entries:
+                # A real table can continue past an entry whose padding or
+                # counts look unusual; extend, flag, and let the reader judge.
+                extensions = 0
+                while extensions < EXTENSION_LIMIT:
+                    entry = self.entry(blob, cursor, style, relocations, strict=False)
+                    if entry is None or not (entry['handler']['address']
+                                             or entry['handler']['symbol']):
+                        break
+                    entry['anchored'] = False
+                    entries.append(entry)
+                    cursor += size
+                    extensions += 1
             if len(entries) >= minimum_entries and any(
                     item['handler']['address'] or item['handler']['symbol']
                     for item in entries):
                 for index, entry in enumerate(entries):
-                    entry['selector'] = index
+                    # The recovered number is the array index. The selector a
+                    # client passes may be this plus a base the subclass
+                    # subtracts before dispatching, which only the call site
+                    # shows, so the wire number stays unknown here.
+                    entry['array_index'] = index
+                    entry['wire_selector'] = None
+                    entry.setdefault('anchored', True)
                 address = section['address'] + position
                 found.append({
                     'style': style,
@@ -225,6 +284,15 @@ class Scanner:
                     'entry_bytes': size,
                     'entry_count': len(entries),
                     'symbol_at_table': self.symbol_index.get(address),
+                    'selector_base': 'unknown: read the subclass externalMethod call site '
+                                     'to learn whether a base is subtracted',
+                    'pointer_form': self._pointer_form(entries, relocations),
+                    'padding_anomalies': sum(1 for entry in entries
+                                             if entry['padding_nonzero']),
+                    'implausible_entries': sum(1 for entry in entries
+                                               if entry['implausible_fields']),
+                    'extended_entries': sum(1 for entry in entries
+                                            if not entry.get('anchored', True)),
                     'named_handlers': sum(1 for entry in entries if entry['handler']['symbol']),
                     'entitlement_gated': sum(1 for entry in entries
                                              if entry['entitlement']
@@ -235,6 +303,23 @@ class Scanner:
                 continue
             position += 8
         return found
+
+
+    def _pointer_form(self, entries: list[dict], relocations: dict) -> str:
+        """How this image stores the pointers — detected, not assumed."""
+        kinds = {entry['handler']['kind'] for entry in entries}
+        kinds.discard('null')
+        if kinds == {'relocation'}:
+            return 'classic_relocations'
+        if kinds == {'executable'}:
+            return 'rebased_addresses'
+        if kinds == {'unchecked'}:
+            return 'unverifiable: no executable section in this image'
+        if not kinds:
+            return 'all_null'
+        if self.image.has_chained_fixups:
+            return 'mixed_with_chained_fixups_present'
+        return 'mixed: ' + ', '.join(sorted(kinds))
 
 
 def confidence(table: dict) -> dict:
@@ -258,6 +343,14 @@ def confidence(table: dict) -> dict:
         score += 1
         reasons.append('the 2022 structure has interior padding, which a coincidence rarely '
                        'satisfies')
+    if table.get('padding_anomalies'):
+        score -= 1
+        reasons.append(str(table['padding_anomalies']) + ' entries carry non-zero padding, '
+                       'which is unusual but not forbidden')
+    if table.get('implausible_entries'):
+        score -= 1
+        reasons.append(str(table['implausible_entries']) + ' entries hold counts outside the '
+                       'documented bounds')
     level = 'high' if score >= 5 else 'medium' if score >= 3 else 'low'
     return {'level': level, 'score': score, 'reasons': reasons,
             'caveat': 'a table is a hypothesis until the dispatch call site is read or a live '
@@ -281,20 +374,20 @@ def probe_plan(table: dict, contract: dict) -> list[dict]:
             if not checks['structure_output_size']['variable'] else 'any',
         }
         if entry['entitlement']:
-            plan.append({'selector': entry['selector'], 'shape': shape,
+            plan.append({'array_index': entry['array_index'], 'shape': shape,
                          'expect': 'kIOReturnNotPrivileged',
                          'expect_value': codes['kIOReturnNotPrivileged']['hex'],
                          'handler_runs': False,
                          'note': 'entitlement is checked after all four shape checks, so this '
                                  'confirms the shape with no side effect'})
         elif not entry['handler']['address']:
-            plan.append({'selector': entry['selector'], 'shape': shape,
+            plan.append({'array_index': entry['array_index'], 'shape': shape,
                          'expect': 'kIOReturnNoCompletion',
                          'expect_value': codes['kIOReturnNoCompletion']['hex'],
                          'handler_runs': False,
                          'note': 'null handler: the driver dispatches this itself'})
         else:
-            plan.append({'selector': entry['selector'], 'shape': shape,
+            plan.append({'array_index': entry['array_index'], 'shape': shape,
                          'expect': 'kIOReturnBadArgument for every wrong shape',
                          'expect_value': codes['kIOReturnBadArgument']['hex'],
                          'handler_runs': True,
@@ -330,6 +423,12 @@ def recover(path: Path, bundle: str | None, minimum_entries: int = MINIMUM_ENTRI
         if image.fileset_entries else [],
         'limits': 'Data fields only. Handler addresses are recorded, never their code; a '
                   'recovered table is a hypothesis about the interface, not a copy of it.',
+        'literal_content': 'The only literal string taken from the analysed binary is an '
+                           'entitlement identifier, and only when it is shaped like one '
+                           '(reverse-DNS, printable, at most ' + str(ENTITLEMENT_MAX)
+                           + ' characters). An independent driver cannot interoperate without '
+                             'declaring the same identifier; anything else resolving at that '
+                             'pointer is recorded by length alone.',
     }
 
 

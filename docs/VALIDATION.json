@@ -937,19 +937,19 @@
     "registers_written": false,
     "apple_binary_read_or_copied": false,
     "hardware_acceleration_established": false,
-    "tests_in_orchestrated_suites": 510
+    "tests_in_orchestrated_suites": 520
   },
   "recon_audit_ci_runs_recorded": false,
   "abi_recovery_tests": {
     "test_type": "Recovered external-method dispatch tables from Mach-O images built in the test, including a compiler-emitted table whose layout clang itself certified through static assertions on every computed size and offset",
     "environment": "Linux x86_64 container, clang 18.1.3 targeting x86_64-apple-macos12",
-    "tests_run": 72,
+    "tests_run": 82,
     "failures": 0,
     "errors": 0,
     "successful": true,
     "suites": {
       "abi_policy": 21,
-      "abi_dispatch": 24,
+      "abi_dispatch": 34,
       "abi_layout_against_clang": 10,
       "collect_platform": 20,
       "macos_graphics_inventory": 12
@@ -961,6 +961,16 @@
     "apple_binary_read_or_copied": false,
     "instruction_bytes_in_any_output": false,
     "ran_on_an_apple_graphics_binary": false,
-    "hardware_acceleration_established": false
+    "hardware_acceleration_established": false,
+    "adversarial_review": {
+      "verdict": "usable_with_corrections",
+      "defects_found_in_shipped_code": 3,
+      "fixed": [
+        "the recovered number was published as a selector when it is an array index; the wire selector may be shifted by a base only the call site shows",
+        "non-zero interior padding discarded a table although zero padding is a compiler habit and not an ABI guarantee",
+        "counts outside the documented bounds discarded entries although the fields are exact requirements rather than maxima"
+      ],
+      "bounded_afterwards": "the entitlement identifier is the one literal string kept, and only in reverse-DNS shape up to 128 characters"
+    }
   }
 }

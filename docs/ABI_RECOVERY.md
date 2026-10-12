@@ -116,6 +116,28 @@ deren Namen. Dazu je Tabelle eine Konfidenz mit Begründung und ein
 **Probe-Plan**, der sagt, welcher Selektor sich nebenwirkungsfrei bestätigen
 lässt (die entitlement-gesicherten) und welcher nicht.
 
+Drei Dinge hält der Scanner nach der adversarialen Gegenprüfung ausdrücklich
+auseinander:
+
+1. **Array-Index ≠ Wire-Selektor.** Ausgegeben wird `array_index`. Welche Nummer
+   ein Client übergibt, kann um eine Basis verschoben sein, die die Subklasse
+   vorher abzieht — das zeigt erst die Call-Site. `wire_selector` bleibt daher
+   `null` und die Tabelle trägt `selector_base: unknown`.
+2. **Prüfwerte sind exakte Anforderungen**, keine Obergrenzen: xnu vergleicht auf
+   Gleichheit. Nur `0xffffffff` akzeptiert jede Größe.
+3. **Null-Padding ist eine Compiler-Gewohnheit, keine ABI-Garantie.** Es verwirft
+   keine Tabelle mehr, sondern senkt die Konfidenz und steht je Eintrag als
+   `padding_nonzero` im Datensatz. Ebenso wird die Zeigerform (klassische
+   Relokationen, rebasierte Adressen, Chained Fixups) **erkannt und benannt**,
+   nicht angenommen.
+
+Der **einzige** wörtliche String aus dem analysierten Binary, der in die Ausgabe
+gelangt, ist ein Entitlement-Bezeichner — und nur, wenn er wie einer aussieht
+(Reverse-DNS, höchstens 128 Zeichen). Ohne ihn kann ein eigener Treiber dieselbe
+Berechtigung nicht deklarieren, also ist er genau der Fall, den die
+Interoperabilitätsausnahme nennt. Alles andere an diesem Zeiger wird nur mit
+Länge vermerkt.
+
 Alle Grenzwerte kommen aus dem Vertrag oben; es gibt keine Magic Numbers im
 Scanner. Belegt ist das Verfahren durch
 [`tests/test_abi_dispatch.py`](../tests/test_abi_dispatch.py): 24 Tests gegen
@@ -149,6 +171,17 @@ laufen.
 | `graphics-inventory.json` | welche Familie unsere `Info.plist` deklarieren muss, welche Basisklasse, welche Methoden zu überschreiben sind, welches Metal-Bundle gegen welchen Client spricht |
 | `dispatch-*.json` | die exakte Selektortabelle, die unser User-Client anbieten muss: Nummern, Argumentformen, Entitlements |
 | Probe-Plan | wie sich jede dieser Formen am laufenden System bestätigen lässt, bevor wir eine Zeile dagegen schreiben |
+
+## Zwei Fallen, die die Gegenprüfung gefunden hat
+
+* `codesign -dvvv --extract-certificates` **schreibt** DER-Dateien (`codesign0`,
+  `codesign1`, …) ins aktuelle Verzeichnis. Aus dem Repository-Wurzelverzeichnis
+  ausgeführt landet damit Apple-Binärinhalt im Baum. Keines unserer Werkzeuge
+  ruft das auf — und du solltest es auch nicht. `codesign -dvvv --verbose=4`
+  liefert Identifier, TeamID und CDHash als Text, das genügt.
+* Eine Kopie des Binaries ist unnötig (das Systemvolume ist versiegelt) und darf
+  **niemals** unterhalb des Repository-Baums landen, auch nicht in `build/`.
+  Unsere Werkzeuge lesen an Ort und Stelle und schreiben nur den Datensatz.
 
 ## Was damit noch nicht erhoben ist
 

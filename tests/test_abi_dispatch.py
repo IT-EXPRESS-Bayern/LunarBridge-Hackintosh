@@ -180,7 +180,7 @@ class RecoversTables(unittest.TestCase):
     def test_every_selector_keeps_its_index_and_shape(self):
         data, _ = build_driver()
         table = [t for t in self.scan(data) if t['style'] == '2022'][0]
-        shapes = [(entry['selector'],
+        shapes = [(entry['array_index'],
                    entry['checks']['scalar_input_count']['value'],
                    entry['checks']['structure_input_size']['value'],
                    entry['checks']['scalar_output_count']['value'],
@@ -250,6 +250,149 @@ class RecoversTables(unittest.TestCase):
         self.assertEqual(table['entry_count'], 4)
 
 
+class ReportsRatherThanTruncates(unittest.TestCase):
+    """A compiler habit must not be able to hide a real table."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.contract = CONTRACT.contract(COMPARE.read_reference)
+
+    def build_with_anomaly(self):
+        """A four-entry table whose last entry has non-zero padding."""
+        image = builder.ImageBuilder()
+        image.section('__TEXT', '__text', b'\x90' * 64, builder.TEXT_FLAGS)
+        probe_image, _ = image.build()
+        probe = MACHO.open_image(probe_image, 'probe')
+        handlers = [probe.section('__TEXT', '__text')['address'] + index * 16
+                    for index in range(4)]
+        dirty = bytearray(builder.dispatch_entry_2022(handlers[3], 1, 0, 0, 8))
+        dirty[25] = 0x01  # a byte the ABI leaves undefined
+        final = builder.ImageBuilder()
+        final.section('__TEXT', '__text', b'\x90' * 64, builder.TEXT_FLAGS)
+        final.section('__DATA_CONST', '__const',
+                      builder.dispatch_entry_2022(handlers[0], 2, 0, 0, 48)
+                      + builder.dispatch_entry_2022(handlers[1], 0, 480, 0, 80)
+                      + builder.dispatch_entry_2022(handlers[2], 0, 0, 0, 0)
+                      + bytes(dirty))
+        data, _ = final.build()
+        return data
+
+    def test_a_padding_anomaly_extends_the_table_instead_of_ending_it(self):
+        image = MACHO.open_image(self.build_with_anomaly(), 'anomaly')
+        tables = [table for table in DISPATCH.Scanner(image, self.contract).run()
+                  if table['style'] == '2022']
+        self.assertTrue(tables)
+        table = max(tables, key=lambda entry: entry['entry_count'])
+        self.assertEqual(table['entry_count'], 4)
+        self.assertEqual(table['padding_anomalies'], 1)
+        self.assertEqual(table['extended_entries'], 1)
+        self.assertTrue(table['entries'][3]['padding_nonzero'])
+        self.assertFalse(table['entries'][3]['anchored'])
+
+    def test_an_anomaly_lowers_confidence_with_a_stated_reason(self):
+        image = MACHO.open_image(self.build_with_anomaly(), 'anomaly')
+        table = max((t for t in DISPATCH.Scanner(image, self.contract).run()
+                     if t['style'] == '2022'), key=lambda entry: entry['entry_count'])
+        verdict = DISPATCH.confidence(table)
+        self.assertTrue(any('non-zero padding' in reason for reason in verdict['reasons']))
+
+    def test_the_recovered_number_is_an_array_index_not_a_wire_selector(self):
+        data, _ = build_driver()
+        image = MACHO.open_image(data, 'synthetic')
+        table = [t for t in DISPATCH.Scanner(image, self.contract).run()
+                 if t['style'] == '2022'][0]
+        self.assertEqual([entry['array_index'] for entry in table['entries']], [0, 1, 2, 3])
+        self.assertTrue(all(entry['wire_selector'] is None for entry in table['entries']))
+        self.assertIn('unknown', table['selector_base'])
+
+    def test_a_check_states_that_it_is_an_exact_requirement(self):
+        data, _ = build_driver()
+        image = MACHO.open_image(data, 'synthetic')
+        table = [t for t in DISPATCH.Scanner(image, self.contract).run()
+                 if t['style'] == '2022'][0]
+        exact = table['entries'][0]['checks']['structure_output_size']
+        self.assertIn('exactly', exact['meaning'])
+        variable = table['entries'][2]['checks']['structure_input_size']
+        self.assertIn('any count', variable['meaning'])
+
+    def test_the_pointer_form_is_detected_and_named(self):
+        data, _ = build_driver()
+        image = MACHO.open_image(data, 'synthetic')
+        table = [t for t in DISPATCH.Scanner(image, self.contract).run()
+                 if t['style'] == '2022'][0]
+        self.assertEqual(table['pointer_form'], 'rebased_addresses')
+
+
+class BoundsLiteralContent(unittest.TestCase):
+    """The entitlement identifier is the one literal string we keep, so its
+    shape is enforced rather than trusted."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.contract = CONTRACT.contract(COMPARE.read_reference)
+
+    def build_with_string(self, text: bytes):
+        image = builder.ImageBuilder()
+        image.section('__TEXT', '__text', b'\x90' * 32, builder.TEXT_FLAGS)
+        image.section('__TEXT', '__cstring', text + b'\0', builder.S_CSTRING_LITERALS)
+        probe_image, _ = image.build()
+        probe = MACHO.open_image(probe_image, 'probe')
+        handler = probe.section('__TEXT', '__text')['address']
+        string_address = probe.section('__TEXT', '__cstring')['address']
+        final = builder.ImageBuilder()
+        final.section('__TEXT', '__text', b'\x90' * 32, builder.TEXT_FLAGS)
+        final.section('__TEXT', '__cstring', text + b'\0', builder.S_CSTRING_LITERALS)
+        final.section('__DATA_CONST', '__const',
+                      builder.dispatch_entry_2022(handler, 0, 0, 0, 0,
+                                                  entitlement=string_address)
+                      + builder.dispatch_entry_2022(handler, 1, 0, 0, 0,
+                                                    entitlement=string_address))
+        data, _ = final.build()
+        image = MACHO.open_image(data, 'strings')
+        tables = [table for table in DISPATCH.Scanner(image, self.contract).run()
+                  if table['style'] == '2022']
+        return tables[0]['entries'][0] if tables else None
+
+    def test_an_identifier_shaped_entitlement_is_kept(self):
+        entry = self.build_with_string(b'com.apple.private.gpu.submit')
+        self.assertEqual(entry['entitlement'], 'com.apple.private.gpu.submit')
+        self.assertNotIn('entitlement_unreadable', entry)
+
+    def test_prose_at_that_pointer_is_recorded_by_length_only(self):
+        entry = self.build_with_string(b'this is not an entitlement, it is a sentence')
+        self.assertIsNone(entry['entitlement'])
+        self.assertTrue(entry['entitlement_unreadable'])
+        self.assertEqual(entry['entitlement_bytes'],
+                         len('this is not an entitlement, it is a sentence'))
+
+    def test_an_overlong_string_is_not_reproduced_but_the_entry_survives(self):
+        entry = self.build_with_string(b'com.apple.' + b'a' * 200)
+        self.assertIsNotNone(entry, 'the entry was discarded instead of flagged')
+        self.assertIsNone(entry['entitlement'])
+        self.assertTrue(entry['entitlement_unreadable'])
+        self.assertIsNone(entry['entitlement_bytes'])
+        self.assertIn('longer than', entry['entitlement_reason'])
+
+    def test_a_pointer_into_non_string_data_still_rejects_the_entry(self):
+        # A field pointing at something that is not string data is structural
+        # evidence that this window is not a dispatch entry at all.
+        data, expected = build_driver()
+        image = MACHO.open_image(data, 'synthetic')
+        scanner = DISPATCH.Scanner(image, self.contract)
+        ok, text, extra = scanner._entitlement(expected['handlers'][0])
+        self.assertFalse(ok)
+        self.assertIsNone(text)
+
+    def test_the_record_states_the_one_literal_it_keeps(self):
+        data, _ = build_driver()
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'driver'
+            path.write_bytes(data)
+            record = DISPATCH.recover(path, None)
+        self.assertIn('entitlement identifier', record['literal_content'])
+        self.assertEqual(POLICY.check_record(record), [])
+
+
 class JudgesAndPlans(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -269,6 +412,7 @@ class JudgesAndPlans(unittest.TestCase):
         self.assertEqual(len(plan), 4)
         entitled = [step for step in plan if step['expect'] == 'kIOReturnNotPrivileged']
         self.assertEqual(len(entitled), 2)
+        self.assertTrue(all('array_index' in step for step in plan))
         for step in entitled:
             self.assertFalse(step['handler_runs'])
             self.assertEqual(step['expect_value'], '0xe00002c1')
