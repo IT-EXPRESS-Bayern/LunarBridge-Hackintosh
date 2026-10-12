@@ -37,7 +37,10 @@ jüngste Familie ist Ice Lake (Gen11):
 * `com.apple.driver.AppleIntelICLLPGraphicsFramebuffer` und
   `…ICLHPGraphicsFramebuffer` – Displayseite
 
-Für Gen12, Xe oder Xe2 existiert **kein** Apple-Treiber. Es gibt damit keinen
+Für Gen12, Xe oder Xe2 existiert **kein** Apple-Treiber. Die öffentliche
+Plattformtabelle stellt das ausdrücklich fest: Rocket Lake, Alder Lake, Raptor
+Lake und Arrow Lake setzen gemeinsam `gPlatformGraphicsSupported = false`;
+Lunar Lake erscheint dort nicht einmal. Es gibt damit keinen
 „Arc-Treiber von macOS", der modifiziert werden könnte: Die macOS-Seite dieses
 Vergleichs ist der **Kernel- und Userclient-Kontrakt**, nicht ein Intel-Treiber.
 Der Arc-Treiber, der tatsächlich existiert und Schnittstellen beschreibt, ist

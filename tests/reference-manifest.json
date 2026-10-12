@@ -239,6 +239,11 @@
       "path": "linux-v6.17/drivers/gpu/drm/xe/instructions/xe_instr_defs.h",
       "url": "https://raw.githubusercontent.com/torvalds/linux/e5f0a698b34ed76002dc5cff3804a61c80233a7a/drivers/gpu/drm/xe/instructions/xe_instr_defs.h",
       "sha256": "d34573ea85ba26e0d3ccc7fe4f9e1b4431f9acdc9afb53a2fa7d3ace6534f7aa"
+    },
+    {
+      "path": "apple-driver-surface/WhateverGreen-093e76f/WhateverGreen/kern_igfx.cpp",
+      "url": "https://raw.githubusercontent.com/acidanthera/WhateverGreen/093e76fec5655001f38b367dd22459c756ee89fa/WhateverGreen/kern_igfx.cpp",
+      "sha256": "a2586597162c8fe4e332161cfbcabe7dbfb446909632a332e2a2c016f8d1700a"
     }
   ]
 }

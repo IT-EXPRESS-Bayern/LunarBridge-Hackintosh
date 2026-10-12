@@ -741,6 +741,8 @@ class AppleBundleShape(unittest.TestCase):
         cls.framebuffer = TOOL.read_reference(
             'macos-tahoe/IOGraphics-600/IOGraphicsFamily/IOKit/graphics/IOFramebuffer.h')
         cls.info = plistlib.loads((ROOT / 'native/Info.plist').read_bytes())
+        cls.igfx = TOOL.read_reference(
+            'apple-driver-surface/WhateverGreen-093e76f/WhateverGreen/kern_igfx.cpp')
 
     def test_icl_ships_one_accelerator_and_two_framebuffers(self):
         bundles = re.findall(r'KernelPatcher::KextInfo\s+kextIntel(\w+)\s*\{\s*"([\w.]+)"',
@@ -753,6 +755,31 @@ class AppleBundleShape(unittest.TestCase):
         # Newer families would have to appear here before Xe2 had a template.
         self.assertFalse([name for name, _ in bundles
                           if name.startswith(('TGL', 'ADL', 'MTL', 'LNL'))])
+
+    def test_the_icl_split_names_one_primary_and_one_optional_framebuffer(self):
+        case = re.search(r'case CPUInfo::CpuGeneration::IceLake:(.*?)break;', self.igfx,
+                         re.S).group(1)
+        self.assertIn('currentGraphics = &kextIntelICL;', case)
+        self.assertIn('currentFramebuffer = &kextIntelICLLPFb;', case)
+        self.assertIn('currentFramebufferOpt = &kextIntelICLHPFb;', case)
+        # Coffee Lake has no accelerator bundle because it reuses Kaby Lake's,
+        # not because Apple ships framebuffer-only drivers.
+        comet = re.search(r'case CPUInfo::CpuGeneration::CometLake:(.*?)break;', self.igfx,
+                          re.S).group(1)
+        self.assertIn('currentGraphics = &kextIntelKBL;', comet)
+
+    def test_post_ice_lake_intel_platforms_are_explicitly_unsupported(self):
+        block = re.search(r'case CPUInfo::CpuGeneration::RocketLake:(.*?)break;', self.igfx,
+                          re.S).group(1)
+        for platform in ('AlderLake', 'RaptorLake', 'ArrowLake'):
+            self.assertIn('case CPUInfo::CpuGeneration::' + platform + ':', block)
+        self.assertIn('gPlatformGraphicsSupported = false;', block)
+        # Lunar Lake is not even in that list, and its device id belongs to the
+        # Linux Lunar Lake set rather than to any Apple-supported generation.
+        self.assertNotIn('LunarLake', self.igfx)
+        pciids = TOOL.read_reference('linux-v6.17/include/drm/intel/pciids.h')
+        lnl = re.search(r'#define INTEL_LNL_IDS\(MACRO__, \.\.\.\)(.*?)\n\n', pciids, re.S)
+        self.assertIn('0x64A0', lnl.group(1))
 
     def test_the_published_framebuffer_contract_cannot_be_completed(self):
         pure_virtual = re.findall(r'virtual\s[^;{]*?=\s*0\s*;', self.framebuffer, re.S)

@@ -12,7 +12,10 @@ auf dem die Form aufsetzt, in [ARC_INTERFACE_DIFF.md](ARC_INTERFACE_DIFF.md).
 Apples jüngster Intel-Grafiktreiber ist `AppleIntelICLGraphics`, dazu die zwei
 SKU-Displaybundles `AppleIntelICLLPGraphicsFramebuffer` und
 `AppleIntelICLHPGraphicsFramebuffer` — Ice Lake, Gen11. Für Gen12, Xe oder Xe2
-liefert Apple **keinen** Treiber. Es gibt deshalb keinen „letzten kompatiblen
+liefert Apple **keinen** Treiber — die öffentliche Plattformtabelle sagt es
+ausdrücklich: Rocket Lake, Alder Lake, Raptor Lake und Arrow Lake fallen
+gemeinsam auf `gPlatformGraphicsSupported = false`, und Lunar Lake kommt dort
+überhaupt nicht vor. Es gibt deshalb keinen „letzten kompatiblen
 Arc-Treiber" von Apple, den man modifizieren könnte: der letzte kompatible
 Apple-Treiber ist eine Generation **ohne** Arc-Hardware, und der einzige
 Treiber, der Arc 130V wirklich beschreibt, ist der Linux-Xe-Treiber.
@@ -162,7 +165,7 @@ sowie PXP, Run-Alone, OA und Parallel-Submission.
 
 | Nachweis | Umfang |
 | --- | --- |
-| `tests/test_arc_port.py` | 29 Tests: **jeder** erwartete Wert wird aus den gepinnten Intel-Quellen geparst und gegen das kompilierte Modul geprüft — alle 32 Tabellenwerte, alle 32 Registeroffsets, die Cache-Indizes, Layout, Dword-Offsets, Steuerworte, Deskriptor, PDE und Ringinstruktion; dazu die Bundle-Form des Apple-Vorbilds |
+| `tests/test_arc_port.py` | 31 Tests: **jeder** erwartete Wert wird aus den gepinnten Intel-Quellen geparst und gegen das kompilierte Modul geprüft — alle 32 Tabellenwerte, alle 32 Registeroffsets, die Cache-Indizes, Layout, Dword-Offsets, Steuerworte, Deskriptor, PDE und Ringinstruktion; dazu die Bundle-Form des Apple-Vorbilds |
 | `tests/test_arc_interface.py` | 52 Tests, einschließlich der vom LRC-Port zusammengesetzten GuC-Registrierung und des Portberichts von Selector 9 |
 | `tests/test_interface_diff.py` | 13 Tests des Schnittstellenvergleichs gegen dieselben Pins |
 | `tests/test_kernel_build_contract.py` | Kernelflags und Quellenzahl des Kextbuilds, jetzt 16 Kernelquellen |
@@ -178,7 +181,11 @@ Die Erwartungswerte stehen nicht im Test, sondern werden aus `xe_pat.c`,
 
 Apple teilt die ICL-Generation in **drei** getrennte Kexte unter
 `/System/Library/Extensions`: einen Accelerator (`AppleIntelICLGraphics`) und
-zwei SKU-Framebuffer (`…ICLLPGraphicsFramebuffer`, `…ICLHPGraphicsFramebuffer`).
+zwei SKU-Framebuffer. Die Aufteilung ist nicht symmetrisch: LP ist der primäre,
+HP der optionale Slot (`currentFramebuffer` gegen `currentFramebufferOpt`).
+Coffee Lake hat übrigens kein eigenes Accelerator-Bundle, weil es den
+Kaby-Lake-Accelerator mitbenutzt — nicht, weil Apple framebufferlose Treiber
+ausliefert.
 Der Mach-O-Name jedes Bundles ist die Bundle-ID ohne das Präfix
 `com.apple.driver.Apple`. ICL ist die einzige Generation dieser Liste mit zwei
 Framebuffer-Bundles für einen Accelerator.
@@ -235,4 +242,7 @@ nachweisbar, und ein Metal-Gerät existiert nicht.
 4. GuC-Ladefolge portieren (DMA-Register, Statuspolling, Authentifizierung),
    dann Registrierung und Submit mit echtem Fenceabschluss.
 5. Erst danach die Display- und Metal-Seite, für die der öffentliche
-   IOAccel-Vertrag nicht ausreicht.
+   IOAccel-Vertrag nicht ausreicht. Welche Klassen, Familienabhängigkeiten und
+   IOKit-Methoden dort gebraucht werden, lässt sich aus dem letzten
+   kompatiblen Apple-Treiber erheben — Werkzeug, Grenzen und rechtlicher Rahmen
+   stehen in der [Apple-Treiberanalyse](APPLE_DRIVER_ANALYSIS.md).

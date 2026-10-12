@@ -10,6 +10,8 @@ on:
       - tests/test_arc_interface.py
       - tests/test_interface_diff.py
       - tests/test_arc_port.py
+      - tests/test_apple_driver_analysis.py
+      - tools/analyze_apple_driver.py
       - tests/reference-manifest.json
       - docs/ARC_INTERFACE_DIFF.json
       - .github/workflows/interface-diff.yml
@@ -22,6 +24,8 @@ on:
       - tests/test_arc_interface.py
       - tests/test_interface_diff.py
       - tests/test_arc_port.py
+      - tests/test_apple_driver_analysis.py
+      - tools/analyze_apple_driver.py
       - tests/reference-manifest.json
       - docs/ARC_INTERFACE_DIFF.json
       - .github/workflows/interface-diff.yml
@@ -59,6 +63,7 @@ jobs:
           python3 -B tests/test_interface_diff.py build/interface/libarcinterface.so
           python3 -B tests/test_arc_port.py build/interface/libarcinterface.so \
             --report build/interface/arc-port-test-report.json
+          python3 -B tests/test_apple_driver_analysis.py
       - name: Verify the compiled table and the committed comparison record
         run: |
           python3 -B tools/compare_interfaces.py --library build/interface/libarcinterface.so \
