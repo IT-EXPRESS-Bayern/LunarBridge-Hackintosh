@@ -64,6 +64,21 @@ Index 2 ist genau der Wert, den der [GGTT-Planer](GGTT_BINDING.md) schon als
 `LB_GGTT_XE2_WB_PAT_VALUE` kodiert; der Port erzwingt diese Übereinstimmung
 jetzt per `static_assert` statt per Kommentar.
 
+**Programmiert heißt nicht nutzbar.** Ein PPGTT-Leaf-Eintrag verteilt fünf
+PAT-Bits (3, 4, 7, 62, 61) — daher die 32 Einträge. Ein Verzeichniseintrag
+kodiert nur die PAT-Bits 1:0, und ein GGTT-Eintrag trägt ebenfalls nur zwei;
+`xe_ggtt.c` setzt dafür ausdrücklich `xe_assert(xe, pat_index <= 3)`. Write-Back
+(2) und Uncached (3) sind damit global bindbar, Write-Through (15) und
+Uncached-mit-Kompression (12) **nicht**. `lb_xe2_pat_index_spaces()` gibt diese
+Erreichbarkeit je Index zurück, der Portbericht trägt `patGgttMaxIndex = 3`,
+und der Userspace-Dekoder weist einen Bericht ab, der das anders behauptet.
+
+Eine zweite Korrektur betrifft Forcewake: Im PAT-**Programmierpfad** nimmt
+Upstream keinen Wake — jeder `xe_force_wake_get` in `xe_pat.c` steht in einem
+Dump-Pfad, weil die Programmierung in der frühen GT-Initialisierung läuft. Die
+Wake-Anforderung dieses Ports ist also eine eigene konservative Regel und als
+solche im Header vermerkt, keine Upstream-Tatsache.
+
 Weitere portierte Eigenschaften: Der Grafik-GT verlangt Multicast-Schreibzugriffe,
 der Media-GT einfache MMIO-Writes. `pat_pta` programmiert Linux nur auf
 diskreten Geräten — Lunar Lake ist integriert, ein „discrete"-Aufruf wird
@@ -113,8 +128,8 @@ sowie PXP, Run-Alone, OA und Parallel-Submission.
 
 | Nachweis | Umfang |
 | --- | --- |
-| `tests/test_arc_port.py` | 26 Tests: **jeder** erwartete Wert wird aus den gepinnten Intel-Quellen geparst und gegen das kompilierte Modul geprüft — alle 32 Tabellenwerte, alle 32 Registeroffsets, die Cache-Indizes, Layout, Dword-Offsets, Steuerworte, Deskriptor, PDE und Ringinstruktion; dazu die Bundle-Form des Apple-Vorbilds |
-| `tests/test_arc_interface.py` | 51 Tests, einschließlich der vom LRC-Port zusammengesetzten GuC-Registrierung und des Portberichts von Selector 9 |
+| `tests/test_arc_port.py` | 28 Tests: **jeder** erwartete Wert wird aus den gepinnten Intel-Quellen geparst und gegen das kompilierte Modul geprüft — alle 32 Tabellenwerte, alle 32 Registeroffsets, die Cache-Indizes, Layout, Dword-Offsets, Steuerworte, Deskriptor, PDE und Ringinstruktion; dazu die Bundle-Form des Apple-Vorbilds |
+| `tests/test_arc_interface.py` | 52 Tests, einschließlich der vom LRC-Port zusammengesetzten GuC-Registrierung und des Portberichts von Selector 9 |
 | `tests/test_interface_diff.py` | 13 Tests des Schnittstellenvergleichs gegen dieselben Pins |
 | `tests/test_kernel_build_contract.py` | Kernelflags und Quellenzahl des Kextbuilds, jetzt 16 Kernelquellen |
 | `.github/workflows/interface-diff.yml` | Linux-CI: Quellen holen, Module bauen, alle drei Suiten |

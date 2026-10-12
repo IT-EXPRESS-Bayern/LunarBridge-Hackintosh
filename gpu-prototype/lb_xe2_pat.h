@@ -51,6 +51,12 @@ enum LBPatResult : uint32_t {
 enum LBPatGtKind : uint32_t { LBPatGraphicsGt = 0, LBPatMediaGt = 1 };
 
 // xe_pat_init_early() records these indices for the generic cache modes.
+// Address spaces an index can actually be encoded into.
+enum LBPatSpace : uint32_t {
+    LBPatSpacePpgttLeaf = 1 << 0, LBPatSpacePpgttDirectory = 1 << 1,
+    LBPatSpaceGgtt = 1 << 2
+};
+
 enum LBPatCacheKind : uint32_t {
     LBPatCacheNone = 0, LBPatCacheWriteThrough = 1, LBPatCacheWriteBack = 2,
     LBPatCacheNoneCompression = 3, LBPatCacheKindCount = 4
@@ -59,8 +65,19 @@ constexpr uint32_t LB_PAT_INDEX_NONE = 3;
 constexpr uint32_t LB_PAT_INDEX_WT = 15;
 constexpr uint32_t LB_PAT_INDEX_WB = 2;
 constexpr uint32_t LB_PAT_INDEX_NONE_COMPRESSION = 12;
+// A programmed index is not automatically a usable one. A PPGTT leaf entry
+// scatters five PAT bits (3, 4, 7, 62, 61), so all 32 indices are reachable.
+// A page-directory entry encodes only PAT bits 1:0, and a GGTT entry carries
+// only two PAT bits as well, with xe_ggtt.c asserting pat_index <= 3. Write-
+// through (15) and uncached-with-compression (12) are therefore leaf-only.
+constexpr uint32_t LB_PAT_GGTT_MAX_INDEX = 3;
+constexpr uint32_t LB_PAT_DIRECTORY_MAX_INDEX = 3;
 
 // Hardware work the plan cannot do for the caller. All of it is still missing.
+// Note on the wake requirement: upstream takes no forcewake in the PAT
+// programming path at all (every forcewake in xe_pat.c sits in a dump path),
+// because the programming runs during early GT init. Holding the wake across
+// these writes is this project's own conservative rule, not an upstream fact.
 enum LBPatQualification : uint32_t {
     LBPatQualForcewake = 1 << 0,      // GT wake held across every write
     LBPatQualMappedBar = 1 << 1,      // BAR mapped and long enough
@@ -92,6 +109,9 @@ LNL_API uint32_t lb_xe2_pat_entry_value(uint32_t index, uint32_t *out);
 LNL_API uint32_t lb_xe2_pat_register_offset(uint32_t index, uint32_t *out);
 // Index Linux records for a generic cache mode on Xe2.
 LNL_API uint32_t lb_xe2_pat_index_for_cache(uint32_t cacheKind, uint32_t *out);
+// Which address spaces can encode one index. A caller that asks for an index a
+// space cannot carry gets told here instead of silently losing the high bits.
+LNL_API uint32_t lb_xe2_pat_index_spaces(uint32_t index, uint32_t *spaces);
 // Build the full ordered write plan: indices ascending, then ATS, then PTA on
 // a discrete device. Fails for any platform, GT kind or BAR this port has not
 // qualified; a failure leaves every output byte unchanged.

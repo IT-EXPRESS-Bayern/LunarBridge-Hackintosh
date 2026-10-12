@@ -50,7 +50,7 @@ class ArcPortReport(c.Structure):
         'lrcWriteCount', 'patProgrammed', 'lrcSubmitted')] + [
         (n, c.c_uint64) for n in ('lrcRenderTotalBytes', 'lrcComputeTotalBytes',
                                   'lrcDescriptorTemplate')] + [
-        ('requiredQualifications', c.c_uint32), ('reserved', c.c_uint32)]
+        ('requiredQualifications', c.c_uint32), ('patGgttMaxIndex', c.c_uint32)]
 
 class ArcDecision(c.Structure):
     _fields_ = [(n, c.c_uint32) for n in (
@@ -202,9 +202,12 @@ def decode_arc_interface(data):
 def decode_arc_port_report(data):
     if len(data) != c.sizeof(ArcPortReport): raise ValueError('Arc port report length mismatch')
     r = ArcPortReport.from_buffer_copy(data)
-    if r.abi != 1 or r.structBytes != c.sizeof(ArcPortReport) or r.reserved or \
+    if r.abi != 1 or r.structBytes != c.sizeof(ArcPortReport) or \
        r.patProgrammed or r.lrcSubmitted:
         raise ValueError('Arc port report ABI mismatch')
+    # A GGTT entry carries two PAT bits, so only indices 0..3 are bindable.
+    if r.patGgttMaxIndex != 3 or r.patIndexWriteBack > r.patGgttMaxIndex:
+        raise ValueError('Arc port report PAT reachability mismatch')
     # The ported Lunar Lake plan: 32 index registers plus the ATS entry, the
     # write-back index the GGTT planner encodes, and two context sizes.
     if r.patEntryCount != 32 or r.patWriteCount != 33 or r.patIndexWriteBack != 2 or \
@@ -230,6 +233,7 @@ def decode_arc_port_report(data):
             'lrc_write_count': int(r.lrcWriteCount),
             'lrc_descriptor_template': int(r.lrcDescriptorTemplate),
             'required_qualifications': int(r.requiredQualifications),
+            'pat_ggtt_max_index': int(r.patGgttMaxIndex),
             'pat_programmed_on_hardware': False, 'lrc_submitted': False,
             'gpu_execution_implemented': False}
 

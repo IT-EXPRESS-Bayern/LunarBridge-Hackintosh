@@ -112,7 +112,7 @@ class PortReport(c.Structure):
         'lrcWriteCount', 'patProgrammed', 'lrcSubmitted')] + [
         (name, c.c_uint64) for name in ('lrcRenderTotalBytes', 'lrcComputeTotalBytes',
                                         'lrcDescriptorTemplate')] + [
-        ('requiredQualifications', c.c_uint32), ('reserved', c.c_uint32)]
+        ('requiredQualifications', c.c_uint32), ('patGgttMaxIndex', c.c_uint32)]
 
 
 class Request(c.Structure):
@@ -750,9 +750,15 @@ class PortedModuleReport(ArcInterfaceCase):
         self.assertEqual(self.report.lrcDescriptorTemplate, 0x119)
 
     def test_report_claims_no_hardware_state(self):
-        self.assertEqual((self.report.patProgrammed, self.report.lrcSubmitted,
-                          self.report.reserved), (0, 0, 0))
+        self.assertEqual((self.report.patProgrammed, self.report.lrcSubmitted), (0, 0))
         self.assertTrue(self.report.requiredQualifications)
+
+    def test_report_states_which_indices_a_ggtt_entry_can_carry(self):
+        # Write-through 15 and compression 12 are programmed but not bindable.
+        self.assertEqual(self.report.patGgttMaxIndex, 3)
+        self.assertLessEqual(self.report.patIndexWriteBack, self.report.patGgttMaxIndex)
+        self.assertGreater(self.report.patIndexWriteThrough, self.report.patGgttMaxIndex)
+        self.assertGreater(self.report.patIndexNoneCompression, self.report.patGgttMaxIndex)
 
     def test_report_output_contract(self):
         report = PortReport()
@@ -770,6 +776,7 @@ class PortedModuleReport(ArcInterfaceCase):
         self.assertEqual(decoded['pat_write_count'], 33)
         self.assertEqual(decoded['pat_indices']['write_back'], 2)
         self.assertEqual(decoded['lrc_image_pages'], {'render': 3, 'compute': 2})
+        self.assertEqual(decoded['pat_ggtt_max_index'], 3)
         self.assertFalse(decoded['pat_programmed_on_hardware'])
         self.assertFalse(decoded['lrc_submitted'])
         forged = PortReport.from_buffer_copy(bytes(self.report))

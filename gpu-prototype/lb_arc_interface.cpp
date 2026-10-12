@@ -263,6 +263,7 @@ extern "C" uint32_t lb_arc_interface_port_report(LBArcPortReport *out, uint32_t 
         (LB_LRC_REQUIRED_QUALIFICATIONS << 8);
     report.patProgrammed = 0;
     report.lrcSubmitted = 0;
+    report.patGgttMaxIndex = LB_PAT_GGTT_MAX_INDEX;
     *out = report;
     return LBArcOK;
 }

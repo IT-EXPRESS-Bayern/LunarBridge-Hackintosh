@@ -181,7 +181,9 @@ struct LBArcPortReport {
     uint64_t lrcRenderTotalBytes, lrcComputeTotalBytes, lrcDescriptorTemplate;
     // Low byte: LBPatQualification bits. Second byte: LBLrcQualification bits
     // shifted left by 8. Both sets are still entirely missing.
-    uint32_t requiredQualifications, reserved;
+    // patGgttMaxIndex is the highest PAT index a GGTT entry can carry at all;
+    // a programmed index above it exists but cannot be bound globally.
+    uint32_t requiredQualifications, patGgttMaxIndex;
 };
 
 struct LBArcSyncPoint {

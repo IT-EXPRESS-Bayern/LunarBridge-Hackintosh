@@ -85,6 +85,17 @@ extern "C" uint32_t lb_xe2_pat_index_for_cache(uint32_t cacheKind, uint32_t *out
     }
 }
 
+extern "C" uint32_t lb_xe2_pat_index_spaces(uint32_t index, uint32_t *spaces) {
+    if (!spaces || (reinterpret_cast<uintptr_t>(spaces) & 3)) return LBPatInput;
+    if (index >= LB_PAT_ENTRIES) return LBPatIndex;
+    // Five scattered PAT bits in a leaf entry; two in a directory or GGTT one.
+    uint32_t reachable = LBPatSpacePpgttLeaf;
+    if (index <= LB_PAT_DIRECTORY_MAX_INDEX) reachable |= LBPatSpacePpgttDirectory;
+    if (index <= LB_PAT_GGTT_MAX_INDEX) reachable |= LBPatSpaceGgtt;
+    *spaces = reachable;
+    return LBPatOK;
+}
+
 extern "C" uint32_t lb_xe2_pat_plan(uint32_t graphicsVerX100, uint32_t gtKind,
                                     uint32_t discrete, uint64_t mappedBarBytes,
                                     LBPatPlan *out, uint32_t outputBytes) {

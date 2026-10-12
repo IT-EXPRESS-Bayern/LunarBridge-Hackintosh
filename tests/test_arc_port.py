@@ -38,6 +38,8 @@ PAT_OK, PAT_INPUT, PAT_PLATFORM, PAT_RANGE, PAT_INDEX, PAT_CACHE_KIND, \
     PAT_READBACK, PAT_ALIASING, PAT_ALIGNMENT = range(9)
 GRAPHICS_GT, MEDIA_GT = 0, 1
 CACHE_NONE, CACHE_WT, CACHE_WB, CACHE_NONE_COMPRESSION = range(4)
+SPACE_PPGTT_LEAF, SPACE_PPGTT_DIRECTORY, SPACE_GGTT = 1, 2, 4
+XE_GGTT = 'linux-v6.17/drivers/gpu/drm/xe/xe_ggtt.c'
 # lb_lrc.h results
 LRC_OK, LRC_INPUT, LRC_ALIGNMENT, LRC_RANGE, LRC_ENGINE, LRC_UNSUPPORTED, \
     LRC_ALIASING, LRC_CAPACITY, LRC_POLICY, LRC_ABI = range(10)
@@ -151,6 +153,7 @@ def bind_library(path):
     DLL.lb_xe2_pat_entry_value.argtypes = [c.c_uint32, c.POINTER(c.c_uint32)]
     DLL.lb_xe2_pat_register_offset.argtypes = [c.c_uint32, c.POINTER(c.c_uint32)]
     DLL.lb_xe2_pat_index_for_cache.argtypes = [c.c_uint32, c.POINTER(c.c_uint32)]
+    DLL.lb_xe2_pat_index_spaces.argtypes = [c.c_uint32, c.POINTER(c.c_uint32)]
     DLL.lb_xe2_pat_plan.argtypes = [c.c_uint32, c.c_uint32, c.c_uint32, c.c_uint64,
                                     c.POINTER(PatPlan), c.c_uint32]
     DLL.lb_xe2_pat_check_readback.argtypes = [c.POINTER(PatPlan), c.POINTER(c.c_uint32),
@@ -264,6 +267,49 @@ class PortedPatTable(unittest.TestCase):
             self.assertEqual(DLL.lb_xe2_pat_register_offset(index, c.byref(value)), PAT_INDEX)
         self.assertEqual(value.value, 0xDEAD)
         self.assertEqual(DLL.lb_xe2_pat_entry_value(0, None), PAT_INPUT)
+
+    def test_index_reachability_matches_the_pinned_encoders(self):
+        ggtt = TOOL.read_reference(XE_GGTT)
+        vm = TOOL.read_reference(XE_VM)
+        gtt_defs = TOOL.read_reference(GTT_DEFS)
+        # A GGTT entry asserts the limit outright; a directory entry carries
+        # only PAT bits 1:0; a leaf entry scatters all five bits.
+        self.assertIn('xe_assert(xe, pat_index <= 3);', ggtt)
+        directory = re.search(r'static u64 pde_encode_pat_index.*?\n\}', vm, re.S).group(0)
+        self.assertEqual(len(re.findall(r'XE_PPGTT_PTE_PAT\d', directory)), 2)
+        leaf = re.search(r'static u64 pte_encode_pat_index.*?\n\}', vm, re.S).group(0)
+        self.assertEqual(len(re.findall(r'BIT\((\d)\)', leaf)), 5)
+        for name in ('XELPG_GGTT_PTE_PAT0', 'XELPG_GGTT_PTE_PAT1', 'XE_PPGTT_PTE_PAT2',
+                     'XELPG_PPGTT_PTE_PAT3', 'XE2_PPGTT_PTE_PAT4'):
+            self.assertIn(name, gtt_defs)
+        spaces = c.c_uint32()
+        for index in range(PAT_ENTRIES):
+            with self.subTest(index=index):
+                self.assertEqual(DLL.lb_xe2_pat_index_spaces(index, c.byref(spaces)), PAT_OK)
+                expected = SPACE_PPGTT_LEAF
+                if index <= 3:
+                    expected |= SPACE_PPGTT_DIRECTORY | SPACE_GGTT
+                self.assertEqual(spaces.value, expected)
+        # Write-through and compression indices cannot be bound through GGTT.
+        for index in (12, 15):
+            DLL.lb_xe2_pat_index_spaces(index, c.byref(spaces))
+            self.assertEqual(spaces.value & SPACE_GGTT, 0)
+        self.assertEqual(DLL.lb_xe2_pat_index_spaces(PAT_ENTRIES, c.byref(spaces)), PAT_INDEX)
+        self.assertEqual(DLL.lb_xe2_pat_index_spaces(0, None), PAT_INPUT)
+
+    def test_programming_path_takes_no_upstream_forcewake(self):
+        source = TOOL.read_reference(XE_PAT)
+        lines = source.splitlines()
+        wake = [i + 1 for i, line in enumerate(lines) if 'xe_force_wake_get' in line]
+        dumps = [i + 1 for i, line in enumerate(lines) if re.search(r'static void \w+_dump\(', line)]
+        self.assertTrue(wake)
+        # Every wake sits after a dump function starts, never in a program_pat
+        # path: the port's wake requirement is its own conservative rule.
+        self.assertTrue(all(any(d < w for d in dumps) for w in wake))
+        program = re.search(r'static void program_pat\(.*?\n\}', source, re.S).group(0)
+        program_mcr = re.search(r'static void program_pat_mcr\(.*?\n\}', source, re.S).group(0)
+        self.assertNotIn('xe_force_wake', program)
+        self.assertNotIn('xe_force_wake', program_mcr)
 
     def test_cache_indices_match_the_pinned_xe2_branch(self):
         expected = {CACHE_NONE: self.source.cache_indices['NONE'],

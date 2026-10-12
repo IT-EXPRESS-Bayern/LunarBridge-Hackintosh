@@ -839,7 +839,7 @@
   "arc_interface_contract_tests": {
     "test_type": "Executed the actual compiled lb_arc_interface C++ through ctypes: wire sizes, operation table, external-method call shapes, per-operation accept/reject matrix, owner binding, buffer aliasing and user-space decoding",
     "environment": "Linux x86_64 container, clang 18.1.3, -O2 -Wall -Wextra -Werror",
-    "tests_run": 51,
+    "tests_run": 52,
     "failures": 0,
     "errors": 0,
     "skipped": 0,
@@ -879,7 +879,7 @@
   "ported_xe2_contract_tests": {
     "test_type": "Executed the compiled lb_xe2_pat and lb_lrc C++ through ctypes while parsing every expected value out of the hash-pinned Intel MIT sources",
     "environment": "Linux x86_64 container, clang 18.1.3, Python 3.13",
-    "tests_run": 26,
+    "tests_run": 28,
     "failures": 0,
     "errors": 0,
     "skipped": 0,
@@ -897,7 +897,8 @@
     "provenance": "docs/ARC_PORT_SOURCES.json",
     "observable_through_user_client_selector": 9,
     "apple_bundle_shape_checks": 3,
-    "framebuffer_half_implemented": false
+    "framebuffer_half_implemented": false,
+    "pat_index_reachability_checked": true
   },
   "arc_port_ci_runs_recorded": false
 }

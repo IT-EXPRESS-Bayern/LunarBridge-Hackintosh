@@ -59,6 +59,7 @@ def arc_port_report_bytes():
     report.lrcWriteCount = 10
     report.lrcDescriptorTemplate = 0x119
     report.requiredQualifications = 0x1F1F
+    report.patGgttMaxIndex = 3
     return bytes(report)
 
 class Function:
