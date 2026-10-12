@@ -16,6 +16,7 @@ import hashlib
 import importlib.util
 import json
 from pathlib import Path
+import plistlib
 import re
 import unittest
 
@@ -624,6 +625,57 @@ class PortedLrcImage(unittest.TestCase):
         compute = LrcLayout()
         DLL.lb_lrc_layout(COMPUTE_CLASS, RING_BYTES, 0, c.byref(compute), c.sizeof(compute))
         self.assertLess((highest + 1) * 4, compute.imageBytes)
+
+
+class AppleBundleShape(unittest.TestCase):
+    """What mirroring Apple's last compatible driver would still require.
+
+    These tests pin the documented state: the kext occupies the accelerator
+    slot of the Apple split and declares no display-side dependency. They fail
+    if a framebuffer personality appears without the record being updated.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.inventory = TOOL.read_reference(
+            'apple-driver-surface/WhateverGreen-093e76f/WhateverGreen/kern_igfx_kexts.cpp')
+        cls.framebuffer = TOOL.read_reference(
+            'macos-tahoe/IOGraphics-600/IOGraphicsFamily/IOKit/graphics/IOFramebuffer.h')
+        cls.info = plistlib.loads((ROOT / 'native/Info.plist').read_bytes())
+
+    def test_icl_ships_one_accelerator_and_two_framebuffers(self):
+        bundles = re.findall(r'KernelPatcher::KextInfo\s+kextIntel(\w+)\s*\{\s*"([\w.]+)"',
+                             self.inventory)
+        icl = {name: bundle for name, bundle in bundles if name.startswith('ICL')}
+        self.assertEqual(sorted(icl), ['ICL', 'ICLHPFb', 'ICLLPFb'])
+        self.assertEqual(icl['ICL'], 'com.apple.driver.AppleIntelICLGraphics')
+        self.assertTrue(all(bundle.endswith('GraphicsFramebuffer')
+                            for name, bundle in icl.items() if name != 'ICL'))
+        # Newer families would have to appear here before Xe2 had a template.
+        self.assertFalse([name for name, _ in bundles
+                          if name.startswith(('TGL', 'ADL', 'MTL', 'LNL'))])
+
+    def test_the_published_framebuffer_contract_cannot_be_completed(self):
+        pure_virtual = re.findall(r'virtual\s[^;{]*?=\s*0\s*;', self.framebuffer, re.S)
+        self.assertEqual(len(pure_virtual), 8)
+        # Its own includes are outside the pinned set, so a framebuffer
+        # subclass cannot even be compiled from this material.
+        for header in ('IOGraphicsDevice.h', 'IOFramebufferShared.h',
+                       'IOFramebufferPrivate.h'):
+            self.assertIn(header, self.framebuffer)
+            self.assertFalse(list((ROOT / 'tests/.references/macos-tahoe').rglob(header)))
+
+    def test_the_kext_occupies_only_the_accelerator_slot(self):
+        personalities = self.info['IOKitPersonalities']
+        self.assertEqual(len(personalities), 1)
+        personality = next(iter(personalities.values()))
+        self.assertEqual(personality['IOProviderClass'], 'IOPCIDevice')
+        self.assertEqual(personality['IOClass'], 'LunarBridgePCI')
+        self.assertEqual(personality['IOMatchCategory'], 'LunarBridgeDiagnostic')
+        # No display-side dependency is declared, so nothing claims the
+        # framebuffer half of the Apple split.
+        self.assertNotIn('com.apple.iokit.IOGraphicsFamily', self.info['OSBundleLibraries'])
+        self.assertIn('com.apple.iokit.IOPCIFamily', self.info['OSBundleLibraries'])
 
 
 def main():

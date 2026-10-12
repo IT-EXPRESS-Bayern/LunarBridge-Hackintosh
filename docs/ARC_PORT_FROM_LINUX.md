@@ -9,8 +9,9 @@ auf dem die Form aufsetzt, in [ARC_INTERFACE_DIFF.md](ARC_INTERFACE_DIFF.md).
 
 ## Warum genau diese Richtung
 
-Apples jüngster Intel-Grafiktreiber ist `AppleIntelICLGraphics` mit
-`AppleIntelICLLPGraphicsFramebuffer` — Ice Lake, Gen11. Für Gen12, Xe oder Xe2
+Apples jüngster Intel-Grafiktreiber ist `AppleIntelICLGraphics`, dazu die zwei
+SKU-Displaybundles `AppleIntelICLLPGraphicsFramebuffer` und
+`AppleIntelICLHPGraphicsFramebuffer` — Ice Lake, Gen11. Für Gen12, Xe oder Xe2
 liefert Apple **keinen** Treiber. Es gibt deshalb keinen „letzten kompatiblen
 Arc-Treiber" von Apple, den man modifizieren könnte: der letzte kompatible
 Apple-Treiber ist eine Generation **ohne** Arc-Hardware, und der einzige
@@ -112,7 +113,7 @@ sowie PXP, Run-Alone, OA und Parallel-Submission.
 
 | Nachweis | Umfang |
 | --- | --- |
-| `tests/test_arc_port.py` | 23 Tests: **jeder** erwartete Wert wird aus den gepinnten Intel-Quellen geparst und gegen das kompilierte Modul geprüft — alle 32 Tabellenwerte, alle 32 Registeroffsets, die Cache-Indizes, Layout, Dword-Offsets, Steuerworte, Deskriptor, PDE und Ringinstruktion |
+| `tests/test_arc_port.py` | 26 Tests: **jeder** erwartete Wert wird aus den gepinnten Intel-Quellen geparst und gegen das kompilierte Modul geprüft — alle 32 Tabellenwerte, alle 32 Registeroffsets, die Cache-Indizes, Layout, Dword-Offsets, Steuerworte, Deskriptor, PDE und Ringinstruktion; dazu die Bundle-Form des Apple-Vorbilds |
 | `tests/test_arc_interface.py` | 51 Tests, einschließlich der vom LRC-Port zusammengesetzten GuC-Registrierung und des Portberichts von Selector 9 |
 | `tests/test_interface_diff.py` | 13 Tests des Schnittstellenvergleichs gegen dieselben Pins |
 | `tests/test_kernel_build_contract.py` | Kernelflags und Quellenzahl des Kextbuilds, jetzt 16 Kernelquellen |
@@ -123,6 +124,33 @@ Ein Transkriptionsfehler im Port fällt damit im Test auf, nicht erst am Gerät:
 Die Erwartungswerte stehen nicht im Test, sondern werden aus `xe_pat.c`,
 `xe_lrc.c`, `xe_lrc_layout.h`, `xe_engine_regs.h`, `xe_mi_commands.h`,
 `xe_instr_defs.h`, `xe_gtt_defs.h`, `xe_vm.c` und `xe_pci.c` gelesen.
+
+## Die Spiegelung des Apple-Bundles: Stand und offene Punkte
+
+Apple teilt die ICL-Generation in **drei** getrennte Kexte unter
+`/System/Library/Extensions`: einen Accelerator (`AppleIntelICLGraphics`) und
+zwei SKU-Framebuffer (`…ICLLPGraphicsFramebuffer`, `…ICLHPGraphicsFramebuffer`).
+Der Mach-O-Name jedes Bundles ist die Bundle-ID ohne das Präfix
+`com.apple.driver.Apple`. ICL ist die einzige Generation dieser Liste mit zwei
+Framebuffer-Bundles für einen Accelerator.
+
+Diese Kext besetzt genau den Platz der Accelerator-Hälfte: eine Personality
+mit `IOClass = LunarBridgePCI` auf `IOProviderClass = IOPCIDevice`,
+`IOMatchCategory = LunarBridgeDiagnostic`, und `OSBundleLibraries` nennt
+`com.apple.iokit.IOPCIFamily` plus die KPIs — **kein** `IOGraphicsFamily`.
+
+Eine zweite, gespiegelte Framebuffer-Personality bräuchte eine eigene Klasse,
+eine eigene Match-Kategorie, die zusätzliche `IOGraphicsFamily`-Abhängigkeit
+und eine `IOFramebuffer`-Unterklasse mit ihren **acht** rein virtuellen
+Methoden. Der veröffentlichte Header ist dafür nicht ausreichend: seine eigenen
+Includes (`IOGraphicsDevice.h`, `IOFramebufferShared.h`,
+`IOFramebufferPrivate.h`) sind nicht öffentlich. Eine solche Unterklasse ließe
+sich aus veröffentlichtem Material also nicht einmal übersetzen. Die
+Displayhälfte bleibt deshalb bewusst unbesetzt, statt eine Personality
+anzumelden, die einen Displaypfad behauptet, den sie nicht bedienen kann.
+Drei Tests in `tests/test_arc_port.py` halten diesen Stand fest: die
+ICL-Dreiteilung, die acht nicht erfüllbaren Methoden und die eine Personality
+ohne Display-Abhängigkeit.
 
 ## Beobachtbar am Gerät
 

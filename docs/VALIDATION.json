@@ -879,7 +879,7 @@
   "ported_xe2_contract_tests": {
     "test_type": "Executed the compiled lb_xe2_pat and lb_lrc C++ through ctypes while parsing every expected value out of the hash-pinned Intel MIT sources",
     "environment": "Linux x86_64 container, clang 18.1.3, Python 3.13",
-    "tests_run": 23,
+    "tests_run": 26,
     "failures": 0,
     "errors": 0,
     "skipped": 0,
@@ -895,7 +895,9 @@
     "lrc_submitted": false,
     "gpu_execution_implemented": false,
     "provenance": "docs/ARC_PORT_SOURCES.json",
-    "observable_through_user_client_selector": 9
+    "observable_through_user_client_selector": 9,
+    "apple_bundle_shape_checks": 3,
+    "framebuffer_half_implemented": false
   },
   "arc_port_ci_runs_recorded": false
 }
