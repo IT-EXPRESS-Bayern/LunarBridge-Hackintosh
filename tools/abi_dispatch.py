@@ -396,6 +396,60 @@ def probe_plan(table: dict, contract: dict) -> list[dict]:
     return plan
 
 
+def correlate(record: dict, callsite: dict) -> dict:
+    """Let the call site decide what the table alone could not.
+
+    A table gives entries; the driver's own override gives how many it believes
+    there are and which number a client passes. Matching the two turns
+    `array_index` into a wire selector and either confirms the scanned run or
+    shows that it over-read.
+    """
+    functions = []
+    for function in callsite.get('functions', []):
+        conclusions = function.get('conclusions') or {}
+        functions.append({
+            'symbol': function['symbol'],
+            'entry_count': conclusions.get('entry_count', {}).get('value'),
+            'selector_base': conclusions.get('selector_base', {}).get('value'),
+            'table_symbols': conclusions.get('table_symbols', []),
+            'dispatch_style': conclusions.get('dispatch_style'),
+        })
+    for table in record.get('tables', []):
+        match = None
+        for function in functions:
+            if table['symbol_at_table'] and table['symbol_at_table'] in function['table_symbols']:
+                match = function
+                break
+        if match is None:
+            for function in functions:
+                if function['entry_count'] == table['entry_count']:
+                    match = function
+                    break
+        if match is None:
+            table['call_site'] = {'matched': False,
+                                  'reason': 'no override names this array or agrees with its '
+                                            'length'}
+            continue
+        base = match['selector_base']
+        table['call_site'] = {
+            'matched': True, 'symbol': match['symbol'],
+            'matched_by': 'array symbol' if table['symbol_at_table'] in match['table_symbols']
+            else 'entry count',
+            'entry_count': match['entry_count'],
+            'selector_base': base,
+            'dispatch_style': match['dispatch_style'],
+            'entry_count_agrees': match['entry_count'] == table['entry_count'],
+            'scan_over_read': (match['entry_count'] is not None
+                               and match['entry_count'] < table['entry_count']),
+        }
+        if base is not None:
+            table['selector_base'] = base
+            for entry in table['entries']:
+                entry['wire_selector'] = entry['array_index'] + base
+    record['call_site_correlated'] = bool(functions)
+    return record
+
+
 def recover(path: Path, bundle: str | None, minimum_entries: int = MINIMUM_ENTRIES) -> dict:
     macho = load('abi_macho', 'tools/abi_macho.py')
     contract_module = load('abi_contract', 'tools/abi_contract.py')
@@ -443,6 +497,9 @@ def main() -> int:
                         help='shortest run of entries to report as a table')
     parser.add_argument('--list-bundles', action='store_true',
                         help='list the bundles in a collection and stop')
+    parser.add_argument('--with-callsite', action='store_true',
+                        help="also read the driver's own externalMethod override, which "
+                             'decides the wire selectors and the authoritative entry count')
     arguments = parser.parse_args()
 
     macho = load('abi_macho', 'tools/abi_macho.py')
@@ -454,6 +511,16 @@ def main() -> int:
         return 0
 
     record = recover(arguments.binary, arguments.bundle, arguments.minimum_entries)
+    if arguments.with_callsite:
+        callsite_module = load('abi_callsite', 'tools/abi_callsite.py')
+        try:
+            record['call_site_record'] = callsite_module.read(arguments.binary,
+                                                              arguments.bundle, None)
+            correlate(record, record['call_site_record'])
+        except Exception as error:
+            record['call_site_record'] = {'performed': False,
+                                          'reason': type(error).__name__ + ': '
+                                                    + str(error)[:200]}
     if arguments.out:
         policy = load('abi_policy', 'tools/abi_policy.py')
         policy.write_record(arguments.out, record, 'recovered dispatch tables')
@@ -461,10 +528,16 @@ def main() -> int:
     print(str(record['table_count']) + ' candidate table(s) in '
           + record['image']['filetype_name'] + ' ' + record['image']['architecture'])
     for table in record['tables'][:8]:
-        print('  ' + table['section'] + ' @ ' + table['address_hex'] + '  '
-              + str(table['entry_count']) + ' × ' + str(table['entry_bytes']) + 'B  '
-              + table['style'] + '  confidence ' + table['confidence']['level']
-              + ('  (' + table['symbol_at_table'] + ')' if table['symbol_at_table'] else ''))
+        line = ('  ' + table['section'] + ' @ ' + table['address_hex'] + '  '
+                + str(table['entry_count']) + ' × ' + str(table['entry_bytes']) + 'B  '
+                + table['style'] + '  confidence ' + table['confidence']['level']
+                + ('  (' + table['symbol_at_table'] + ')' if table['symbol_at_table'] else ''))
+        site = table.get('call_site') or {}
+        if site.get('matched'):
+            line += ('  base ' + str(site['selector_base'])
+                     + ('  count agrees' if site['entry_count_agrees']
+                        else '  call site says ' + str(site['entry_count'])))
+        print(line)
     return 0
 
 

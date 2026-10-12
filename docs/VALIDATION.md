@@ -107,7 +107,7 @@ The GGTT planner and GuC scheduler codec are now included in the host DLL, macOS
 Fourteen fresh kernel objects were cross-compiled after adding the upstream kernel build flag `-fno-stack-check`. Every header was verified against the pinned SDK tree, and those objects contain no Darwin userspace stack-probe symbol. The historical 755ba093 CI binary had that import. The actual 3b7550d Apple-clang build now proves its removal from both imports and definitions; native kernel admission and stack budget remain unqualified.
 
 One command now establishes all of that in a single run. `tools/recon.py`
-builds the CPU modules and the host-test library with `-Werror`, runs all twenty
+builds the CPU modules and the host-test library with `-Werror`, runs all twenty-two
 suites, verifies the SHA-256 of all 58 pinned sources, re-derives 54 upstream
 facts with `file:line` citations, and ranks what is still open. Its own 27 tests
 check that every extraction rule still matches its pinned source, that each

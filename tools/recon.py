@@ -91,6 +91,8 @@ TEST_SUITES = (
     ('abi_policy', 'tests/test_abi_policy.py', None),
     ('abi_dispatch', 'tests/test_abi_dispatch.py', None),
     ('abi_layout_vs_clang', 'tests/test_abi_layout_against_clang.py', None),
+    ('abi_callsite', 'tests/test_abi_callsite.py', None),
+    ('abi_correlation', 'tests/test_abi_correlation.py', None),
     ('platform_collector', 'tests/test_collect_platform.py', None),
     ('graphics_inventory', 'tests/test_macos_graphics_inventory.py', None),
     ('installer', 'tests/test_installer.py', None),
@@ -119,7 +121,7 @@ PORT_COVERAGE = {
              'gpu-prototype/lb_guc_firmware.cpp'),
             'transport codec and scheduler state only; no firmware load sequence'),
     'userclient': (('native/LunarBridgeDriver.cpp', 'gpu-prototype/lb_arc_interface.cpp',
-                    'tools/abi_dispatch.py'),
+                    'tools/abi_dispatch.py', 'tools/abi_callsite.py'),
                    'our own selector table satisfies the published validation contract; the '
                    'recovered Apple tables are not yet compared against it'),
     'metaclass': (('native/LunarBridgeDriver.cpp', 'tools/abi_macho.py'),

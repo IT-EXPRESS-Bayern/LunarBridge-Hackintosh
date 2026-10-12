@@ -145,6 +145,48 @@ Scanner. Belegt ist das Verfahren durch
 gestripptem Binary, Legacy-Struktur und Kernel-Collection. Ein Apple-Binary
 beweist das nicht, weil dort die erwartete Antwort unbekannt ist.
 
+### 3b. Die Call-Site lesen — Eintragszahl und Selektor-Basis
+
+```sh
+# Beides in einem Lauf: Tabelle scannen und mit der Call-Site verknüpfen
+python3 tools/abi_dispatch.py \
+    --binary /System/Library/KernelCollections/BootKernelExtensions.kc \
+    --bundle com.apple.driver.AppleIntelICLGraphics \
+    --with-callsite --out build/recon/dispatch-icl.json
+
+# Oder nur die Call-Site
+python3 tools/abi_callsite.py --binary <binary> --out build/recon/callsite-icl.json
+```
+
+Gelesen wird **der `externalMethod`-Override der Subklasse** — nicht
+`IOUserClient2022::dispatchExternalMethod`, die im Kernel liegt und im Treiber
+nur ein importiertes Symbol ist. Dort stehen:
+
+* die **Eintragszahl**, aus zwei unabhängigen Quellen: dem Immediate des
+  Grenzvergleichs und dem `dispatchArrayCount`-Argument;
+* die **Selektor-Basis**, ebenfalls doppelt: aus dem Abzug auf dem
+  Selektorregister und aus dem „reject-if-below"-Vergleich;
+* das **Array-Symbol**, das der Override lädt;
+* welcher Dispatch-Einsprungpunkt überhaupt gerufen wird.
+
+Entschieden wird nie aus dem Mnemonic allein — clang compiliert
+`if (selector >= 11)` zu `cmpl $0xa` plus einem Sprung **in** den Rumpf, also
+liefert jeder Vergleich zwei mögliche Grenzen und erst die **Übereinstimmung**
+mit dem Argument entscheidet. Kleine Basen erscheinen als `addl $-0x2a`, große
+als `addl $0xffffff00`; beide Formen werden gelesen.
+
+Die Verknüpfung füllt dann `wire_selector = array_index + base` und vergleicht
+die Längen. Das entscheidet nebenbei etwas, was die Bytes allein nicht
+entscheiden können: dieselben 120 Bytes lassen sich als drei 2022-Einträge
+**oder** als kürzerer Legacy-Lauf lesen — die Call-Site sagt „drei", und die
+falsche Lesung wird als widersprüchlich markiert statt als gleichwertige
+Tabelle geführt.
+
+Disassembliert wird dafür mit `llvm-objdump`/`otool`; die Ausgabe wird geparst
+und **verworfen**. In den Datensatz gelangen Zahlen, Offsets, Registernamen und
+Symbolnamen — kein Instruktionstext. `tests/test_abi_callsite.py` prüft genau
+das mit, gegen compilierte Fixtures mit bekannter Antwort.
+
 ### 4. Einen einzelnen Treiber kartieren
 
 ```sh
@@ -159,7 +201,7 @@ python3 tools/analyze_apple_driver.py \
 python3 tools/recon.py --out build/recon
 ```
 
-19 Suiten, 58 gepinnte Quellen, 73 Upstream-Fakten mit Zeilenzitat, plus die
+22 Suiten, 58 gepinnte Quellen, 73 Upstream-Fakten mit Zeilenzitat, plus die
 macOS-Stufen (`appledriver`, `system`, `device`), die hier auf dem Mac endlich
 laufen.
 
